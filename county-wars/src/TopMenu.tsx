@@ -1,16 +1,20 @@
-import React from 'react';
-import { Settings, RotateCcw, Map, Users, Coins } from 'lucide-react';
+import React, { useContext, useState } from "react";
+import { Settings, RotateCcw, Map, Users, Coins } from "lucide-react";
+import SettingsModal from "./SettingsModal";
+import { GameStateContext } from "./GameStateContext";
 
-const TopMenu = ({ gameState, totalPopulation, onToggleMapStyle, onReset }) => {
+const TopMenu = ( onToggleMapStyle) => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+
+  const {gameState, resetGame} = useContext(GameStateContext);
   const handleSettings = () => {
-    alert('Settings panel would open here!');
+    setIsSettingsOpen(true);
   };
 
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800 to-slate-700 flex items-center justify-between px-6 z-[1000] shadow-lg border-b border-slate-600">
-      <div className="text-2xl font-bold text-blue-400">
-        County Conquest
-      </div>
+      <div className="text-2xl font-bold text-blue-400">County Conquest</div>
 
       {/* Stats */}
       <div className="flex gap-8">
@@ -22,7 +26,7 @@ const TopMenu = ({ gameState, totalPopulation, onToggleMapStyle, onReset }) => {
         />
         <StatItem
           icon={<Users className="w-5 h-5 text-blue-400" />}
-          value={totalPopulation.toLocaleString()}
+          value={gameState.population.toLocaleString()}
           label="Population"
           color="text-blue-400"
         />
@@ -43,7 +47,7 @@ const TopMenu = ({ gameState, totalPopulation, onToggleMapStyle, onReset }) => {
           className="from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600"
         />
         <MenuButton
-          onClick={onReset}
+          onClick={resetGame}
           icon={<RotateCcw className="w-4 h-4" />}
           text="Reset"
           className="from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600"
@@ -53,6 +57,10 @@ const TopMenu = ({ gameState, totalPopulation, onToggleMapStyle, onReset }) => {
           icon={<Settings className="w-4 h-4" />}
           text="Settings"
           className="from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-600"
+        />
+        <SettingsModal
+          onClose={() => setIsSettingsOpen(false)}
+          isOpen={isSettingsOpen}
         />
       </div>
     </div>

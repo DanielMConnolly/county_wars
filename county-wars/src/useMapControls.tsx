@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { MapControls } from './types/GameTypes';
+
 
 const useMapControls = () => {
-  const [mapControls, setMapControls] = useState({
+  const [mapControls, setMapControls] = useState<MapControls>({
     zoom: 4,
     style: 'terrain'
   });

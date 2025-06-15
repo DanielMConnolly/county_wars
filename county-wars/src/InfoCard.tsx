@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Zap } from 'lucide-react';
-import { getCost } from '../../county-conquest-game/src/utils/gameUtils';
+import { getCost } from './utils/gameUtils';
+import { GameStateContext } from './GameStateContext';
 
-const InfoCard = ({ gameState, onConquest }) => {
+const InfoCard = ({}) => {
+  const { gameState, addCounty } = useContext(GameStateContext);
   const { selectedCounty, ownedCounties } = gameState;
 
   const getDifficultyColor = (difficulty) => {
@@ -66,7 +68,11 @@ const InfoCard = ({ gameState, onConquest }) => {
       </div>
 
       <button
-        onClick={onConquest}
+        onClick={()=> {
+          if(selectedCounty != null){
+            addCounty(selectedCounty)
+          }
+        }}
         disabled={buttonState.disabled}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
           buttonState.disabled
