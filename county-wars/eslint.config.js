@@ -26,6 +26,19 @@ export default [
       'react': react,
       'react-hooks': reactHooks,
     },
+    globals: {
+      // Browser globals
+      window: 'readonly',
+      document: 'readonly',
+      localStorage: 'readonly',
+      sessionStorage: 'readonly',
+      console: 'readonly',
+      // Add other browser APIs you might use
+      fetch: 'readonly',
+      URL: 'readonly',
+      URLSearchParams: 'readonly',
+    },
+  },
     rules: {
       // TypeScript rules
       ...typescript.configs.recommended.rules,

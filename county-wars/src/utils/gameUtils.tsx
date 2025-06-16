@@ -24,8 +24,8 @@ export const getCost = (difficulty: DifficultyType) => {
 
 
   export const useIsCountyOwned = (county: County | null) => {
-    if (!county) return false;
     const {gameState} = useContext(GameStateContext);
+    if (!county) return false;
     const {ownedCounties} = gameState;
     const countycode = county.name + county.state;
     return ownedCounties.has(countycode);

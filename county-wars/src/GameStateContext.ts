@@ -1,6 +1,7 @@
 
 import { createContext, useContext } from 'react';
 import { County, GameState } from './types/GameTypes';
+import React from 'react';
 
 // Define the context type
 export interface GameStateContextType {
