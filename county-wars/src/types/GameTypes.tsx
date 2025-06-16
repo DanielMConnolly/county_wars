@@ -1,5 +1,6 @@
 export type County = {
     name: string,
+    state: string,
     pop: number,
     difficulty: number
 }

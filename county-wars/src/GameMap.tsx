@@ -1,4 +1,4 @@
-import  { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { mapStyles, getAttribution } from "./data/mapStyles";
 import {
   map,
@@ -7,6 +7,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
+import { useIsCountyOwned } from "./utils/gameUtils";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -26,14 +27,40 @@ const highlightStyle = {
 
 
 
-const GameMap= ({mapControls }) => {
+const GameMap = ({ mapControls }) => {
 
   const { gameState, selectCounty } = useContext(GameStateContext);
-  console.log(gameState);
+
   const mapRef = useRef<string | HTMLElement>(null);
   const mapInstance = useRef<leaflet.Map>(null);
 
-  let currentHighlighted: ImageOverlay | null = null; // Track currently highlighted county
+  const [currentHighlighted, setCurrentHighlighted] = useState<ImageOverlay | null>(null);
+  if (currentHighlighted != null) {
+    currentHighlighted.setStyle(highlightStyle);
+  }
+
+  const handleTileClick = useCallback((layer: ImageOverlay) => {
+    setCurrentHighlighted(prevLayer => {
+      const prevLayerCounty = {
+        name: prevLayer?.feature.properties.NAME,
+        state: prevLayer?.feature.properties.STATEFP,
+        pop: 10000,
+        difficulty: 1,
+      }
+      const wasPreviouslySelectedCountyOwned = useIsCountyOwned(prevLayerCounty);
+      if (!wasPreviouslySelectedCountyOwned) {
+        prevLayer?.setStyle(defaultStyle);
+      }
+      return layer;
+    });
+    selectCounty({
+      name: layer.feature.properties.NAME,
+      pop: 10000,
+      difficulty: 1,
+      state: layer.feature.properties.STATEFP,
+    });
+  }, [currentHighlighted]);
+
 
   // Initialize map
   useEffect(() => {
@@ -51,18 +78,11 @@ const GameMap= ({mapControls }) => {
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
           onEachFeature: function (feature, layer: ImageOverlay) {
-            if(layer.feature.properties.NAME in gameState.ownedCounties) {
-              highlightCounty(layer)
+            if (layer.feature.properties.NAME + layer.feature.properties.STATE_FP in gameState.ownedCounties) {
+              layer.setStyle(highlightStyles);
             }
             // Add click event to each county
-            layer.on("click", function (e) {
-              highlightCounty(layer);
-             selectCounty({
-                name: feature.properties.NAME,
-                pop: 10000,
-                difficulty: 1,
-              });
-            });
+            layer.on("click", () => handleTileClick(layer));
 
             layer.on("mouseover", function (e) {
 
@@ -79,34 +99,20 @@ const GameMap= ({mapControls }) => {
       })
       .catch((error) => console.error("Error loading counties:", error));
 
-    function highlightCounty(layer: ImageOverlay) {
-
-      // Highlight the clicked county
-      layer.setStyle(highlightStyle);
-      currentHighlighted = layer;
-
-      // Optional: Get county information
-      const countyName = layer.feature.properties.NAME || "Unknown";
-      const stateName = layer.feature.properties.STATE_NAME || "Unknown";
-      console.log(`Selected: ${countyName}, ${stateName}`);
-    }
-
     return () => {
 
     };
-  }, []);
+  }, [handleTileClick]);
 
 
   useEffect(() => {
     function highlightCounty(layer: ImageOverlay) {
-
-      // Highlight the clicked county
       layer.setStyle(highlightStyle);
-      currentHighlighted = layer;
+      setCurrentHighlighted(layer);
     }
-    mapInstance.current.eachLayer((layer: ImageOverlay)=> {
-      if(!layer.feature) return;
-      if(gameState.ownedCounties.has(layer.feature.properties.NAME)) {
+    mapInstance.current.eachLayer((layer: ImageOverlay) => {
+      if (!layer.feature) return;
+      if (gameState.ownedCounties.has(layer.feature.properties.NAME + layer.feature.properties.STATEFP)) {
         highlightCounty(layer)
       }
 
@@ -138,10 +144,10 @@ const GameMap= ({mapControls }) => {
 
   return (
     <div
-      ref={mapRef}
-      className="fixed top-16 left-0 right-0 bottom-0 z-[1]"
-      style={{ height: "calc(100vh - 64px)" }}
-    ></div>
+      ref= { mapRef }
+  className = "fixed top-16 left-0 right-0 bottom-0 z-[1]"
+  style = {{ height: "calc(100vh - 64px)" }}
+    > </div>
   );
 };
 

@@ -1,3 +1,7 @@
+import { useContext } from "react";
+import { GameStateContext } from "../GameStateContext";
+import { County } from "../types/GameTypes";
+
 export const getCost = (difficulty) => {
     const costs = { Easy: 100, Medium: 250, Hard: 500 };
     return costs[difficulty] || 100;
@@ -15,3 +19,12 @@ export const getCost = (difficulty) => {
       default: return 'text-gray-400';
     }
   };
+
+
+  export const useIsCountyOwned = (county: County | null) => {
+    if (!county) return false;
+    const {gameState} = useContext(GameStateContext);
+    const {ownedCounties} = gameState;
+    const countycode = county.name + county.state;
+    return ownedCounties.has(countycode);
+  }

@@ -22,7 +22,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const addCounty = (countyInfo: County) => {
     setGameState((prevState) => ({
       ...prevState,
-      ownedCounties: new Set([...prevState.ownedCounties, countyInfo.name]),
+      ownedCounties: new Set([...prevState.ownedCounties, countyInfo.name + countyInfo.state]),
     }));
   };
 

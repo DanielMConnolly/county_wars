@@ -1,11 +1,13 @@
 import React, { useContext } from 'react';
 import { Zap } from 'lucide-react';
-import { getCost } from './utils/gameUtils';
+import { getCost, useIsCountyOwned } from './utils/gameUtils';
 import { GameStateContext } from './GameStateContext';
 
 const InfoCard = ({}) => {
   const { gameState, addCounty } = useContext(GameStateContext);
   const { selectedCounty, ownedCounties } = gameState;
+
+  const isCountyOwned = useIsCountyOwned(selectedCounty);
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -18,7 +20,7 @@ const InfoCard = ({}) => {
 
   const getButtonState = () => {
     if (!selectedCounty) return { text: 'Select a Territory', disabled: true };
-    if (ownedCounties.has(selectedCounty.name)) return { text: 'Already Owned', disabled: true };
+    if (ownedCounties.has(selectedCounty.name + selectedCounty.state)) return { text: 'Already Owned', disabled: true };
     return { text: 'Conquer Territory', disabled: false };
   };
 
@@ -48,8 +50,8 @@ const InfoCard = ({}) => {
 
             <InfoRow
               label="Status:"
-              value={ownedCounties.has(selectedCounty.name) ? 'Owned' : 'Neutral'}
-              className={ownedCounties.has(selectedCounty.name) ? 'text-green-400' : 'text-yellow-400'}
+              value={isCountyOwned ? 'Owned' : 'Neutral'}
+              className={isCountyOwned ? 'text-green-400' : 'text-yellow-400'}
             />
 
             <InfoRow
