@@ -3,13 +3,13 @@ import { Zap } from 'lucide-react';
 import { getCost, useIsCountyOwned } from './utils/gameUtils';
 import { GameStateContext } from './GameStateContext';
 
-const InfoCard = ({}) => {
+const InfoCard = () => {
   const { gameState, addCounty } = useContext(GameStateContext);
   const { selectedCounty, ownedCounties } = gameState;
 
   const isCountyOwned = useIsCountyOwned(selectedCounty);
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: 'Easy'| 'Medium' | 'Hard') => {
     switch (difficulty) {
       case 'Easy': return 'text-green-400';
       case 'Medium': return 'text-yellow-400';
@@ -56,7 +56,7 @@ const InfoCard = ({}) => {
 
             <InfoRow
               label="Difficulty:"
-              value={selectedCounty.difficulty}
+              value={selectedCounty.difficulty.toString()}
               className={getDifficultyColor(selectedCounty.difficulty)}
             />
 
@@ -88,7 +88,7 @@ const InfoCard = ({}) => {
   );
 };
 
-const InfoRow = ({ label, value, className }) => (
+const InfoRow = ({ label, value, className }: {label: string, value: string, className: string}) => (
   <div className="flex justify-between items-center">
     <span className="text-gray-400">{label}</span>
     <span className={`font-semibold ${className}`}>{value}</span>

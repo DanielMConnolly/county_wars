@@ -2,7 +2,7 @@ export type County = {
     name: string,
     state: string,
     pop: number,
-    difficulty: number
+    difficulty: GameDifficulty,
 }
 
 export type GameState = {
@@ -14,7 +14,9 @@ export type GameState = {
     population: number,
 }
 
+export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
+export type MapStyle = 'terrain' | 'satellite' | 'dark' | 'street';
 export type MapControls = {
     zoom: number,
-    style: string,
+    style: MapStyle
 }
