@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/gamemap.tsx","./src/gamestatecontext.ts","./src/gamestateprovider.react.tsx","./src/infocard.tsx","./src/mapcontrols.tsx","./src/settingsmodal.tsx","./src/topmenu.tsx","./src/usemapcontrols.tsx","./src/vite-env.d.ts","./src/vite.config.ts","./src/types/gametypes.tsx","./src/utils/gameutils.tsx"],"errors":true,"version":"5.8.3"}
