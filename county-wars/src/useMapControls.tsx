@@ -8,11 +8,11 @@ const useMapControls = () => {
     style: 'terrain'
   });
 
-  const changeMapStyle = (style) => {
+  const changeMapStyle = (style: string) => {
     setMapControls(prev => ({ ...prev, style }));
   };
 
-  const updateZoom = (zoom) => {
+  const updateZoom = (zoom: string) => {
     setMapControls(prev => ({ ...prev, zoom }));
   };
 

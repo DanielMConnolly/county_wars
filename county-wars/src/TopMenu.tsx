@@ -67,7 +67,7 @@ const TopMenu = ( onToggleMapStyle) => {
   );
 };
 
-const StatItem = ({ icon, value, label, color }) => (
+const StatItem = ({ icon, value, label, color }: {color: string, icon: any, value: any,  label: string}) => (
   <div className="flex items-center gap-2">
     {icon}
     <div className="text-center">
@@ -77,7 +77,7 @@ const StatItem = ({ icon, value, label, color }) => (
   </div>
 );
 
-const MenuButton = ({ onClick, icon, text, className }) => (
+const MenuButton = ({ onClick, icon, text, className }: {onClick: any, icon: any, text: string, className: string}) => (
   <button
     onClick={onClick}
     className={`px-4 py-2 bg-gradient-to-r ${className} rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2`}

@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
 import { useIsCountyOwned } from "./utils/gameUtils";
+import { MapControls } from "./types/GameTypes";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -27,7 +28,7 @@ const highlightStyle = {
 
 
 
-const GameMap = ({ mapControls }) => {
+const GameMap = (mapControls: MapControls ) => {
 
   const { gameState, selectCounty } = useContext(GameStateContext);
 

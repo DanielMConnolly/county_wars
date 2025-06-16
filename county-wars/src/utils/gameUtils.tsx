@@ -2,16 +2,22 @@ import { useContext } from "react";
 import { GameStateContext } from "../GameStateContext";
 import { County } from "../types/GameTypes";
 
-export const getCost = (difficulty) => {
-    const costs = { Easy: 100, Medium: 250, Hard: 500 };
+enum DifficultyType {
+  Easy,
+  Medium,
+  Hard
+}
+
+export const getCost = (difficulty: DifficultyType) => {
+    const costs: {DifficultyType: number} = {Easy: 100, Medium: 250, Hard: 500 };
     return costs[difficulty] || 100;
   };
 
-  export const formatNumber = (num) => {
+  export const formatNumber = (num: number) => {
     return num.toLocaleString();
   };
 
-  export const getDifficultyColor = (difficulty) => {
+  export const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'Easy': return 'text-green-400';
       case 'Medium': return 'text-yellow-400';
