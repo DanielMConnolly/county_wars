@@ -1,12 +1,10 @@
-
-import useGameState from './useGameState';
 import useMapControls from './useMapControls';
-import GameMap from './GameMap.tsx';
+import GameMap from './GameMap.react';
 import InfoCard from './InfoCard';
 import TopMenu from './TopMenu';
 import MapControls from './MapControls';
 import React, { useContext } from 'react';
-import { GameStateProvider } from './GameStateProvider.react.tsx';
+import { GameStateProvider } from './GameStateProvider.react';
 
 const App = () => {
 

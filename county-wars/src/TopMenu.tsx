@@ -3,7 +3,7 @@ import { Settings, RotateCcw, Map, Users, Coins } from "lucide-react";
 import SettingsModal from "./SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 
-const TopMenu = ( onToggleMapStyle) => {
+const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 

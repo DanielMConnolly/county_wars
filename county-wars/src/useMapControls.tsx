@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapControls } from './types/GameTypes';
+import { MapControls, MapStyle } from './types/GameTypes';
 
 
 const useMapControls = () => {
@@ -8,16 +8,16 @@ const useMapControls = () => {
     style: 'terrain'
   });
 
-  const changeMapStyle = (style: string) => {
+  const changeMapStyle = (style: MapStyle) => {
     setMapControls(prev => ({ ...prev, style }));
   };
 
-  const updateZoom = (zoom: string) => {
+  const updateZoom = (zoom: number) => {
     setMapControls(prev => ({ ...prev, zoom }));
   };
 
   const toggleMapStyle = () => {
-    const styles = ['terrain', 'satellite', 'dark', 'street'];
+    const styles: Array<MapStyle> = ['terrain', 'satellite', 'dark', 'street'];
     const currentIndex = styles.indexOf(mapControls.style);
     const nextIndex = (currentIndex + 1) % styles.length;
     changeMapStyle(styles[nextIndex]);

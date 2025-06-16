@@ -5,6 +5,9 @@ import { GameStateContext } from './GameStateContext';
 export default function SettingsModal({
   isOpen,
   onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
 }) {
 
   const [selectedColor, setSelectedColor] = React.useState('#3B82F6');

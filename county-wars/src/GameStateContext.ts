@@ -17,7 +17,7 @@ export interface GameStateContextType {
 }
 
 // Create the context
-// @ts-ignore
+//@ts-expect-error This is only null if provider isn't used
 export const GameStateContext = createContext<GameStateContextType>(null);
 
 // Custom hook to use the GameState context

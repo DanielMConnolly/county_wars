@@ -2,14 +2,10 @@ import { useContext } from "react";
 import { GameStateContext } from "../GameStateContext";
 import { County } from "../types/GameTypes";
 
-enum DifficultyType {
-  Easy,
-  Medium,
-  Hard
-}
+type DifficultyType  = 'Easy' | 'Medium' | 'Hard';
 
 export const getCost = (difficulty: DifficultyType) => {
-    const costs: {DifficultyType: number} = {Easy: 100, Medium: 250, Hard: 500 };
+    const costs = {Easy: 100, Medium: 250, Hard: 500 };
     return costs[difficulty] || 100;
   };
 
