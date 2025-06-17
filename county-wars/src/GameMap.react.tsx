@@ -45,14 +45,15 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
   const handleTileClick = useCallback((layer: Polyline) => {
     setCurrentHighlighted(prevLayer => {
+      if (!prevLayer) return layer;
       const prevLayerCounty = {
         name: prevLayer?.feature?.properties.NAME as string,
         state: prevLayer?.feature?.properties.STATEFP as string,
         pop: 10000 as number,
         difficulty: "Hard" as GameDifficulty,
       }
-      const wasPreviouslySelectedCountyOwned = useIsCountyOwned(prevLayerCounty);
-      if (!wasPreviouslySelectedCountyOwned) {
+      const countyId = prevLayerCounty.name + prevLayerCounty.state;
+      if (!gameState.ownedCounties.has(countyId)) {
         prevLayer?.setStyle(defaultStyle);
       }
       return layer;
@@ -63,13 +64,14 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       difficulty: 'Easy',
       state: layer.feature?.properties.STATEFP,
     });
-  }, [currentHighlighted]);
+  }, [gameState.ownedCounties, selectCounty]);
 
 
-  // Initialize map
+  // Store the county layer reference
+  const countyLayerRef = useRef<leaflet.GeoJSON | null>(null);
+
+  // Initialize map (only once)
   useEffect(() => {
-    const highlightStyles = highlightStyle;
-    highlightStyles.fillColor = gameState.highlightColor;
     if (!mapRef.current || mapInstance.current) return;
 
     if (mapRef.current != null) {
@@ -82,21 +84,20 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
           onEachFeature: function (feature, layer: Polyline) {
-            if (layer.feature?.properties.NAME + layer.feature?.properties.STATE_FP in gameState.ownedCounties) {
-              layer.setStyle(highlightStyles);
-            }
             // Add click event to each county
             layer.on("click", () => handleTileClick(layer));
 
-            layer.on("mouseover", function (e) {
-
+            layer.on("mouseover", function () {
             });
 
-            layer.on("mouseout", function (e) {
+            layer.on("mouseout", function () {
 
             });
           },
         });
+
+        countyLayerRef.current = layer;
+
         if (mapInstance.current) {
           layer.addTo(mapInstance.current);
         }
@@ -104,23 +105,32 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       .catch((error) => console.error("Error loading counties:", error));
 
     return () => {
-
-    };
-  }, [handleTileClick]);
-
-
-  useEffect(() => {
-    function highlightCounty(layer: Polyline) {
-      layer.setStyle(highlightStyle);
-      setCurrentHighlighted(layer);
-    }
-    if (mapInstance.current == null) return;
-    mapInstance.current.eachLayer((layer: Layer) => {
-      if (!(layer instanceof Polyline)) return;
-      if (gameState.ownedCounties.has(layer.feature?.properties.NAME + layer.feature?.properties.STATEFP)) {
-        highlightCounty(layer)
+      if (countyLayerRef.current && mapInstance.current) {
+        mapInstance.current.removeLayer(countyLayerRef.current);
       }
+    };
+  }, []); // No dependencies - initialize only once
 
+
+  // Update county styling when ownership or colors change
+  useEffect(() => {
+    if (!countyLayerRef.current) return;
+
+    const updatedHighlightStyle = {
+      ...highlightStyle,
+      fillColor: gameState.highlightColor
+    };
+
+    countyLayerRef.current.eachLayer((layer: Layer) => {
+      if (!(layer instanceof Polyline)) return;
+
+      const countyId = layer.feature?.properties.NAME + layer.feature?.properties.STATEFP;
+
+      if (gameState.ownedCounties.has(countyId)) {
+        layer.setStyle(updatedHighlightStyle);
+      } else {
+        layer.setStyle(defaultStyle);
+      }
     });
   }, [gameState.highlightColor, gameState.ownedCounties]);
 
@@ -145,7 +155,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   useEffect(() => {
     if (!mapInstance.current) return;
     mapInstance.current.setZoom(mapControls.zoom);
-  }, []);
+  }, [mapControls.zoom]);
 
   return (
     <div
