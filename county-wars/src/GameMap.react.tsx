@@ -95,9 +95,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
             });
           },
         });
-        
+
         countyLayerRef.current = layer;
-        
+
         if (mapInstance.current) {
           layer.addTo(mapInstance.current);
         }
@@ -115,7 +115,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   // Update county styling when ownership or colors change
   useEffect(() => {
     if (!countyLayerRef.current) return;
-    
+
     const updatedHighlightStyle = {
       ...highlightStyle,
       fillColor: gameState.highlightColor
@@ -123,9 +123,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     countyLayerRef.current.eachLayer((layer: Layer) => {
       if (!(layer instanceof Polyline)) return;
-      
+
       const countyId = layer.feature?.properties.NAME + layer.feature?.properties.STATEFP;
-      
+
       if (gameState.ownedCounties.has(countyId)) {
         layer.setStyle(updatedHighlightStyle);
       } else {

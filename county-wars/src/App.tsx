@@ -18,23 +18,21 @@ const App = () => {
   return (
     <div className="h-screen bg-gray-900 text-white overflow-hidden">
       <GameStateProvider>
-      <TopMenu
-        onToggleMapStyle={toggleMapStyle}
-      />
+        <TopMenu
+          onToggleMapStyle={toggleMapStyle}
+        />
 
-      <MapControls
-        mapControls={mapControls}
-        onChangeMapStyle={changeMapStyle}
-        onUpdateZoom={updateZoom}
-      />
+        <MapControls
+          mapControls={mapControls}
+          onChangeMapStyle={changeMapStyle}
+          onUpdateZoom={updateZoom}
+        />
 
-      <GameMap
-        mapControls={mapControls}
-      />
+        <GameMap
+          mapControls={mapControls} />
 
-      <InfoCard
-      />
-       </GameStateProvider>
+        <InfoCard />
+      </GameStateProvider>
     </div>
 
   );

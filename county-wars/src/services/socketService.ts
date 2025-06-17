@@ -8,7 +8,7 @@ export class SocketService {
   connect(userId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.userId = userId;
-      
+
       this.socket = io('http://localhost:3001', {
         auth: {
           userId: userId
