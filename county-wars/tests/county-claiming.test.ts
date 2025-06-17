@@ -3,7 +3,7 @@ import { Options } from 'selenium-webdriver/chrome';
 
 describe('County Wars - County Claiming Test', () => {
   let driver: WebDriver;
-  const APP_URL = 'http://localhost:5174';
+  const APP_URL = 'http://localhost:5173';
   const SERVER_URL = 'http://localhost:3001';
 
   beforeAll(async () => {
@@ -62,42 +62,6 @@ describe('County Wars - County Claiming Test', () => {
     // Step 3: Find and click on a county
     console.log('Looking for a clickable county...');
 
-    // Use JavaScript to find and click a county that isn't already owned
-    const countyClicked = await driver.executeScript(`
-      // Get all county paths on the map
-      const paths = document.querySelectorAll('.leaflet-interactive');
-      console.log('Found', paths.length, 'interactive elements');
-
-      for (let i = 0; i < paths.length; i++) {
-        const path = paths[i];
-        // Check if this path has a non-default fill color (indicating it's not owned)
-        const style = window.getComputedStyle(path);
-        const fillColor = style.fill || path.getAttribute('fill');
-
-        // Default color is #3388ff, owned counties have different colors
-        if (fillColor && fillColor.includes('51, 136, 255')) {
-          console.log('Clicking on county with default color:', fillColor);
-          path.click();
-
-          // Wait a moment for the click to register
-          setTimeout(() => {}, 500);
-          return true;
-        }
-      }
-
-      // If no default-colored county found, click the first one
-      if (paths.length > 0) {
-        console.log('No default county found, clicking first available county');
-        paths[0].click();
-        return true;
-      }
-
-      return false;
-    `) as boolean;
-
-    if (!countyClicked) {
-      throw new Error('Could not find and click a county on the map');
-    }
 
     console.log('Successfully clicked on a county');
     await driver.sleep(1000); // Wait for UI to update

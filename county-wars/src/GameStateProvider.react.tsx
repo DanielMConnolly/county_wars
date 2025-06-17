@@ -34,20 +34,16 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Helper function to add a county
-  const addCounty = (countyInfo: County) => {
+  const addCounty = (countyName: string) => {
     try {
-      console.log('addCounty called with:', countyInfo);
-      const countyId = countyInfo.name + countyInfo.state;
-      console.log('Generated countyId:', countyId);
-      
       if (isConnected) {
         console.log('Socket connected, claiming county via socket');
-        socketService.claimCounty(countyId);
+        socketService.claimCounty(countyName);
       } else {
         console.log('Socket not connected, updating state directly');
         setGameState((prevState) => ({
           ...prevState,
-          ownedCounties: new Set([...prevState.ownedCounties, countyId]),
+          ownedCounties: new Set([...prevState.ownedCounties, countyName]),
         }));
       }
       console.log('addCounty completed successfully');
@@ -131,7 +127,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         console.log('Fetching initial counties for userId:', userId);
         const response = await fetch(`http://localhost:3001/api/counties/${userId}`);
         console.log('HTTP response status:', response.status);
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log('Fetched initial counties via HTTP:', data.ownedCounties);
@@ -155,7 +151,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // Socket connection and event handling
   useEffect(() => {
     console.log('Socket effect running, userId:', userId);
-    
+
     // Skip if already connected to avoid reconnections
     if (socketService.isConnected()) {
       console.log('Socket already connected, skipping reconnection');
@@ -213,12 +209,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     };
 
     connectToSocket();
-
-    return () => {
-      console.log('Socket effect cleanup - NOT disconnecting to prevent reconnection issues');
-      // Don't disconnect here as it causes reconnection issues
-      // The socket will be cleaned up when the component unmounts or page refreshes
-    };
   }, [userId]);
 
   const contextValue: GameStateContextType = {

@@ -26,7 +26,12 @@ export default [
       'react': react,
       'react-hooks': reactHooks,
     },
+    "env": {
+      "jest": true,
+      "node": true
+    },
     globals: {
+      'desribe': 'readonly',
       // Browser globals
       window: 'readonly',
       document: 'readonly',

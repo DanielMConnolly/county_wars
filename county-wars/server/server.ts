@@ -4,6 +4,13 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { dbOperations } from './database.js';
 
+// Extend Socket.IO socket to include custom userId property
+declare module 'socket.io' {
+  interface Socket {
+    userId: string;
+  }
+}
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
@@ -35,15 +42,10 @@ io.use((socket, next) => {
 // HTTP API endpoints
 app.get('/api/counties/:userId', (req, res) => {
   const { userId } = req.params;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
-  }
-
   try {
     // Ensure user exists in database
     dbOperations.createUser(userId);
-    
+
     const ownedCounties = dbOperations.getUserCounties(userId);
     res.json({ ownedCounties });
   } catch (error) {
@@ -52,7 +54,7 @@ app.get('/api/counties/:userId', (req, res) => {
   }
 });
 
-app.get('/api/counties/all/taken', (req, res) => {
+app.get('/api/counties/all/taken', (_, res) => {
   try {
     const allTakenCounties = dbOperations.getAllTakenCounties();
     res.json(allTakenCounties);
@@ -62,7 +64,7 @@ app.get('/api/counties/all/taken', (req, res) => {
   }
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', (_, res) => {
   try {
     const stats = dbOperations.getStats();
     res.json(stats);
