@@ -1,7 +1,9 @@
 
 import "jest-puppeteer";
 import "expect-puppeteer";
+import '@testing-library/jest-dom';
 import puppeteer, { Page, Browser } from 'puppeteer';
+import { svg } from "leaflet";
 
 let testPage: Page;
 let browser: Browser;
@@ -11,7 +13,7 @@ beforeAll(async () => {
     headless: false,
   });
   testPage = await browser.newPage();
-  await testPage.goto("http://localhost:5174");
+  await testPage.goto("http://localhost:5173");
 });
 
 describe("County Wars GameMap", () => {
@@ -29,11 +31,23 @@ describe("County Wars GameMap", () => {
     await testPage.waitForSelector('.leaflet-overlay-pane svg', { timeout: 15000 });
     const svgElements = await testPage.$$('.leaflet-overlay-pane svg path');
     expect(svgElements.length).toBeGreaterThan(0);
+    await svgElements[1].click();
+    const infoCardElement = await testPage.$$('[data-testid="info-card"]');
+    expect(infoCardElement.length).toBeGreaterThan(0);
+    await testPage.click('[data-testid="conquer-county-button"]');
+    // await jestPuppeteer.debug();
+    // const x = await svgElements[1];
+
+    await e
+    // expect(await svgElements[1]).toHaveAttribute('fill', 'red');
+
+
+
   });
 });
 
-afterAll(async () => {
-  if (browser) {
-    await browser.close();
-  }
-})
+// afterAll(async () => {
+//   if (browser) {
+//     await browser.close();
+//   }
+// })
