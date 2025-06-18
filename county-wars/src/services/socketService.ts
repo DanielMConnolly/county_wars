@@ -108,7 +108,7 @@ export class SocketService {
     }
   }
 
-  private emit(event: string, data: any) {
+  private emit<T>(event: string, data: T) {
     const callbacks = this.callbacks.get(event);
     if (callbacks) {
       callbacks.forEach(callback => callback(data));

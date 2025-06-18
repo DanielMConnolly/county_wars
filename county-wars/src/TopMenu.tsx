@@ -1,6 +1,6 @@
-import React, { useContext, useState } from "react";
+import React, { ReactNode, useContext, useState } from "react";
 import { Settings, RotateCcw, Map, Users, Coins } from "lucide-react";
-import SettingsModal from "./SettingsModal";
+import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
@@ -67,7 +67,17 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   );
 };
 
-const StatItem = ({ icon, value, label, color }: {color: string, icon: any, value: any,  label: string}) => (
+const StatItem = ({
+  icon,
+  value,
+  label,
+  color,
+}: {
+  color: string;
+  icon: any;
+  value: any;
+  label: string;
+}) => (
   <div className="flex items-center gap-2">
     {icon}
     <div className="text-center">
@@ -77,7 +87,17 @@ const StatItem = ({ icon, value, label, color }: {color: string, icon: any, valu
   </div>
 );
 
-const MenuButton = ({ onClick, icon, text, className }: {onClick: any, icon: any, text: string, className: string}) => (
+const MenuButton = ({
+  onClick,
+  icon,
+  text,
+  className,
+}: {
+  onClick: () => void;
+  icon: ReactNode;
+  text: string;
+  className: string;
+}) => (
   <button
     onClick={onClick}
     className={`px-4 py-2 bg-gradient-to-r ${className} rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2`}

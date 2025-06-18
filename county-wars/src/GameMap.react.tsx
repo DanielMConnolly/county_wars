@@ -8,8 +8,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
-import { useIsCountyOwned } from "./utils/gameUtils";
-import { GameDifficulty, MapControls } from "./types/GameTypes";
+import { MapControls } from "./types/GameTypes";
 import React from 'react';
 
 const defaultStyle = {
@@ -31,7 +30,6 @@ const highlightStyle = {
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-
   const { gameState, selectCounty } = useContext(GameStateContext);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -39,18 +37,20 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
   const [_, setCurrentHighlighted] = useState<Polyline | null>(null);
   const [isCountyLayerLoaded, setIsCountyLayerLoaded] = useState<boolean>(false);
-  const ownedCounties = useRef(gameState.ownedCounties);
   useEffect(() => {
-    ownedCounties.current = gameState.ownedCounties;
-  }, [gameState.ownedCounties]);
+    gameStateRef.current = gameState;
+  }, [gameState]);
 
 
   const handleTileClick = useCallback((layer: Polyline) => {
     setCurrentHighlighted(prevLayer => {
       if (!prevLayer) return layer;
-      const countyId = prevLayer?.feature?.properties.NAME + prevLayer?.feature?.properties.STATEFP;
-      if (ownedCounties.current.has(countyId)) {
-        prevLayer?.setStyle(highlightStyle);
+      const countyId = prevLayer?.feature?.properties.COUNTYFP + prevLayer?.feature?.properties.STATEFP;
+      if (gameStateRef.current.ownedCounties.has(countyId)) {
+        prevLayer?.setStyle({
+          ...highlightStyle,
+         fillColor: gameStateRef.current.highlightColor,
+       });
       } else {
         prevLayer?.setStyle(defaultStyle);
       }
@@ -66,11 +66,12 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         countyFP: layer.feature?.properties.COUNTYFP,
       }
     );
-  }, [gameState, selectCounty]);
+  }, [gameState.ownedCounties]);
 
 
   // Store the county layer reference
   const countyLayerRef = useRef<leaflet.GeoJSON | null>(null);
+  const gameStateRef = useRef(gameState);
 
   // Initialize map (only once)
   useEffect(() => {
@@ -86,15 +87,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
           onEachFeature: function (feature, layer: Polyline) {
-            // Add data attribute for testing
-            if (layer.getElement) {
-              const element = layer.getElement();
-              if (element) {
-                element.setAttribute('data-testid', 'county-' + feature.properties.COUNTYFP + '-' + feature.properties.STATEFP);
-                element.setAttribute('data-county-name', feature.properties.NAME);
-              }
-            }
-            
             layer.on("click", () => handleTileClick(layer));
             layer.on("mouseover", function () {
             });
@@ -120,7 +112,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         mapInstance.current.removeLayer(countyLayerRef.current);
       }
     };
-  }, []);
+  }, [handleTileClick]);
 
 
   // Update county styling when ownership or colors change
@@ -129,8 +121,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       console.log('County layer not ready yet, skipping style update. Layer loaded:', isCountyLayerLoaded);
       return;
     }
-
-    ownedCounties.current = gameState.ownedCounties;
 
     console.log('Updating county styles. Owned counties:', Array.from(gameState.ownedCounties));
 

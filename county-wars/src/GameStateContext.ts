@@ -14,6 +14,10 @@ export interface GameStateContextType {
   setMapStyle: (style: string) => void;
   setHighlightColor: (color: string) => void;
   resetGame: () => void;
+  // Time management functions
+  pauseTime: () => void;
+  resumeTime: () => void;
+  setGameDuration: (hours: number) => void;
 }
 
 // Create the context

@@ -46,6 +46,12 @@ export default [
         localStorage: 'readonly',
         sessionStorage: 'readonly',
         console: 'readonly',
+        'alert': 'readonly',
+        // Timer functions
+        'setInterval': 'readonly',
+        'clearInterval': 'readonly',
+        'setTimeout': 'readonly',
+        'clearTimeout': 'readonly',
         // Add other browser APIs you might use
         fetch: 'readonly',
         URL: 'readonly',
@@ -55,6 +61,13 @@ export default [
     rules: {
       // TypeScript rules
       ...typescript.configs.recommended.rules,
+      "no-unused-vars": [
+        "error",
+        {
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ],
 
       // React rules
       ...react.configs.recommended.rules,

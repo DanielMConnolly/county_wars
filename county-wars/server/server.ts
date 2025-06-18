@@ -84,9 +84,12 @@ app.put('/api/users/:userId/highlight-color', (req, res) => {
   }
 
   // Validate color format (hex color or predefined color names)
-  const validColors = ['red', 'blue', 'green', 'purple', 'orange', 'pink', 'yellow', 'teal', 'indigo', 'lime', 'cyan', 'rose'];
+  const validColors = [
+    'red', 'blue', 'green', 'purple', 'orange', 'pink', 'yellow',
+    'teal', 'indigo', 'lime', 'cyan', 'rose'
+  ];
   const hexColorRegex = /^#[0-9A-F]{6}$/i;
-  
+
   if (!validColors.includes(color) && !hexColorRegex.test(color)) {
     return res.status(400).json({ error: 'Invalid color format' });
   }
@@ -94,10 +97,10 @@ app.put('/api/users/:userId/highlight-color', (req, res) => {
   try {
     // Ensure user exists in database
     dbOperations.createUser(userId);
-    
+
     // Update the highlight color
     const success = dbOperations.updateUserHighlightColor(userId, color);
-    
+
     if (success) {
       res.json({ message: 'Highlight color updated successfully', color });
     } else {
@@ -112,15 +115,58 @@ app.put('/api/users/:userId/highlight-color', (req, res) => {
 // Get user highlight color
 app.get('/api/users/:userId/highlight-color', (req, res) => {
   const { userId } = req.params;
-  
+
   try {
     // Ensure user exists in database
     dbOperations.createUser(userId);
-    
+
     const color = dbOperations.getUserHighlightColor(userId);
     res.json({ color });
   } catch (error) {
     console.error('Error fetching highlight color:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user game time
+app.get('/api/users/:userId/game-time', (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+
+    const gameTime = dbOperations.getUserGameTime(userId);
+    res.json({ gameTime });
+  } catch (error) {
+    console.error('Error fetching game time:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update user game time
+app.put('/api/users/:userId/game-time', (req, res) => {
+  const { userId } = req.params;
+  const { gameTime } = req.body;
+
+  if (!gameTime) {
+    return res.status(400).json({ error: 'Game time is required' });
+  }
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+
+    // Update the game time
+    const success = dbOperations.updateUserGameTime(userId, gameTime);
+
+    if (success) {
+      res.json({ message: 'Game time updated successfully', gameTime });
+    } else {
+      res.status(500).json({ error: 'Failed to update game time' });
+    }
+  } catch (error) {
+    console.error('Error updating game time:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
