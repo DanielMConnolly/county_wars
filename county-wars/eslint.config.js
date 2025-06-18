@@ -46,6 +46,12 @@ export default [
         localStorage: 'readonly',
         sessionStorage: 'readonly',
         console: 'readonly',
+        'alert': 'readonly',
+        // Timer functions
+        'setInterval': 'readonly',
+        'clearInterval': 'readonly',
+        'setTimeout': 'readonly',
+        'clearTimeout': 'readonly',
         // Add other browser APIs you might use
         fetch: 'readonly',
         URL: 'readonly',

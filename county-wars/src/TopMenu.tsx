@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { Settings, RotateCcw, Map, Users, Coins } from "lucide-react";
-import SettingsModal from "./SettingsModal";
+import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
