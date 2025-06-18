@@ -1,12 +1,22 @@
 import React from 'react';
 import { MapControls, MapStyle } from './types/GameTypes';
 
-const MapControlsComponent = ({ mapControls, onChangeMapStyle, onUpdateZoom }: {mapControls: MapControls, onChangeMapStyle: (arg: MapStyle)=> void , onUpdateZoom: (arg: number)=> void}) => {
+const MapControlsComponent = ({
+  mapControls,
+  onChangeMapStyle,
+  onUpdateZoom,
+}: {
+  mapControls: MapControls;
+  onChangeMapStyle: (arg: MapStyle) => void;
+  onUpdateZoom: (arg: number) => void;
+}) => {
   return (
     <div className="fixed top-20 left-6 bg-slate-800/90 backdrop-blur-sm p-4 rounded-xl z-[1000] border border-slate-600 shadow-xl">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Map Style</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Map Style
+          </label>
           <select
             value={mapControls.style}
             onChange={(e) => onChangeMapStyle(e.target.value as MapStyle)}

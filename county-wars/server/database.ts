@@ -53,7 +53,7 @@ const initDatabase = () => {
   try {
     // Check if the column exists by trying to select from it
     db.prepare('SELECT game_time FROM users LIMIT 1').get();
-  } catch (error) {
+  } catch (_) {
     // Column doesn't exist, add it
     console.log('Adding game_time column to users table...');
     db.exec(`ALTER TABLE users ADD COLUMN game_time TEXT`);

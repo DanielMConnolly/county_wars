@@ -8,8 +8,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
-import { useIsCountyOwned } from "./utils/gameUtils";
-import { GameDifficulty, MapControls } from "./types/GameTypes";
+import { MapControls } from "./types/GameTypes";
 import React from 'react';
 
 const defaultStyle = {
@@ -31,7 +30,6 @@ const highlightStyle = {
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-
   const { gameState, selectCounty } = useContext(GameStateContext);
 
   const mapRef = useRef<HTMLDivElement | null>(null);

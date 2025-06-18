@@ -61,6 +61,13 @@ export default [
     rules: {
       // TypeScript rules
       ...typescript.configs.recommended.rules,
+      "no-unused-vars": [
+        "error",
+        {
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ],
 
       // React rules
       ...react.configs.recommended.rules,

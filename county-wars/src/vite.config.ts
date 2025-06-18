@@ -6,15 +6,6 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(),
     tailwindcss(),
-      {
-        name: 'ignore-json-hmr',
-        handleHotUpdate({ file, server }) {
-          if (file.endsWith('user-counties.json')) {
-            console.log('Ignoring HMR for:', file)
-            return []
-          }
-        }
-      }
   ],
   server: {
     hmr: false,
