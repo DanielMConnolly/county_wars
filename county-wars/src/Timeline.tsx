@@ -1,4 +1,5 @@
 import React from 'react';
+import { Play, Pause } from 'lucide-react';
 import { useGameState } from './GameStateContext';
 import { GAME_DEFAULTS } from './constants/gameDefaults';
 
@@ -7,7 +8,7 @@ interface TimelineProps {
 }
 
 export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
-  const { gameState } = useGameState();
+  const { gameState, pauseTime, resumeTime } = useGameState();
 
   // Calculate progress as percentage (0-100)
   const startYear = GAME_DEFAULTS.START_YEAR;
@@ -27,9 +28,28 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
 
   const currentMonthName = monthNames[currentMonth - 1] || 'January';
 
+  const handlePlayPauseClick = () => {
+    if (gameState.gameTime?.isPaused) {
+      resumeTime();
+    } else {
+      pauseTime();
+    }
+  };
+
   return (
     <div className={`timeline-container ${className}`}>
       <div className="timeline-header">
+        <button 
+          className="play-pause-btn"
+          onClick={handlePlayPauseClick}
+          aria-label={gameState.gameTime?.isPaused ? 'Resume game' : 'Pause game'}
+        >
+          {gameState.gameTime?.isPaused ? (
+            <Play className="w-5 h-5" />
+          ) : (
+            <Pause className="w-5 h-5" />
+          )}
+        </button>
         <div className="time-display">
           <span className="month">{currentMonthName}</span>
           <span className="year">{currentYear}</span>
@@ -69,6 +89,29 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 8px;
+        }
+
+        .play-pause-btn {
+          background: rgba(59, 130, 246, 0.1);
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          border-radius: 6px;
+          padding: 8px;
+          color: #3b82f6;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .play-pause-btn:hover {
+          background: rgba(59, 130, 246, 0.2);
+          border-color: rgba(59, 130, 246, 0.5);
+          transform: scale(1.05);
+        }
+
+        .play-pause-btn:active {
+          transform: scale(0.95);
         }
 
         .time-display {

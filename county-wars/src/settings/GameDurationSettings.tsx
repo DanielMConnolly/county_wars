@@ -15,6 +15,7 @@ export const GameDurationSettings: React.FC<GameDurationSettingsProps> = ({
   const { gameState, pauseTime, resumeTime } = useGameState();
 
   const durationOptions: DropdownOption[] = [
+    { value: 5/60, label: '5 minutes' },
     { value: 0.25, label: '15 minutes' },
     { value: 0.5, label: '30 minutes' },
     { value: 1, label: '1 hour' },

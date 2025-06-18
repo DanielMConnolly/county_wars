@@ -7,6 +7,8 @@ import {
   fetchUserCounties,
   fetchUserHighlightColor,
   updateUserHighlightColor,
+  fetchUserGameTime,
+  updateUserGameTime,
 } from "./api_calls/CountyWarsHTTPRequests";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
@@ -148,10 +150,15 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     const fetchInitialData = async () => {
       const ownedCounties = await fetchUserCounties(userId);
       const savedColor = await fetchUserHighlightColor(userId);
+      const savedGameTime = await fetchUserGameTime(userId);
+
       setGameState(prevState => ({
         ...prevState,
         ownedCounties: new Set(ownedCounties),
-        highlightColor: savedColor
+        highlightColor: savedColor,
+        gameTime: savedGameTime ? {
+          ...savedGameTime,
+        } : prevState.gameTime
       }));
     };
     fetchInitialData();
@@ -219,6 +226,27 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
     return () => clearInterval(interval);
   }, [gameState.gameTime.isPaused, gameState.gameTime.startTime, gameState.gameTime.gameDurationHours]);
+
+  // Autosave game time every 15 seconds
+  useEffect(() => {
+    const saveInterval = setInterval(async () => {
+      const now = Date.now();
+      const elapsedTime = now - gameState.gameTime.startTime;
+
+      const gameTimeToSave = {
+        ...gameState.gameTime,
+        elapsedTime, // Save how much time has elapsed for proper restoration
+      };
+
+      console.log('Autosaving game time:', gameTimeToSave);
+      const success = await updateUserGameTime(userId, gameTimeToSave);
+      if (!success) {
+        console.warn('Failed to autosave game time');
+      }
+    }, 15000); // Save every 15 seconds
+
+    return () => clearInterval(saveInterval);
+  }, [gameState.gameTime, userId]);
 
   const contextValue: GameStateContextType = {
     gameState,

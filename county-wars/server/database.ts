@@ -49,6 +49,17 @@ const initDatabase = () => {
     console.log('highlight_color column added successfully');
   }
 
+  // Migration: Add game_time column if it doesn't exist
+  try {
+    // Check if the column exists by trying to select from it
+    db.prepare('SELECT game_time FROM users LIMIT 1').get();
+  } catch (error) {
+    // Column doesn't exist, add it
+    console.log('Adding game_time column to users table...');
+    db.exec(`ALTER TABLE users ADD COLUMN game_time TEXT`);
+    console.log('game_time column added successfully');
+  }
+
   // Initialize prepared statements after tables are created
   statements = {
     insertUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
@@ -60,7 +71,9 @@ const initDatabase = () => {
     getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties'),
     getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
     updateUserHighlightColor: db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?')
+    getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?'),
+    updateUserGameTime: db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?')
   };
 
   console.log('Database initialized successfully');
@@ -175,6 +188,31 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error getting user highlight color:', error);
       return 'red';
+    }
+  },
+
+  // Game time operations
+  updateUserGameTime: (userId: string, gameTime: any): boolean => {
+    try {
+      const gameTimeJson = JSON.stringify(gameTime);
+      const result = statements.updateUserGameTime.run(gameTimeJson, userId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error updating user game time:', error);
+      return false;
+    }
+  },
+
+  getUserGameTime: (userId: string): any | null => {
+    try {
+      const result = statements.getUserGameTime.get(userId) as { game_time: string } | undefined;
+      if (result?.game_time) {
+        return JSON.parse(result.game_time);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting user game time:', error);
+      return null;
     }
   }
 };

@@ -1,7 +1,11 @@
+import { GameTime } from '../types/GameTypes';
+
+const API_BASE_URL = 'http://localhost:3001';
+
 export async function fetchUserCounties(userId: string): Promise<string[]> {
   try {
     console.log('Fetching initial counties for userId:', userId);
-    const response = await fetch(`http://localhost:3001/api/counties/${userId}`);
+    const response = await fetch(`${API_BASE_URL}/api/counties/${userId}`);
     console.log('Counties HTTP response status:', response.status);
 
     if (response.ok) {
@@ -21,7 +25,7 @@ export async function fetchUserCounties(userId: string): Promise<string[]> {
 export async function fetchUserHighlightColor(userId: string): Promise<string> {
   try {
     console.log('Fetching highlight color for userId:', userId);
-    const response = await fetch(`http://localhost:3001/api/users/${userId}/highlight-color`);
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/highlight-color`);
     console.log('Color HTTP response status:', response.status);
 
     if (response.ok) {
@@ -40,7 +44,7 @@ export async function fetchUserHighlightColor(userId: string): Promise<string> {
 
 export async function updateUserHighlightColor(userId: string, color: string): Promise<boolean> {
   try {
-    const response = await fetch(`http://localhost:3001/api/users/${userId}/highlight-color`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/highlight-color`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -57,6 +61,49 @@ export async function updateUserHighlightColor(userId: string, color: string): P
     }
   } catch (error) {
     console.error('Failed to update highlight color:', error);
+    return false;
+  }
+}
+
+export async function fetchUserGameTime(userId: string): Promise<GameTime | null> {
+  try {
+    console.log('Fetching game time for userId:', userId);
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/game-time`);
+    console.log('Game time HTTP response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Fetched saved game time:', data.gameTime);
+      return data.gameTime;
+    } else {
+      console.error('Game time HTTP request failed with status:', response.status);
+      return null; // No saved game time
+    }
+  } catch (error) {
+    console.error('Failed to fetch game time:', error);
+    return null;
+  }
+}
+
+export async function updateUserGameTime(userId: string, gameTime: GameTime): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/game-time`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ gameTime }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to save game time:', response.status);
+      return false;
+    } else {
+      console.log('Game time saved successfully:', gameTime);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to update game time:', error);
     return false;
   }
 }

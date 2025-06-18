@@ -10,6 +10,7 @@ export type GameTime = {
     isPaused: boolean;
     gameDurationHours: number; // How long the full timeline takes in real hours
     startTime: number; // Timestamp when game started
+    elapsedTime?: number; // How much time has elapsed (for save/restore)
 }
 
 export type GameState = {
