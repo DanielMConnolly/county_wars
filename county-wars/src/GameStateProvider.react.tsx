@@ -2,6 +2,8 @@ import React, { useState, ReactNode, useEffect } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
+import { connectToSocket } from "./services/connectToSocket";
+import { fetchUserCounties, fetchUserHighlightColor, updateUserHighlightColor } from "./api_calls/CountyWarsHTTPRequests";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -34,20 +36,16 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Helper function to add a county
-  const addCounty = (countyInfo: County) => {
+  const addCounty = (countyName: string) => {
     try {
-      console.log('addCounty called with:', countyInfo);
-      const countyId = countyInfo.name + countyInfo.state;
-      console.log('Generated countyId:', countyId);
-      
       if (isConnected) {
         console.log('Socket connected, claiming county via socket');
-        socketService.claimCounty(countyId);
+        socketService.claimCounty(countyName);
       } else {
         console.log('Socket not connected, updating state directly');
         setGameState((prevState) => ({
           ...prevState,
-          ownedCounties: new Set([...prevState.ownedCounties, countyId]),
+          ownedCounties: new Set([...prevState.ownedCounties, countyName]),
         }));
       }
       console.log('addCounty completed successfully');
@@ -71,14 +69,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         };
       });
     }
-  };
-
-  // Helper function to update resources
-  const updateResources = (amount: number) => {
-    setGameState((prevState) => ({
-      ...prevState,
-      resources: Math.max(0, prevState.resources + amount),
-    }));
   };
 
   // Helper function to select a county
@@ -116,109 +106,43 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
   };
 
-  // Helper function to set highlight color
-  const setHighlightColor = (color: string) => {
+  const setHighlightColor = async (color: string) => {
     setGameState((prevState) => ({
       ...prevState,
       highlightColor: color,
     }));
+    const successfullyUpdated = await updateUserHighlightColor(userId, color);
+    if (!successfullyUpdated) {
+      alert('Failed to update highlight color. Please try again.');
+    }
   };
 
-  // Initial county data fetching via HTTP
+  // Initial data fetching via HTTP
   useEffect(() => {
-    const fetchInitialCounties = async () => {
-      try {
-        console.log('Fetching initial counties for userId:', userId);
-        const response = await fetch(`http://localhost:3001/api/counties/${userId}`);
-        console.log('HTTP response status:', response.status);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Fetched initial counties via HTTP:', data.ownedCounties);
-          setGameState(prevState => ({
-            ...prevState,
-            ownedCounties: new Set(data.ownedCounties)
-          }));
-          console.log('Successfully set initial counties');
-        } else {
-          console.error('HTTP request failed with status:', response.status);
-        }
-      } catch (error) {
-        console.error('Failed to fetch initial counties:', error);
-        // Don't throw the error to prevent crashes
-      }
+    const fetchInitialData = async () => {
+      const ownedCounties = await fetchUserCounties(userId);
+      const savedColor = await fetchUserHighlightColor(userId);
+      setGameState(prevState => ({
+        ...prevState,
+        ownedCounties: new Set(ownedCounties),
+        highlightColor: savedColor
+      }));
     };
 
-    fetchInitialCounties();
-  }, []);
+    fetchInitialData();
+  }, [userId]);
 
   // Socket connection and event handling
   useEffect(() => {
     console.log('Socket effect running, userId:', userId);
-    
+
     // Skip if already connected to avoid reconnections
     if (socketService.isConnected()) {
       console.log('Socket already connected, skipping reconnection');
       return;
     }
 
-    const connectToSocket = async () => {
-      try {
-        await socketService.connect(userId);
-        setIsConnected(true);
-
-        // Set up socket event listeners for real-time updates only
-        // Initial county data is now fetched via HTTP above
-
-        socketService.on('county-claimed', (data: { countyName: string }) => {
-          try {
-            console.log('Received county-claimed event:', data);
-            setGameState(prevState => ({
-              ...prevState,
-              ownedCounties: new Set([...prevState.ownedCounties, data.countyName])
-            }));
-            console.log('Successfully updated state for county-claimed');
-          } catch (error) {
-            console.error('Error handling county-claimed event:', error);
-          }
-        });
-
-        socketService.on('county-released', (data: { countyName: string }) => {
-          try {
-            console.log('Received county-released event:', data);
-            setGameState(prevState => {
-              const newOwnedCounties = new Set(prevState.ownedCounties);
-              newOwnedCounties.delete(data.countyName);
-              return {
-                ...prevState,
-                ownedCounties: newOwnedCounties
-              };
-            });
-            console.log('Successfully updated state for county-released');
-          } catch (error) {
-            console.error('Error handling county-released event:', error);
-          }
-        });
-
-        socketService.on('error', (data: { message: string }) => {
-          console.error('Socket error:', data.message);
-          // Don't use alert as it can cause page refresh issues
-          // Instead, we could show a toast notification or handle it silently
-        });
-
-      } catch (error) {
-        console.error('Failed to connect to socket:', error);
-        setIsConnected(false);
-      }
-    };
-
-    connectToSocket();
-
-    return () => {
-      console.log('Socket effect cleanup - NOT disconnecting to prevent reconnection issues');
-      // Don't disconnect here as it causes reconnection issues
-      // The socket will be cleaned up when the component unmounts or page refreshes
-    };
+    connectToSocket({ userId, setGameState, setIsConnected });
   }, [userId]);
 
   const contextValue: GameStateContextType = {
@@ -226,7 +150,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     setGameState,
     addCounty,
     removeCounty,
-    updateResources,
     selectCounty,
     setMapStyle,
     setHighlightColor,

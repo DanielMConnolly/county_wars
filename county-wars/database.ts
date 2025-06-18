@@ -1,6 +1,10 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
+// SQL template tag for syntax highlighting
+const sql = (strings: TemplateStringsArray, ...values: any[]) =>
+  strings.reduce((result, string, i) => result + string + (values[i] || ''), '');
+
 // Initialize SQLite database
 const dbPath = path.join(process.cwd(), 'county-wars.db');
 const db = new Database(dbPath);
@@ -11,17 +15,16 @@ db.pragma('journal_mode = WAL');
 // Create tables if they don't exist
 const initDatabase = () => {
   // Create users table
-  db.exec(`
+  db.exec(sql`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_active DATETIME DEFAULT CURRENT_TIMESTAMP,
-      highlight_color TEXT DEFAULT 'red'
+      last_active DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
   // Create user_counties table
-  db.exec(`
+  db.exec(sql`
     CREATE TABLE IF NOT EXISTS user_counties (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL,
@@ -33,56 +36,47 @@ const initDatabase = () => {
   `);
 
   // Create indexes for better performance
-  db.exec(`
+  db.exec(sql`
     CREATE INDEX IF NOT EXISTS idx_user_counties_user_id ON user_counties(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_counties_county_name ON user_counties(county_name);
   `);
 
-  // Migration: Add highlight_color column if it doesn't exist
-  try {
-    // Check if the column exists by trying to select from it
-    db.prepare('SELECT highlight_color FROM users LIMIT 1').get();
-  } catch (error) {
-    // Column doesn't exist, add it
-    console.log('Adding highlight_color column to users table...');
-    db.exec(`ALTER TABLE users ADD COLUMN highlight_color TEXT DEFAULT 'red'`);
-    console.log('highlight_color column added successfully');
-  }
-
-  // Initialize prepared statements after tables are created
-  statements = {
-    insertUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
-    updateUserActivity: db.prepare('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ?'),
-    claimCounty: db.prepare('INSERT OR IGNORE INTO user_counties (user_id, county_name) VALUES (?, ?)'),
-    releaseCounty: db.prepare('DELETE FROM user_counties WHERE user_id = ? AND county_name = ?'),
-    isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
-    getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties'),
-    getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
-    updateUserHighlightColor: db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?')
-  };
-
   console.log('Database initialized successfully');
 };
 
-// Prepared statements - will be initialized after tables are created
-let statements: any = {};
+// Prepared statements for better performance
+const statements = {
+  insertUser: db.prepare(sql`INSERT OR IGNORE INTO users (id) VALUES (?)`),
+  updateUserActivity: db.prepare(sql`UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?`),
+  getUserCounties: db.prepare(sql`SELECT county_name FROM user_counties WHERE user_id = ?`),
+  claimCounty: db.prepare(sql`INSERT OR IGNORE INTO user_counties (user_id, county_name) VALUES (?, ?)`),
+  releaseCounty: db.prepare(sql`DELETE FROM user_counties WHERE user_id = ? AND county_name = ?`),
+  isCountyOwned: db.prepare(sql`SELECT user_id FROM user_counties WHERE county_name = ?`),
+  getAllTakenCounties: db.prepare(sql`SELECT county_name, user_id FROM user_counties`),
+  getCountyOwner: db.prepare(sql`SELECT user_id FROM user_counties WHERE county_name = ?`)
+};
 
 // Database operations
 export const dbOperations = {
+  // Initialize database
   init: initDatabase,
+
+  // User operations
   createUser: (userId: string) => {
     statements.insertUser.run(userId);
     statements.updateUserActivity.run(userId);
   },
+
   updateUserActivity: (userId: string) => {
     statements.updateUserActivity.run(userId);
   },
+
+  // County operations
   getUserCounties: (userId: string): string[] => {
     const rows = statements.getUserCounties.all(userId) as { county_name: string }[];
     return rows.map(row => row.county_name);
   },
+
   claimCounty: (userId: string, countyName: string): boolean => {
     try {
       // Check if county is already owned by someone else
@@ -101,16 +95,19 @@ export const dbOperations = {
       return false;
     }
   },
+
   releaseCounty: (userId: string, countyName: string): boolean => {
     try {
       const result = statements.releaseCounty.run(userId, countyName);
       statements.updateUserActivity.run(userId);
+
       return result.changes > 0;
     } catch (error) {
       console.error('Error releasing county:', error);
       return false;
     }
   },
+
   isCountyOwned: (countyName: string): { owned: boolean, owner?: string } => {
     try {
       const owner = statements.getCountyOwner.get(countyName) as { user_id: string } | undefined;
@@ -120,6 +117,7 @@ export const dbOperations = {
       return { owned: false };
     }
   },
+
   getAllTakenCounties: (): Record<string, string> => {
     try {
       const rows = statements.getAllTakenCounties.all() as { county_name: string, user_id: string }[];
@@ -144,8 +142,8 @@ export const dbOperations = {
   // Get database stats
   getStats: () => {
     try {
-      const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-      const countyCount = db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
+      const userCount = db.prepare(sql`SELECT COUNT(*) as count FROM users`).get() as { count: number };
+      const countyCount = db.prepare(sql`SELECT COUNT(*) as count FROM user_counties`).get() as { count: number };
 
       return {
         users: userCount.count,
@@ -154,27 +152,6 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error getting database stats:', error);
       return { users: 0, claimedCounties: 0 };
-    }
-  },
-
-  // Highlight color operations
-  updateUserHighlightColor: (userId: string, color: string): boolean => {
-    try {
-      const result = statements.updateUserHighlightColor.run(color, userId);
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error updating user highlight color:', error);
-      return false;
-    }
-  },
-
-  getUserHighlightColor: (userId: string): string => {
-    try {
-      const result = statements.getUserHighlightColor.get(userId) as { highlight_color: string } | undefined;
-      return result?.highlight_color || 'red';
-    } catch (error) {
-      console.error('Error getting user highlight color:', error);
-      return 'red';
     }
   }
 };

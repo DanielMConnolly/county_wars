@@ -1,8 +1,7 @@
 export type County = {
     name: string,
-    state: string,
-    pop: number,
-    difficulty: GameDifficulty,
+    stateFP: string,
+    countyFP: string,
 }
 
 export type GameState = {

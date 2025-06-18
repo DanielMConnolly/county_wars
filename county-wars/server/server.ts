@@ -4,6 +4,13 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { dbOperations } from './database.js';
 
+// Extend Socket.IO socket to include custom userId property
+declare module 'socket.io' {
+  interface Socket {
+    userId: string;
+  }
+}
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
@@ -35,15 +42,10 @@ io.use((socket, next) => {
 // HTTP API endpoints
 app.get('/api/counties/:userId', (req, res) => {
   const { userId } = req.params;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required' });
-  }
-
   try {
     // Ensure user exists in database
     dbOperations.createUser(userId);
-    
+
     const ownedCounties = dbOperations.getUserCounties(userId);
     res.json({ ownedCounties });
   } catch (error) {
@@ -52,7 +54,7 @@ app.get('/api/counties/:userId', (req, res) => {
   }
 });
 
-app.get('/api/counties/all/taken', (req, res) => {
+app.get('/api/counties/all/taken', (_, res) => {
   try {
     const allTakenCounties = dbOperations.getAllTakenCounties();
     res.json(allTakenCounties);
@@ -62,12 +64,63 @@ app.get('/api/counties/all/taken', (req, res) => {
   }
 });
 
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', (_, res) => {
   try {
     const stats = dbOperations.getStats();
     res.json(stats);
   } catch (error) {
     console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update user highlight color
+app.put('/api/users/:userId/highlight-color', (req, res) => {
+  const { userId } = req.params;
+  const { color } = req.body;
+
+  if (!color) {
+    return res.status(400).json({ error: 'Color is required' });
+  }
+
+  // Validate color format (hex color or predefined color names)
+  const validColors = ['red', 'blue', 'green', 'purple', 'orange', 'pink', 'yellow', 'teal', 'indigo', 'lime', 'cyan', 'rose'];
+  const hexColorRegex = /^#[0-9A-F]{6}$/i;
+  
+  if (!validColors.includes(color) && !hexColorRegex.test(color)) {
+    return res.status(400).json({ error: 'Invalid color format' });
+  }
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+    
+    // Update the highlight color
+    const success = dbOperations.updateUserHighlightColor(userId, color);
+    
+    if (success) {
+      res.json({ message: 'Highlight color updated successfully', color });
+    } else {
+      res.status(500).json({ error: 'Failed to update highlight color' });
+    }
+  } catch (error) {
+    console.error('Error updating highlight color:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user highlight color
+app.get('/api/users/:userId/highlight-color', (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+    
+    const color = dbOperations.getUserHighlightColor(userId);
+    res.json({ color });
+  } catch (error) {
+    console.error('Error fetching highlight color:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
