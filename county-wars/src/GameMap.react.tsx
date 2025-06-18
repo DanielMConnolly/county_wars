@@ -86,6 +86,15 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
           onEachFeature: function (feature, layer: Polyline) {
+            // Add data attribute for testing
+            if (layer.getElement) {
+              const element = layer.getElement();
+              if (element) {
+                element.setAttribute('data-testid', 'county-' + feature.properties.COUNTYFP + '-' + feature.properties.STATEFP);
+                element.setAttribute('data-county-name', feature.properties.NAME);
+              }
+            }
+            
             layer.on("click", () => handleTileClick(layer));
             layer.on("mouseover", function () {
             });
@@ -175,6 +184,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       ref={mapRef}
       className="fixed top-16 left-0 right-0 bottom-0 z-[1]"
       style={{ height: "calc(100vh - 64px)" }}
+      data-testid="game-map"
     > </div>
   );
 };

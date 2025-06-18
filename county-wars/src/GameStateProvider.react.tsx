@@ -2,6 +2,7 @@ import React, { useState, ReactNode, useEffect } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
+import { fetchUserCounties, fetchUserHighlightColor } from "./api_calls/fetchDataFromServer";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -113,40 +114,64 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   // Helper function to set highlight color
-  const setHighlightColor = (color: string) => {
+  const setHighlightColor = async (color: string) => {
+    // Update local state first for immediate UI feedback
     setGameState((prevState) => ({
       ...prevState,
       highlightColor: color,
     }));
+
+    // Save to database
+    try {
+      const response = await fetch(`http://localhost:3001/api/users/${userId}/highlight-color`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ color }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save highlight color:', response.status);
+        // Optionally revert the color change or show an error message
+      } else {
+        console.log('Highlight color saved successfully:', color);
+      }
+    } catch (error) {
+      console.error('Error saving highlight color:', error);
+      // Optionally revert the color change or show an error message
+    }
   };
 
-  // Initial county data fetching via HTTP
+  // Initial data fetching via HTTP
   useEffect(() => {
-    const fetchInitialCounties = async () => {
+    const fetchInitialData = async () => {
       try {
-        console.log('Fetching initial counties for userId:', userId);
-        const response = await fetch(`http://localhost:3001/api/counties/${userId}`);
-        console.log('HTTP response status:', response.status);
+        console.log('Fetching initial data for userId:', userId);
+        
+        // Fetch initial counties using the extracted function
+        const ownedCounties = await fetchUserCounties(userId);
+        setGameState(prevState => ({
+          ...prevState,
+          ownedCounties: new Set(ownedCounties)
+        }));
+        console.log('Successfully set initial counties');
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Fetched initial counties via HTTP:', data.ownedCounties);
-          setGameState(prevState => ({
-            ...prevState,
-            ownedCounties: new Set(data.ownedCounties)
-          }));
-          console.log('Successfully set initial counties');
-        } else {
-          console.error('HTTP request failed with status:', response.status);
-        }
+        // Fetch saved highlight color using the extracted function
+        const savedColor = await fetchUserHighlightColor(userId);
+        setGameState(prevState => ({
+          ...prevState,
+          highlightColor: savedColor
+        }));
+        console.log('Successfully set saved highlight color');
       } catch (error) {
-        console.error('Failed to fetch initial counties:', error);
+        console.error('Failed to fetch initial data:', error);
         // Don't throw the error to prevent crashes
       }
     };
 
-    fetchInitialCounties();
-  }, []);
+    fetchInitialData();
+  }, [userId]);
 
   // Socket connection and event handling
   useEffect(() => {

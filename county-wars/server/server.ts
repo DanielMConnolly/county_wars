@@ -74,6 +74,57 @@ app.get('/api/stats', (_, res) => {
   }
 });
 
+// Update user highlight color
+app.put('/api/users/:userId/highlight-color', (req, res) => {
+  const { userId } = req.params;
+  const { color } = req.body;
+
+  if (!color) {
+    return res.status(400).json({ error: 'Color is required' });
+  }
+
+  // Validate color format (hex color or predefined color names)
+  const validColors = ['red', 'blue', 'green', 'purple', 'orange', 'pink', 'yellow', 'teal', 'indigo', 'lime', 'cyan', 'rose'];
+  const hexColorRegex = /^#[0-9A-F]{6}$/i;
+  
+  if (!validColors.includes(color) && !hexColorRegex.test(color)) {
+    return res.status(400).json({ error: 'Invalid color format' });
+  }
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+    
+    // Update the highlight color
+    const success = dbOperations.updateUserHighlightColor(userId, color);
+    
+    if (success) {
+      res.json({ message: 'Highlight color updated successfully', color });
+    } else {
+      res.status(500).json({ error: 'Failed to update highlight color' });
+    }
+  } catch (error) {
+    console.error('Error updating highlight color:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user highlight color
+app.get('/api/users/:userId/highlight-color', (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+    
+    const color = dbOperations.getUserHighlightColor(userId);
+    res.json({ color });
+  } catch (error) {
+    console.error('Error fetching highlight color:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 io.on('connection', (socket) => {
   console.log(`User ${socket.userId} connected`);

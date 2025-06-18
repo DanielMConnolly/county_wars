@@ -9,10 +9,10 @@ export default function SettingsModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const {setHighlightColor, gameState} = useContext(GameStateContext);
+  const [selectedColor, setSelectedColor] = React.useState(gameState.highlightColor);
 
-  const [selectedColor, setSelectedColor] = React.useState('#3B82F6');
 
-  const {setHighlightColor} = useContext(GameStateContext);
 
   const colorOptions = [
     { name: 'Blue', value: '#3B82F6', class: 'bg-blue-500' },

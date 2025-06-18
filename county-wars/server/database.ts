@@ -15,7 +15,8 @@ const initDatabase = () => {
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_active DATETIME DEFAULT CURRENT_TIMESTAMP
+      last_active DATETIME DEFAULT CURRENT_TIMESTAMP,
+      highlight_color TEXT DEFAULT 'red'
     )
   `);
 
@@ -37,6 +38,17 @@ const initDatabase = () => {
     CREATE INDEX IF NOT EXISTS idx_user_counties_county_name ON user_counties(county_name);
   `);
 
+  // Migration: Add highlight_color column if it doesn't exist
+  try {
+    // Check if the column exists by trying to select from it
+    db.prepare('SELECT highlight_color FROM users LIMIT 1').get();
+  } catch (error) {
+    // Column doesn't exist, add it
+    console.log('Adding highlight_color column to users table...');
+    db.exec(`ALTER TABLE users ADD COLUMN highlight_color TEXT DEFAULT 'red'`);
+    console.log('highlight_color column added successfully');
+  }
+
   // Initialize prepared statements after tables are created
   statements = {
     insertUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
@@ -46,7 +58,9 @@ const initDatabase = () => {
     releaseCounty: db.prepare('DELETE FROM user_counties WHERE user_id = ? AND county_name = ?'),
     isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
     getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties'),
-    getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?')
+    getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
+    updateUserHighlightColor: db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?')
   };
 
   console.log('Database initialized successfully');
@@ -57,25 +71,18 @@ let statements: any = {};
 
 // Database operations
 export const dbOperations = {
-  // Initialize database
   init: initDatabase,
-
-  // User operations
   createUser: (userId: string) => {
     statements.insertUser.run(userId);
     statements.updateUserActivity.run(userId);
   },
-
   updateUserActivity: (userId: string) => {
     statements.updateUserActivity.run(userId);
   },
-
-  // County operations
   getUserCounties: (userId: string): string[] => {
     const rows = statements.getUserCounties.all(userId) as { county_name: string }[];
     return rows.map(row => row.county_name);
   },
-
   claimCounty: (userId: string, countyName: string): boolean => {
     try {
       // Check if county is already owned by someone else
@@ -87,26 +94,23 @@ export const dbOperations = {
       // Claim the county
       const result = statements.claimCounty.run(userId, countyName);
       statements.updateUserActivity.run(userId);
-      
+
       return result.changes > 0;
     } catch (error) {
       console.error('Error claiming county:', error);
       return false;
     }
   },
-
   releaseCounty: (userId: string, countyName: string): boolean => {
     try {
       const result = statements.releaseCounty.run(userId, countyName);
       statements.updateUserActivity.run(userId);
-      
       return result.changes > 0;
     } catch (error) {
       console.error('Error releasing county:', error);
       return false;
     }
   },
-
   isCountyOwned: (countyName: string): { owned: boolean, owner?: string } => {
     try {
       const owner = statements.getCountyOwner.get(countyName) as { user_id: string } | undefined;
@@ -116,16 +120,15 @@ export const dbOperations = {
       return { owned: false };
     }
   },
-
   getAllTakenCounties: (): Record<string, string> => {
     try {
       const rows = statements.getAllTakenCounties.all() as { county_name: string, user_id: string }[];
       const result: Record<string, string> = {};
-      
+
       for (const row of rows) {
         result[row.county_name] = row.user_id;
       }
-      
+
       return result;
     } catch (error) {
       console.error('Error getting all taken counties:', error);
@@ -143,7 +146,7 @@ export const dbOperations = {
     try {
       const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
       const countyCount = db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
-      
+
       return {
         users: userCount.count,
         claimedCounties: countyCount.count
@@ -151,6 +154,27 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error getting database stats:', error);
       return { users: 0, claimedCounties: 0 };
+    }
+  },
+
+  // Highlight color operations
+  updateUserHighlightColor: (userId: string, color: string): boolean => {
+    try {
+      const result = statements.updateUserHighlightColor.run(color, userId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error updating user highlight color:', error);
+      return false;
+    }
+  },
+
+  getUserHighlightColor: (userId: string): string => {
+    try {
+      const result = statements.getUserHighlightColor.get(userId) as { highlight_color: string } | undefined;
+      return result?.highlight_color || 'red';
+    } catch (error) {
+      console.error('Error getting user highlight color:', error);
+      return 'red';
     }
   }
 };

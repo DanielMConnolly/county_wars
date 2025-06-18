@@ -99,6 +99,7 @@ const InfoCard = () => {
         )}
       </div>
       <button
+        data-testid="conquer-territory-button"
         onClick={() => {
           if (selectedCounty != null) {
             addCounty(selectedCounty.countyFP + selectedCounty.stateFP)
