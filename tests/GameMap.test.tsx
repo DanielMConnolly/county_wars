@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import GameMap from './GameMap.react';
-import { GameStateProvider } from './GameStateProvider.react';
-import { MapControls } from './types/GameTypes';
+import GameMap from '../src/GameMap.react';
+import { GameStateProvider } from '../src/GameStateProvider.react';
+import { MapControls } from '../src/types/GameTypes';
 
 // Mock fetch to return sample GeoJSON data
 const mockCountyData = {
@@ -25,7 +25,7 @@ const mockCountyData = {
 
 beforeEach(() => {
   // Mock the fetch call for counties.geojson
-  (global.fetch as jest.Mock).mockResolvedValue({
+  (fetch as jest.Mock).mockResolvedValue({
     ok: true,
     json: async () => mockCountyData
   });
@@ -63,14 +63,14 @@ describe('GameMap Component', () => {
     );
 
     const mapContainer = screen.getByTestId('game-map');
-    
+
     // Check positioning classes
     expect(mapContainer).toHaveClass('fixed');
     expect(mapContainer).toHaveClass('top-16');
     expect(mapContainer).toHaveClass('left-0');
     expect(mapContainer).toHaveClass('right-0');
     expect(mapContainer).toHaveClass('bottom-0');
-    
+
     // Check z-index
     expect(mapContainer).toHaveClass('z-[1]');
   });
@@ -86,7 +86,7 @@ describe('GameMap Component', () => {
     const mapContainer = screen.getByTestId('game-map');
     expect(mapContainer).toBeInTheDocument();
 
-    // Wait for fetch to be called (counties.geojson) 
+    // Wait for fetch to be called (counties.geojson)
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('counties.geojson');
     });
@@ -97,7 +97,7 @@ describe('GameMap Component', () => {
 
   test('handles map loading delay', async () => {
     // Mock fetch to simulate loading delay
-    (global.fetch as jest.Mock).mockImplementation(() => 
+    (global.fetch as jest.Mock).mockImplementation(() =>
       new Promise(resolve => setTimeout(() => resolve({
         ok: true,
         json: async () => mockCountyData
