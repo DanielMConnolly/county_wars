@@ -19,7 +19,7 @@ export type GameState = {
     selectedCounty: County | null,
     mapStyle: string
     highlightColor: string,
-    population: number,
+    restaurants: number,
     gameTime: GameTime,
 }
 

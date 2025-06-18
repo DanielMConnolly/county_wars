@@ -1,5 +1,5 @@
 import React, { ReactNode, useContext, useState } from "react";
-import { Settings, RotateCcw, Map, Users, Coins } from "lucide-react";
+import { Settings, RotateCcw, Map, UtensilsCrossed, Coins } from "lucide-react";
 import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 
@@ -25,10 +25,10 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           color="text-green-400"
         />
         <StatItem
-          icon={<Users className="w-5 h-5 text-blue-400" />}
-          value={gameState.population.toLocaleString()}
-          label="Population"
-          color="text-blue-400"
+          icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}
+          value={gameState.restaurants.toLocaleString()}
+          label="Restaurants"
+          color="text-orange-400"
         />
         <StatItem
           icon={<Coins className="w-5 h-5 text-yellow-400" />}
