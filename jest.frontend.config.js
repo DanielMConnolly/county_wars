@@ -7,7 +7,7 @@ export default {
     }
   },
   testEnvironment: 'jsdom',
-  testMatch: ['<rootDir>/src/**/*.test.{ts,tsx}'],
+  testMatch: ['<rootDir>/tests/**/*.test.{ts,tsx}'],
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
   testTimeout: 10000,
   verbose: true,
