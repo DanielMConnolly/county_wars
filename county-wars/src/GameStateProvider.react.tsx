@@ -2,7 +2,8 @@ import React, { useState, ReactNode, useEffect } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
-import { fetchUserCounties, fetchUserHighlightColor } from "./api_calls/fetchDataFromServer";
+import { connectToSocket } from "./services/connectToSocket";
+import { fetchUserCounties, fetchUserHighlightColor, updateUserHighlightColor } from "./api_calls/CountyWarsHTTPRequests";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -70,14 +71,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
   };
 
-  // Helper function to update resources
-  const updateResources = (amount: number) => {
-    setGameState((prevState) => ({
-      ...prevState,
-      resources: Math.max(0, prevState.resources + amount),
-    }));
-  };
-
   // Helper function to select a county
   const selectCounty = (countyInfo: County) => {
     setGameState((prevState) => ({
@@ -113,61 +106,27 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
   };
 
-  // Helper function to set highlight color
   const setHighlightColor = async (color: string) => {
-    // Update local state first for immediate UI feedback
     setGameState((prevState) => ({
       ...prevState,
       highlightColor: color,
     }));
-
-    // Save to database
-    try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/highlight-color`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ color }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to save highlight color:', response.status);
-        // Optionally revert the color change or show an error message
-      } else {
-        console.log('Highlight color saved successfully:', color);
-      }
-    } catch (error) {
-      console.error('Error saving highlight color:', error);
-      // Optionally revert the color change or show an error message
+    const successfullyUpdated = await updateUserHighlightColor(userId, color);
+    if (!successfullyUpdated) {
+      alert('Failed to update highlight color. Please try again.');
     }
   };
 
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
-      try {
-        console.log('Fetching initial data for userId:', userId);
-        
-        // Fetch initial counties using the extracted function
-        const ownedCounties = await fetchUserCounties(userId);
-        setGameState(prevState => ({
-          ...prevState,
-          ownedCounties: new Set(ownedCounties)
-        }));
-        console.log('Successfully set initial counties');
-
-        // Fetch saved highlight color using the extracted function
-        const savedColor = await fetchUserHighlightColor(userId);
-        setGameState(prevState => ({
-          ...prevState,
-          highlightColor: savedColor
-        }));
-        console.log('Successfully set saved highlight color');
-      } catch (error) {
-        console.error('Failed to fetch initial data:', error);
-        // Don't throw the error to prevent crashes
-      }
+      const ownedCounties = await fetchUserCounties(userId);
+      const savedColor = await fetchUserHighlightColor(userId);
+      setGameState(prevState => ({
+        ...prevState,
+        ownedCounties: new Set(ownedCounties),
+        highlightColor: savedColor
+      }));
     };
 
     fetchInitialData();
@@ -183,57 +142,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       return;
     }
 
-    const connectToSocket = async () => {
-      try {
-        await socketService.connect(userId);
-        setIsConnected(true);
-
-        // Set up socket event listeners for real-time updates only
-        // Initial county data is now fetched via HTTP above
-
-        socketService.on('county-claimed', (data: { countyName: string }) => {
-          try {
-            console.log('Received county-claimed event:', data);
-            setGameState(prevState => ({
-              ...prevState,
-              ownedCounties: new Set([...prevState.ownedCounties, data.countyName])
-            }));
-            console.log('Successfully updated state for county-claimed');
-          } catch (error) {
-            console.error('Error handling county-claimed event:', error);
-          }
-        });
-
-        socketService.on('county-released', (data: { countyName: string }) => {
-          try {
-            console.log('Received county-released event:', data);
-            setGameState(prevState => {
-              const newOwnedCounties = new Set(prevState.ownedCounties);
-              newOwnedCounties.delete(data.countyName);
-              return {
-                ...prevState,
-                ownedCounties: newOwnedCounties
-              };
-            });
-            console.log('Successfully updated state for county-released');
-          } catch (error) {
-            console.error('Error handling county-released event:', error);
-          }
-        });
-
-        socketService.on('error', (data: { message: string }) => {
-          console.error('Socket error:', data.message);
-          // Don't use alert as it can cause page refresh issues
-          // Instead, we could show a toast notification or handle it silently
-        });
-
-      } catch (error) {
-        console.error('Failed to connect to socket:', error);
-        setIsConnected(false);
-      }
-    };
-
-    connectToSocket();
+    connectToSocket({ userId, setGameState, setIsConnected });
   }, [userId]);
 
   const contextValue: GameStateContextType = {
@@ -241,7 +150,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     setGameState,
     addCounty,
     removeCounty,
-    updateResources,
     selectCounty,
     setMapStyle,
     setHighlightColor,

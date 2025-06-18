@@ -12,6 +12,14 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["DOM", "ES2020"],
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "plugins": [
+      {
+        "name": "typescript-lit-html-plugin",
+        "tags": [
+          "sql"
+        ]
+      }
+    ]
   }
 }

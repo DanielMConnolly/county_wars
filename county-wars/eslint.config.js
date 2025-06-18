@@ -11,6 +11,11 @@ export default [
   // TypeScript and React files
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
+    plugins: {
+      '@typescript-eslint': typescript,
+      'react': react,
+      'react-hooks': reactHooks,
+    },
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
@@ -20,30 +25,33 @@ export default [
           jsx: true,
         },
       },
+      globals: {
+        // Jest globals
+        'describe': 'readonly',
+        'it': 'readonly',
+        'test': 'readonly',
+        'expect': 'readonly',
+        'beforeAll': 'readonly',
+        'beforeEach': 'readonly',
+        'afterAll': 'readonly',
+        'afterEach': 'readonly',
+        'jest': 'readonly',
+        // React globals
+        'React': 'readonly',
+        // Node.js globals
+        'process': 'readonly',
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        console: 'readonly',
+        // Add other browser APIs you might use
+        fetch: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+      },
     },
-    plugins: {
-      '@typescript-eslint': typescript,
-      'react': react,
-      'react-hooks': reactHooks,
-    },
-    "env": {
-      "jest": true,
-      "node": true
-    },
-    globals: {
-      'desribe': 'readonly',
-      // Browser globals
-      window: 'readonly',
-      document: 'readonly',
-      localStorage: 'readonly',
-      sessionStorage: 'readonly',
-      console: 'readonly',
-      // Add other browser APIs you might use
-      fetch: 'readonly',
-      URL: 'readonly',
-      URLSearchParams: 'readonly',
-    },
-  },
     rules: {
       // TypeScript rules
       ...typescript.configs.recommended.rules,
@@ -55,6 +63,7 @@ export default [
       // Custom overrides
       'react/react-in-jsx-scope': 'off', // Not needed in React 17+
       'react/prop-types': 'off', // Using TypeScript for prop validation
+      'max-len': ['error', { code: 110 }], // Enforce maximum line length of 110 characters
     },
     settings: {
       react: {

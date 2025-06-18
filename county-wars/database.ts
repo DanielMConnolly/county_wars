@@ -1,6 +1,10 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
+// SQL template tag for syntax highlighting
+const sql = (strings: TemplateStringsArray, ...values: any[]) =>
+  strings.reduce((result, string, i) => result + string + (values[i] || ''), '');
+
 // Initialize SQLite database
 const dbPath = path.join(process.cwd(), 'county-wars.db');
 const db = new Database(dbPath);
@@ -11,7 +15,7 @@ db.pragma('journal_mode = WAL');
 // Create tables if they don't exist
 const initDatabase = () => {
   // Create users table
-  db.exec(`
+  db.exec(sql`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -20,7 +24,7 @@ const initDatabase = () => {
   `);
 
   // Create user_counties table
-  db.exec(`
+  db.exec(sql`
     CREATE TABLE IF NOT EXISTS user_counties (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL,
@@ -32,7 +36,7 @@ const initDatabase = () => {
   `);
 
   // Create indexes for better performance
-  db.exec(`
+  db.exec(sql`
     CREATE INDEX IF NOT EXISTS idx_user_counties_user_id ON user_counties(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_counties_county_name ON user_counties(county_name);
   `);
@@ -42,14 +46,14 @@ const initDatabase = () => {
 
 // Prepared statements for better performance
 const statements = {
-  insertUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
-  updateUserActivity: db.prepare('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-  getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ?'),
-  claimCounty: db.prepare('INSERT OR IGNORE INTO user_counties (user_id, county_name) VALUES (?, ?)'),
-  releaseCounty: db.prepare('DELETE FROM user_counties WHERE user_id = ? AND county_name = ?'),
-  isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
-  getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties'),
-  getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?')
+  insertUser: db.prepare(sql`INSERT OR IGNORE INTO users (id) VALUES (?)`),
+  updateUserActivity: db.prepare(sql`UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?`),
+  getUserCounties: db.prepare(sql`SELECT county_name FROM user_counties WHERE user_id = ?`),
+  claimCounty: db.prepare(sql`INSERT OR IGNORE INTO user_counties (user_id, county_name) VALUES (?, ?)`),
+  releaseCounty: db.prepare(sql`DELETE FROM user_counties WHERE user_id = ? AND county_name = ?`),
+  isCountyOwned: db.prepare(sql`SELECT user_id FROM user_counties WHERE county_name = ?`),
+  getAllTakenCounties: db.prepare(sql`SELECT county_name, user_id FROM user_counties`),
+  getCountyOwner: db.prepare(sql`SELECT user_id FROM user_counties WHERE county_name = ?`)
 };
 
 // Database operations
@@ -138,8 +142,8 @@ export const dbOperations = {
   // Get database stats
   getStats: () => {
     try {
-      const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-      const countyCount = db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
+      const userCount = db.prepare(sql`SELECT COUNT(*) as count FROM users`).get() as { count: number };
+      const countyCount = db.prepare(sql`SELECT COUNT(*) as count FROM user_counties`).get() as { count: number };
 
       return {
         users: userCount.count,

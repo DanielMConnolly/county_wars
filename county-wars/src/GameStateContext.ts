@@ -10,7 +10,6 @@ export interface GameStateContextType {
   // Helper functions
   addCounty: (countyName: string) => void;
   removeCounty: (countyId: string) => void;
-  updateResources: (amount: number) => void;
   selectCounty: (countyName: County)=> void;
   setMapStyle: (style: string) => void;
   setHighlightColor: (color: string) => void;

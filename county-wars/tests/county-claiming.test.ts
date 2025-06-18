@@ -1,4 +1,4 @@
-import { Builder, By, until, WebDriver, WebElement } from 'selenium-webdriver';
+import { Builder, By, until, WebDriver } from 'selenium-webdriver';
 import { Options } from 'selenium-webdriver/chrome';
 
 describe('County Wars - County Claiming Test', () => {
