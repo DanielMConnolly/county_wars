@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import GameMap from '../src/GameMap.react';
 import { GameStateProvider } from '../src/GameStateProvider.react';
 import { MapControls } from '../src/types/GameTypes';
+import 'whatwg-fetch';
 
 // Mock fetch to return sample GeoJSON data
 const mockCountyData = {

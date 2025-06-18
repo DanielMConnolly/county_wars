@@ -7,7 +7,7 @@ export const getDefaultState = (): GameState => {
     resources: GAME_DEFAULTS.RESOURCES,
     selectedCounty: null,
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
-    population: GAME_DEFAULTS.POPULATION,
+    restaurants: GAME_DEFAULTS.RESTAURANTS,
     highlightColor: GAME_DEFAULTS.HIGHLIGHT_COLOR,
     gameTime: {
       year: GAME_DEFAULTS.START_YEAR,
