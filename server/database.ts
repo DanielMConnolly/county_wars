@@ -42,7 +42,7 @@ const initDatabase = () => {
   try {
     // Check if the column exists by trying to select from it
     db.prepare('SELECT highlight_color FROM users LIMIT 1').get();
-  } catch (error) {
+  } catch (_) {
     // Column doesn't exist, add it
     console.log('Adding highlight_color column to users table...');
     db.exec(`ALTER TABLE users ADD COLUMN highlight_color TEXT DEFAULT 'red'`);
@@ -70,9 +70,11 @@ const initDatabase = () => {
     isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
     getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties'),
     getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
-    updateUserHighlightColor: db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    updateUserHighlightColor:
+      db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
     getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?'),
-    updateUserGameTime: db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    updateUserGameTime:
+      db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
     getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?')
   };
 
@@ -158,7 +160,8 @@ export const dbOperations = {
   getStats: () => {
     try {
       const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-      const countyCount = db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
+      const countyCount =
+        db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
 
       return {
         users: userCount.count,

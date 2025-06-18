@@ -1,12 +1,11 @@
 export default {
-  preset: 'ts-jest/presets/default-esm',
+  "preset": "jest-puppeteer",
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   globals: {
     'ts-jest': {
       useESM: true
     }
   },
-  testEnvironment: 'jsdom',
   testMatch: ['<rootDir>/tests/**/*.test.{ts,tsx}'],
   setupFilesAfterEnv: ['<rootDir>/tests/test-setup.ts'],
   testTimeout: 10000,

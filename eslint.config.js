@@ -65,7 +65,8 @@ export default [
         "error",
         {
           "varsIgnorePattern": "^_",
-          "caughtErrorsIgnorePattern": "^_"
+          "caughtErrorsIgnorePattern": "^_",
+           "argsIgnorePattern": ".*"
         }
       ],
 

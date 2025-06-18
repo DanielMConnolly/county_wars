@@ -8,16 +8,16 @@ export interface GameStateContextType {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // Helper functions
-  addCounty: (countyName: string) => void;
-  removeCounty: (countyId: string) => void;
-  selectCounty: (countyName: County)=> void;
-  setMapStyle: (style: string) => void;
-  setHighlightColor: (color: string) => void;
+  addCounty: (_countyName: string) => void;
+  removeCounty: (_countyId: string) => void;
+  selectCounty: (_countyName: County)=> void;
+  setMapStyle: (_style: string) => void;
+  setHighlightColor: (_color: string) => void;
   resetGame: () => void;
   // Time management functions
   pauseTime: () => void;
   resumeTime: () => void;
-  setGameDuration: (hours: number) => void;
+  setGameDuration: (_hours: number) => void;
 }
 
 // Create the context

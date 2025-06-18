@@ -7,7 +7,7 @@ const MapControlsComponent = ({
   onUpdateZoom,
 }: {
   mapControls: MapControls;
-  onChangeMapStyle: (arg: MapStyle) => void;
+  onChangeMapStyle: (_arg: MapStyle) => void;
   onUpdateZoom: (arg: number) => void;
 }) => {
   return (
