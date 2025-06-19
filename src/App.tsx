@@ -7,7 +7,8 @@ import MapControls from './MapControls';
 import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
-import { AuthProvider } from './auth/AuthContext';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import AuthModal from './auth/AuthModal';
 
 
 const App = () => {
@@ -25,6 +26,7 @@ const App = () => {
 const AppContent = () => {
   const { gameState } = useContext(GameStateContext);
   const { selectedCounty } = gameState;
+  const { user, loading } = useAuth();
 
   const {
     mapControls,
@@ -33,6 +35,32 @@ const AppContent = () => {
     toggleMapStyle
   } = useMapControls();
 
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login modal if user is not authenticated
+  if (!user) {
+    return (
+      <div className="h-screen bg-gray-900 flex flex-col items-center justify-center relative">
+        <div className="text-center mb-8 z-10">
+          <h1 className="text-4xl font-bold text-white mb-4">County Wars</h1>
+          <p className="text-gray-300 text-lg">Please log in to start playing</p>
+        </div>
+        <AuthModal isOpen={true} onClose={() => {}} />
+      </div>
+    );
+  }
+
+  // Show main game interface for authenticated users
   return (
     <>
       <TopMenu
