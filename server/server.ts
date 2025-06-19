@@ -2,21 +2,35 @@ import express, { Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { dbOperations } from './database.js';
 import { setupSocket } from './SetupSocket.js';
 import authRoutes from './authRoutes.js';
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: true,
+    origin: process.env.NODE_ENV === 'production' ? false : true,
     methods: ["GET", "POST"]
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? false : true
+}));
 app.use(express.json());
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '..', 'dist');
+  app.use(express.static(distPath));
+}
 
 // Response body parser middleware - converts JSON strings to JavaScript objects
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -314,7 +328,15 @@ app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
   }
 });
 
+// Catch-all handler for React Router in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

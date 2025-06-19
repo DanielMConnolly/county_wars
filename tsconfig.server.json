@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./server/dist",
+    "rootDir": "./",
+    "noEmit": false,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "server/**/*",
+    "src/types/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*",
+    "!src/types/**/*",
+    "**/*.test.ts"
+  ]
+}
