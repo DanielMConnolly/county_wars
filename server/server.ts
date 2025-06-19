@@ -80,13 +80,13 @@ setupSocket(io);
 app.use('/api/auth', authRoutes);
 
 // HTTP API endpoints
-app.get('/api/counties/:userId', (req, res) => {
-  const { userId } = req.params;
+app.get('/api/counties/:userId/:gameId', (req, res) => {
+  const { userId, gameId } = req.params;
   try {
     // Ensure user exists in database
     dbOperations.createUser(userId);
 
-    const ownedCounties = dbOperations.getUserCounties(userId);
+    const ownedCounties = dbOperations.getUserCounties(userId, gameId);
     res.json({ ownedCounties });
   } catch (error) {
     console.error('Error fetching user counties:', error);
@@ -94,9 +94,10 @@ app.get('/api/counties/:userId', (req, res) => {
   }
 });
 
-app.get('/api/counties/all/taken', (_, res) => {
+app.get('/api/counties/all/taken/:gameId', (req, res) => {
+  const { gameId } = req.params;
   try {
-    const allTakenCounties = dbOperations.getAllTakenCounties();
+    const allTakenCounties = dbOperations.getAllTakenCounties(gameId);
     res.json(allTakenCounties);
   } catch (error) {
     console.error('Error fetching all taken counties:', error);
@@ -259,6 +260,59 @@ app.put('/api/users/:userId/money', (req: Request, res: Response): void => {
 });
 
 
+
+// Game management endpoints
+app.post('/api/games', (req: Request, res: Response): void => {
+  const { name, createdBy } = req.body;
+  
+  if (!name || !createdBy) {
+    res.status(400).json({ error: 'Name and createdBy are required' });
+    return;
+  }
+
+  try {
+    const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
+    const success = dbOperations.createGame(gameId, name, createdBy);
+    
+    if (success) {
+      res.json({ gameId, name, createdBy, message: 'Game created successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to create game' });
+    }
+  } catch (error) {
+    console.error('Error creating game:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/games/:gameId', (req: Request, res: Response): void => {
+  const { gameId } = req.params;
+  
+  try {
+    const game = dbOperations.getGame(gameId);
+    
+    if (game) {
+      res.json(game);
+    } else {
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching game:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
+  const { userId } = req.params;
+  
+  try {
+    const games = dbOperations.getUserGames(userId);
+    res.json({ games });
+  } catch (error) {
+    console.error('Error fetching user games:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

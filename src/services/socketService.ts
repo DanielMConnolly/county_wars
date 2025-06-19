@@ -3,15 +3,18 @@ import { io, Socket } from 'socket.io-client';
 export class SocketService {
   private socket: Socket | null = null;
   private userId: string | null = null;
+  private gameId: string | null = null;
   private callbacks: Map<string, Function[]> = new Map();
 
-  connect(userId: string): Promise<void> {
+  connect(userId: string, gameId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.userId = userId;
+      this.gameId = gameId;
 
       this.socket = io('http://localhost:3001', {
         auth: {
-          userId: userId
+          userId: userId,
+          gameId: gameId
         }
       });
 

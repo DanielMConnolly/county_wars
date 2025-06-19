@@ -3,17 +3,19 @@ import { GameState } from "../types/GameTypes";
 
 interface ConnectToSocketParams {
   userId: string;
+  gameId: string;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   setIsConnected: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const connectToSocket = async ({
   userId,
+  gameId,
   setGameState,
   setIsConnected
 }: ConnectToSocketParams) => {
   try {
-    await socketService.connect(userId);
+    await socketService.connect(userId, gameId);
     setIsConnected(true);
 
     // Set up socket event listeners for real-time updates only

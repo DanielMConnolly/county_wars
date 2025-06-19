@@ -15,6 +15,7 @@ import {
 import { getCountyCost } from "./utils/countyUtils";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
+import { getCurrentGameId } from "./utils/gameUrl";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -24,6 +25,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   children,
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
+  const [gameId, setGameId] = useState<string>(getCurrentGameId());
   const [userId] = useState<string>(() => {
     // Try to get existing userId from localStorage
     const savedUserId = localStorage.getItem('county-wars-user-id');
@@ -63,16 +65,17 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const conquerCounty = async (county: County): Promise<boolean> => {
     try {
       const cost = getCountyCost(county.name);
-      
+
       // Check if user has enough money
       if (gameState.money < cost) {
-        console.log('Insufficient funds to conquer county:', county.name, 'Cost:', cost, 'Available:', gameState.money);
+        console.log('Insufficient funds to conquer county:',
+           county.name, 'Cost:', cost, 'Available:', gameState.money);
         return false;
       }
 
       // Deduct the cost from user's money
       const newMoney = gameState.money - cost;
-      
+
       // Update money in database
       const moneyUpdated = await updateUserMoney(userId, newMoney);
       if (!moneyUpdated) {
@@ -89,7 +92,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       // Now claim the county
       const countyId = county.countyFP + county.stateFP;
       addCounty(countyId);
-      
+
       console.log(`Successfully conquered ${county.name} for $${cost}. Remaining money: $${newMoney}`);
       return true;
     } catch (error) {
@@ -187,10 +190,23 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }));
   };
 
+  // Listen for URL changes
+  useEffect(() => {
+    const handleGameNavigate = (event: any) => {
+      const newGameId = event.detail.gameId || 'default-game';
+      console.log('Game navigation detected, switching to gameId:', newGameId);
+      setGameId(newGameId);
+    };
+
+    window.addEventListener('gameNavigate', handleGameNavigate);
+    return () => window.removeEventListener('gameNavigate', handleGameNavigate);
+  }, []);
+
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
-      const ownedCounties = await fetchUserCounties(userId);
+      console.log('Fetching initial data for userId:', userId, 'gameId:', gameId);
+      const ownedCounties = await fetchUserCounties(userId, gameId);
       const savedColor = await fetchUserHighlightColor(userId);
       const savedGameTime = await fetchUserGameTime(userId);
       const userMoney = await fetchUserMoney(userId);
@@ -206,7 +222,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       }));
     };
     fetchInitialData();
-  }, [userId]);
+  }, [userId, gameId]);
 
   // Socket connection and event handling
   useEffect(() => {
@@ -218,8 +234,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       return;
     }
 
-    connectToSocket({ userId, setGameState, setIsConnected });
-  }, [userId]);
+    connectToSocket({ userId, gameId, setGameState, setIsConnected });
+  }, [userId, gameId]);
 
   // Time progression logic
   useEffect(() => {
