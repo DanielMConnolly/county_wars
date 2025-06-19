@@ -35,19 +35,12 @@ describe("County Wars GameMap", () => {
     const infoCardElement = await testPage.$$('[data-testid="info-card"]');
     expect(infoCardElement.length).toBeGreaterThan(0);
     await testPage.click('[data-testid="conquer-county-button"]');
-    // await jestPuppeteer.debug();
-    // const x = await svgElements[1];
-
-    await e
-    // expect(await svgElements[1]).toHaveAttribute('fill', 'red');
-
-
 
   });
 });
 
-// afterAll(async () => {
-//   if (browser) {
-//     await browser.close();
-//   }
-// })
+afterAll(async () => {
+  if (browser) {
+    await browser.close();
+  }
+})
