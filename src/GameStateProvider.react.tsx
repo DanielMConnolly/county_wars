@@ -190,6 +190,16 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }));
   };
 
+  const setCurrentGame = (gameId: string | null) => {
+    setGameState((prevState) => ({
+      ...prevState,
+      currentGameId: gameId,
+    }));
+    if (gameId) {
+      setGameId(gameId);
+    }
+  };
+
   // Listen for URL changes
   useEffect(() => {
     const handleGameNavigate = (event: any) => {
@@ -321,6 +331,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     pauseTime,
     resumeTime,
     setGameDuration,
+    setCurrentGame,
   };
 
   return (

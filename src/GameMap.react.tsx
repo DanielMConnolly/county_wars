@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { mapStyles, getAttribution } from "./data/mapStyles";
 import {
   map,
@@ -42,31 +42,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   }, [gameState]);
 
 
-  const handleTileClick = useCallback((layer: Polyline) => {
-    setCurrentHighlighted(prevLayer => {
-      if (!prevLayer) return layer;
-      const countyId = prevLayer?.feature?.properties.COUNTYFP + prevLayer?.feature?.properties.STATEFP;
-      if (gameStateRef.current.ownedCounties.has(countyId)) {
-        prevLayer?.setStyle({
-          ...highlightStyle,
-         fillColor: gameStateRef.current.highlightColor,
-       });
-      } else {
-        prevLayer?.setStyle(defaultStyle);
-      }
-      return layer;
-    });
-
-    // Apply selection highlight to the newly selected county
-    layer.setStyle(highlightStyle);
-    selectCounty(
-      {
-        name: layer.feature?.properties.NAME,
-        stateFP: layer.feature?.properties.STATEFP,
-        countyFP: layer.feature?.properties.COUNTYFP,
-      }
-    );
-  }, [gameState.ownedCounties]);
 
 
   // Store the county layer reference
@@ -77,20 +52,57 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
+    console.log('Initializing map...');
+    
     if (mapRef.current != null) {
       mapInstance.current = map(mapRef.current).setView([39.8283, -98.5795], 4);
     }
 
-    fetch("counties.geojson")
-      .then((response) => response.json())
-      .then((data) => {
+    const loadCounties = async () => {
+      try {
+        console.log('Fetching counties.geojson...');
+        const response = await fetch("counties.geojson");
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch counties: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Counties data loaded, creating layer...');
+
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
           onEachFeature: function (feature, layer: Polyline) {
-            layer.on("click", () => handleTileClick(layer));
+            layer.on("click", () => {
+              setCurrentHighlighted(prevLayer => {
+                if (!prevLayer) return layer;
+                const countyId = prevLayer?.feature?.properties.COUNTYFP + prevLayer?.feature?.properties.STATEFP;
+                if (gameStateRef.current.ownedCounties.has(countyId)) {
+                  prevLayer?.setStyle({
+                    ...highlightStyle,
+                   fillColor: gameStateRef.current.highlightColor,
+                 });
+                } else {
+                  prevLayer?.setStyle(defaultStyle);
+                }
+                return layer;
+              });
+
+              // Apply selection highlight to the newly selected county
+              layer.setStyle(highlightStyle);
+              selectCounty(
+                {
+                  name: layer.feature?.properties.NAME,
+                  stateFP: layer.feature?.properties.STATEFP,
+                  countyFP: layer.feature?.properties.COUNTYFP,
+                }
+              );
+            });
             layer.on("mouseover", function () {
+              // Optional hover effects can be added here
             });
             layer.on("mouseout", function () {
+              // Optional hover effects can be added here
             });
           },
         });
@@ -99,20 +111,30 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         if (mapInstance.current) {
           layer.addTo(mapInstance.current);
-
-          // Mark county layer as loaded
-          console.log('County layer loaded and added to map');
+          console.log('County layer loaded and added to map successfully');
           setIsCountyLayerLoaded(true);
+        } else {
+          console.error('Map instance not available when trying to add county layer');
         }
-      })
-      .catch((error) => console.error("Error loading counties:", error));
+      } catch (error) {
+        console.error("Error loading counties:", error);
+        setIsCountyLayerLoaded(false);
+      }
+    };
+
+    loadCounties();
 
     return () => {
+      console.log('Cleaning up map...');
       if (countyLayerRef.current && mapInstance.current) {
         mapInstance.current.removeLayer(countyLayerRef.current);
       }
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+        mapInstance.current = null;
+      }
     };
-  }, [handleTileClick]);
+  }, []); // No dependencies - only run once
 
 
   // Update county styling when ownership or colors change

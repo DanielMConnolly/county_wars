@@ -1,5 +1,5 @@
 import React, { ReactNode, useContext, useState } from "react";
-import { Settings, RotateCcw, Map, UtensilsCrossed, Coins } from "lucide-react";
+import { Settings, RotateCcw, Map, UtensilsCrossed, Coins, Home } from "lucide-react";
 import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
@@ -7,15 +7,21 @@ import UserMenu from "./auth/UserMenu";
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const {gameState, resetGame} = useContext(GameStateContext);
+  const {gameState, resetGame, setCurrentGame} = useContext(GameStateContext);
 
   const handleSettings = () => {
     setIsSettingsOpen(true);
   };
 
+  const handleChangeGame = () => {
+    if (window.confirm("Return to game selection? Your current progress will be saved.")) {
+      setCurrentGame(null); // Clear current game to show welcome screen
+    }
+  };
+
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800 to-slate-700 flex items-center justify-between px-6 z-[1000] shadow-lg border-b border-slate-600">
-      <div className="text-2xl font-bold text-blue-400">County Conquest</div>
+      <div className="text-2xl font-bold text-blue-400">Franchise Wars</div>
 
       {/* Stats */}
       <div className="flex gap-8">
@@ -41,6 +47,12 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
 
       {/* Menu Buttons */}
       <div className="flex gap-3 items-center">
+        <MenuButton
+          onClick={handleChangeGame}
+          icon={<Home className="w-4 h-4" />}
+          text="Change Game"
+          className="from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600"
+        />
         <MenuButton
           onClick={onToggleMapStyle}
           icon={<Map className="w-4 h-4" />}
