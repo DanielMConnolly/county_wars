@@ -8,16 +8,28 @@ import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
 import { AuthProvider, useAuth } from './auth/AuthContext';
+import { useLocation, createBrowserRouter, RouterProvider } from "react-router-dom";
 import AuthModal from './auth/AuthModal';
 import WelcomeScreen from './components/WelcomeScreen';
 
 
 const App = () => {
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <WelcomeScreen />,
+    },
+    {
+      path: '/game/:gameId', // Parameterized path for gameId
+      element: <AppContent />, // Component to render for this route
+    },
+  ]);
   return (
     <div className="h-screen bg-gray-900 text-white overflow-hidden relative">
+
       <AuthProvider>
         <GameStateProvider>
-          <AppContent />
+        <RouterProvider router={router} />
         </GameStateProvider>
       </AuthProvider>
     </div>
@@ -25,9 +37,11 @@ const App = () => {
 };
 
 const AppContent = () => {
-  const { gameState, setCurrentGame } = useContext(GameStateContext);
-  const { selectedCounty, currentGameId } = gameState;
+  const { gameState} = useContext(GameStateContext);
+  const { selectedCounty} = gameState;
   const { user, loading } = useAuth();
+  const location = useLocation();
+  console.log(location.pathname);
 
   const {
     mapControls,
@@ -59,11 +73,6 @@ const AppContent = () => {
         <AuthModal isOpen={true} onClose={() => {}} />
       </div>
     );
-  }
-
-  // Show welcome screen if no game is selected
-  if (!currentGameId) {
-    return <WelcomeScreen onGameSelected={setCurrentGame} />;
   }
 
   // Show main game interface for authenticated users with a selected game

@@ -6,6 +6,8 @@ export default {
       useESM: true
     }
   },
+  globalSetup: './tests/setup.js',
+  globalTeardown: './tests/teardown.js',
   testMatch: ['<rootDir>/tests/**/*.test.{ts,tsx}'],
   testTimeout: 10000,
   verbose: true,

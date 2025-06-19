@@ -3,17 +3,24 @@ import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Page, Browser } from 'puppeteer';
-import { svg } from "leaflet";
+import { promises as fs } from 'fs';
+import path from 'path';
 
 let testPage: Page;
 let browser: Browser;
+let baseUrl: string;
 
 beforeAll(async () => {
+  // Read the test configuration to get the base URL
+  const configPath = path.join(process.cwd(), 'test-config.json');
+  const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+  baseUrl = config.baseUrl;
+
   browser = await puppeteer.launch({
     headless: false,
   });
   testPage = await browser.newPage();
-  await testPage.goto("http://localhost:5173");
+  await testPage.goto(baseUrl);
 });
 
 describe("County Wars GameMap", () => {
