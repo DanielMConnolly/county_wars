@@ -7,14 +7,17 @@ import MapControls from './MapControls';
 import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
+import { AuthProvider } from './auth/AuthContext';
 
 
 const App = () => {
   return (
     <div className="h-screen bg-gray-900 text-white overflow-hidden relative">
-      <GameStateProvider>
-        <AppContent />
-      </GameStateProvider>
+      <AuthProvider>
+        <GameStateProvider>
+          <AppContent />
+        </GameStateProvider>
+      </AuthProvider>
     </div>
   );
 };

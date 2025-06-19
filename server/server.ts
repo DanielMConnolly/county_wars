@@ -1,9 +1,10 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { dbOperations } from './database.js';
 import { setupSocket } from './SetupSocket.js';
+import authRoutes from './authRoutes.js';
 
 const app = express();
 const server = createServer(app);
@@ -22,6 +23,9 @@ console.log('Using SQLite database for data persistence');
 
 // Setup socket connections and handlers
 setupSocket(io);
+
+// Authentication routes
+app.use('/api/auth', authRoutes);
 
 // HTTP API endpoints
 app.get('/api/counties/:userId', (req, res) => {
@@ -59,12 +63,13 @@ app.get('/api/stats', (_, res) => {
 });
 
 // Update user highlight color
-app.put('/api/users/:userId/highlight-color', (req, res) => {
+app.put('/api/users/:userId/highlight-color', function(req: Request, res: Response): void {
   const { userId } = req.params;
   const { color } = req.body;
 
   if (!color) {
-    return res.status(400).json({ error: 'Color is required' });
+    res.status(400).json({ error: 'Color is required' });
+    return;
   }
 
   // Validate color format (hex color or predefined color names)
@@ -75,7 +80,8 @@ app.put('/api/users/:userId/highlight-color', (req, res) => {
   const hexColorRegex = /^#[0-9A-F]{6}$/i;
 
   if (!validColors.includes(color) && !hexColorRegex.test(color)) {
-    return res.status(400).json({ error: 'Invalid color format' });
+    res.status(400).json({ error: 'Invalid color format' });
+    return;
   }
 
   try {
@@ -129,12 +135,13 @@ app.get('/api/users/:userId/game-time', (req, res) => {
 });
 
 // Update user game time
-app.put('/api/users/:userId/game-time', (req, res) => {
+app.put('/api/users/:userId/game-time', (req: Request, res: Response): void => {
   const { userId } = req.params;
   const { gameTime } = req.body;
 
   if (!gameTime) {
-    return res.status(400).json({ error: 'Game time is required' });
+    res.status(400).json({ error: 'Game time is required' });
+    return;
   }
 
   try {

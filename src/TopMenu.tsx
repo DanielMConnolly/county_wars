@@ -1,15 +1,24 @@
 import React, { ReactNode, useContext, useState } from "react";
-import { Settings, RotateCcw, Map, UtensilsCrossed, Coins } from "lucide-react";
+import { Settings, RotateCcw, Map, UtensilsCrossed, Coins, LogIn } from "lucide-react";
 import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
+import { useAuth } from "./auth/AuthContext";
+import AuthModal from "./auth/AuthModal";
+import UserMenu from "./auth/UserMenu";
 
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const {gameState, resetGame} = useContext(GameStateContext);
+  const { user } = useAuth();
+  
   const handleSettings = () => {
     setIsSettingsOpen(true);
+  };
+
+  const handleAuth = () => {
+    setIsAuthOpen(true);
   };
 
   return (
@@ -39,7 +48,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
       </div>
 
       {/* Menu Buttons */}
-      <div className="flex gap-3">
+      <div className="flex gap-3 items-center">
         <MenuButton
           onClick={onToggleMapStyle}
           icon={<Map className="w-4 h-4" />}
@@ -58,9 +67,26 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           text="Settings"
           className="from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-600"
         />
+        
+        {/* Authentication */}
+        {user ? (
+          <UserMenu />
+        ) : (
+          <MenuButton
+            onClick={handleAuth}
+            icon={<LogIn className="w-4 h-4" />}
+            text="Login"
+            className="from-green-600 to-green-500 hover:from-green-500 hover:to-green-600"
+          />
+        )}
+        
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           isOpen={isSettingsOpen}
+        />
+        <AuthModal
+          onClose={() => setIsAuthOpen(false)}
+          isOpen={isAuthOpen}
         />
       </div>
     </div>

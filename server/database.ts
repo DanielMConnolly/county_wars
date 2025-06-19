@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import { GameTime } from '../src/types/GameTypes';
 
 // Initialize SQLite database
 const dbPath = path.join(process.cwd(), 'county-wars.db');
@@ -14,6 +15,9 @@ const initDatabase = () => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
+      username TEXT,
+      email TEXT,
+      password_hash TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_active DATETIME DEFAULT CURRENT_TIMESTAMP,
       highlight_color TEXT DEFAULT 'red'
@@ -42,7 +46,7 @@ const initDatabase = () => {
   try {
     // Check if the column exists by trying to select from it
     db.prepare('SELECT highlight_color FROM users LIMIT 1').get();
-  } catch (error) {
+  } catch (_) {
     // Column doesn't exist, add it
     console.log('Adding highlight_color column to users table...');
     db.exec(`ALTER TABLE users ADD COLUMN highlight_color TEXT DEFAULT 'red'`);
@@ -60,9 +64,29 @@ const initDatabase = () => {
     console.log('game_time column added successfully');
   }
 
+  // Migration: Add authentication columns if they don't exist
+  try {
+    db.prepare('SELECT username FROM users LIMIT 1').get();
+  } catch (_) {
+    console.log('Adding authentication columns to users table...');
+    db.exec(`ALTER TABLE users ADD COLUMN username TEXT`);
+    db.exec(`ALTER TABLE users ADD COLUMN email TEXT`);
+    db.exec(`ALTER TABLE users ADD COLUMN password_hash TEXT`);
+    console.log('Authentication columns added successfully');
+  }
+
+  // Create unique indexes for authentication columns
+  try {
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username) WHERE username IS NOT NULL`);
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`);
+  } catch (error) {
+    console.log('Note: Unique indexes for auth columns may already exist or have conflicts');
+  }
+
   // Initialize prepared statements after tables are created
   statements = {
     insertUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
+    createUser: db.prepare('INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)'),
     updateUserActivity: db.prepare('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?'),
     getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ?'),
     claimCounty: db.prepare('INSERT OR IGNORE INTO user_counties (user_id, county_name) VALUES (?, ?)'),
@@ -70,10 +94,15 @@ const initDatabase = () => {
     isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
     getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties'),
     getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE county_name = ?'),
-    updateUserHighlightColor: db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    updateUserHighlightColor:
+      db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
     getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?'),
-    updateUserGameTime: db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?')
+    updateUserGameTime:
+      db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?'),
+    getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
+    getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
+    getUserById: db.prepare('SELECT * FROM users WHERE id = ?')
   };
 
   console.log('Database initialized successfully');
@@ -88,6 +117,15 @@ export const dbOperations = {
   createUser: (userId: string) => {
     statements.insertUser.run(userId);
     statements.updateUserActivity.run(userId);
+  },
+  createUserWithAuth: (userId: string, username: string, email: string, passwordHash: string) => {
+    try {
+      statements.createUser.run(userId, username, email, passwordHash);
+      return true;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return false;
+    }
   },
   updateUserActivity: (userId: string) => {
     statements.updateUserActivity.run(userId);
@@ -158,7 +196,8 @@ export const dbOperations = {
   getStats: () => {
     try {
       const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-      const countyCount = db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
+      const countyCount =
+        db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
 
       return {
         users: userCount.count,
@@ -203,7 +242,7 @@ export const dbOperations = {
     }
   },
 
-  getUserGameTime: (userId: string): any | null => {
+  getUserGameTime: (userId: string): GameTime | null => {
     try {
       const result = statements.getUserGameTime.get(userId) as { game_time: string } | undefined;
       if (result?.game_time) {
@@ -212,6 +251,34 @@ export const dbOperations = {
       return null;
     } catch (error) {
       console.error('Error getting user game time:', error);
+      return null;
+    }
+  },
+
+  // Authentication operations
+  getUserByUsername: (username: string): any => {
+    try {
+      return statements.getUserByUsername.get(username);
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      return null;
+    }
+  },
+
+  getUserByEmail: (email: string): any => {
+    try {
+      return statements.getUserByEmail.get(email);
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
+    }
+  },
+
+  getUserById: (id: string): any => {
+    try {
+      return statements.getUserById.get(id);
+    } catch (error) {
+      console.error('Error getting user by id:', error);
       return null;
     }
   }

@@ -50,6 +50,7 @@ const InfoCard = () => {
 
   return (
     <div
+      data-testid="info-card"
       className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
@@ -105,7 +106,7 @@ const InfoCard = () => {
         )}
       </div>
       <button
-        data-testid="conquer-territory-button"
+        data-testid="conquer-county-button"
         onClick={() => {
           if (selectedCounty != null) {
             addCounty(selectedCounty.countyFP + selectedCounty.stateFP)

@@ -1,6 +1,22 @@
 import { GameTime } from '../types/GameTypes';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = '';  // Use Vite proxy for local development
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  created_at?: string;
+  last_active?: string;
+  highlight_color?: string;
+  game_time?: string;
+}
+
+interface AuthResponse {
+  user: User;
+  token: string;
+}
+
 
 export async function fetchUserCounties(userId: string): Promise<string[]> {
   try {
@@ -107,3 +123,106 @@ export async function updateUserGameTime(userId: string, gameTime: GameTime): Pr
     return false;
   }
 }
+
+// Authentication functions
+export async function signup(
+  username: string,
+  email: string,
+  password: string
+): Promise<{ success: boolean; data?: AuthResponse; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, email, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return { success: false, error: data.error || 'Signup failed' };
+    }
+  } catch (error) {
+    console.error('Signup request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function login(
+  username: string,
+  password: string
+): Promise<{ success: boolean; data?: AuthResponse; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return { success: false, error: data.error || 'Login failed' };
+    }
+  } catch (error) {
+    console.error('Login request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function verifyToken(
+  token: string
+): Promise<{ success: boolean; data?: { user: User }; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return { success: false, error: data.error || 'Token verification failed' };
+    }
+  } catch (error) {
+    console.error('Token verification failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function getUserProfile(
+  token: string
+): Promise<{ success: boolean; data?: { user: User }; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, data };
+    } else {
+      return { success: false, error: data.error || 'Failed to get user profile' };
+    }
+  } catch (error) {
+    console.error('Get profile request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// Export User type for use in other files
+export type { User };
