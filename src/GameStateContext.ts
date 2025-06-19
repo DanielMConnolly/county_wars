@@ -19,6 +19,8 @@ export interface GameStateContextType {
   pauseTime: () => void;
   resumeTime: () => void;
   setGameDuration: (_hours: number) => void;
+  // Game management functions
+  setCurrentGame: (_gameId: string | null) => void;
 }
 
 // Create the context

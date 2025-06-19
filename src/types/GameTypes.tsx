@@ -21,6 +21,7 @@ export type GameState = {
     highlightColor: string,
     restaurants: number,
     gameTime: GameTime,
+    currentGameId: string | null,
 }
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';

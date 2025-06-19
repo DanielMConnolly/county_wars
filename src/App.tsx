@@ -9,6 +9,7 @@ import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import AuthModal from './auth/AuthModal';
+import WelcomeScreen from './components/WelcomeScreen';
 
 
 const App = () => {
@@ -24,8 +25,8 @@ const App = () => {
 };
 
 const AppContent = () => {
-  const { gameState } = useContext(GameStateContext);
-  const { selectedCounty } = gameState;
+  const { gameState, setCurrentGame } = useContext(GameStateContext);
+  const { selectedCounty, currentGameId } = gameState;
   const { user, loading } = useAuth();
 
   const {
@@ -52,7 +53,7 @@ const AppContent = () => {
     return (
       <div className="h-screen bg-gray-900 flex flex-col items-center justify-center relative">
         <div className="text-center mb-8 z-10">
-          <h1 className="text-4xl font-bold text-white mb-4">County Wars</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">Franchise Wars</h1>
           <p className="text-gray-300 text-lg">Please log in to start playing</p>
         </div>
         <AuthModal isOpen={true} onClose={() => {}} />
@@ -60,7 +61,12 @@ const AppContent = () => {
     );
   }
 
-  // Show main game interface for authenticated users
+  // Show welcome screen if no game is selected
+  if (!currentGameId) {
+    return <WelcomeScreen onGameSelected={setCurrentGame} />;
+  }
+
+  // Show main game interface for authenticated users with a selected game
   return (
     <>
       <TopMenu

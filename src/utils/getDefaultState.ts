@@ -9,6 +9,7 @@ export const getDefaultState = (): GameState => {
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
     restaurants: GAME_DEFAULTS.RESTAURANTS,
     highlightColor: GAME_DEFAULTS.HIGHLIGHT_COLOR,
+    currentGameId: null,
     gameTime: {
       year: GAME_DEFAULTS.START_YEAR,
       month: GAME_DEFAULTS.START_MONTH,
