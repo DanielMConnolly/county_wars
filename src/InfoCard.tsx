@@ -2,17 +2,22 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Zap } from 'lucide-react';
 import {
   calculateDifficultyScoreBasedOnPopulation,
-  getCost,
   useIsCountyOwned,
   getDifficultyLevel,
   getDifficultyColor
 } from './utils/gameUtils';
+import { 
+  calculateCountyDifficulty, 
+  getCountyCost, 
+  getDifficultyDisplayName,
+  getDifficultyColor as getNewDifficultyColor 
+} from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
 import { County, GameState } from './types/GameTypes';
 
 const InfoCard = () => {
-  const { gameState, addCounty } = useContext(GameStateContext);
+  const { gameState, conquerCounty } = useContext(GameStateContext);
   const { selectedCounty } = gameState;
 
   if (!selectedCounty) {
@@ -80,26 +85,12 @@ const InfoCard = () => {
 
             <InfoRow
               label="Difficulty:"
-              value={
-                loading
-                  ? 'Loading...'
-                  : difficultyScore !== null
-                    ? `${getDifficultyLevel(difficultyScore)} (${difficultyScore})`
-                    : 'Unknown'
-              }
-              className={
-                difficultyScore !== null
-                  ? getDifficultyColor(getDifficultyLevel(difficultyScore))
-                  : 'text-gray-400'
-              }
+              value={getDifficultyDisplayName(calculateCountyDifficulty(selectedCounty.name))}
+              className={getNewDifficultyColor(calculateCountyDifficulty(selectedCounty.name))}
             />
             <InfoRow
               label="Cost:"
-              value={
-                difficultyScore !== null
-                  ? `${getCost(getDifficultyLevel(difficultyScore))} resources`
-                  : `${getCost('Easy')} resources`
-              }
+              value={`$${getCountyCost(selectedCounty.name)}`}
               className="text-yellow-400"
             />
           </>
@@ -107,9 +98,9 @@ const InfoCard = () => {
       </div>
       <button
         data-testid="conquer-county-button"
-        onClick={() => {
+        onClick={async () => {
           if (selectedCounty != null) {
-            addCounty(selectedCounty.countyFP + selectedCounty.stateFP)
+            await conquerCounty(selectedCounty);
           }
         }}
         disabled={isButtonDisabled}
@@ -139,14 +130,22 @@ const getButtonText = (county: County, gameState: GameState): string => {
   if (gameState.gameTime.isPaused) {
     return 'Game Paused';
   }
-  return 'Conquer Territory';
+  const cost = getCountyCost(county.name);
+  if (gameState.money < cost) {
+    return `Insufficient Funds ($${cost})`;
+  }
+  return `Conquer Territory ($${cost})`;
 };
 
 const getIsButtonDisabled = (county: County, gameState: GameState): boolean => {
   if (gameState.gameTime.isPaused) {
     return true;
   }
-  return (gameState.ownedCounties.has(county.countyFP + county.stateFP));
+  if (gameState.ownedCounties.has(county.countyFP + county.stateFP)) {
+    return true;
+  }
+  const cost = getCountyCost(county.name);
+  return gameState.money < cost;
 };
 
 export default InfoCard;

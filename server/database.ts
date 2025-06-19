@@ -76,6 +76,15 @@ const initDatabase = () => {
     console.log('Authentication columns added successfully');
   }
 
+  // Migration: Add money column if it doesn't exist
+  try {
+    db.prepare('SELECT money FROM users LIMIT 1').get();
+  } catch (_) {
+    console.log('Adding money column to users table...');
+    db.exec(`ALTER TABLE users ADD COLUMN money INTEGER DEFAULT 1000`);
+    console.log('Money column added successfully');
+  }
+
   // Create unique indexes for authentication columns
   try {
     db.exec(
@@ -87,8 +96,8 @@ const initDatabase = () => {
 
   // Initialize prepared statements after tables are created
   statements = {
-    insertUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
-    createUser: db.prepare('INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)'),
+    insertUser: db.prepare('INSERT OR IGNORE INTO users (id, money) VALUES (?, 1000)'),
+    createUser: db.prepare('INSERT INTO users (id, username, email, password_hash, money) VALUES (?, ?, ?, ?, 1000)'),
     updateUserActivity: db.prepare('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?'),
     getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ?'),
     claimCounty: db.prepare('INSERT OR IGNORE INTO user_counties (user_id, county_name) VALUES (?, ?)'),
@@ -104,7 +113,10 @@ const initDatabase = () => {
     getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?'),
     getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
     getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
-    getUserById: db.prepare('SELECT * FROM users WHERE id = ?')
+    getUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
+    getUserMoney: db.prepare('SELECT money FROM users WHERE id = ?'),
+    updateUserMoney: db.prepare('UPDATE users SET money = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
+    deductUserMoney: db.prepare('UPDATE users SET money = money - ?, last_active = CURRENT_TIMESTAMP WHERE id = ? AND money >= ?')
   };
 
   console.log('Database initialized successfully');
@@ -282,6 +294,38 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error getting user by id:', error);
       return null;
+    }
+  },
+
+  // Money operations
+  getUserMoney: (userId: string): number => {
+    try {
+      const result = statements.getUserMoney.get(userId) as { money: number } | undefined;
+      return result?.money || 1000; // Default to starting money if not found
+    } catch (error) {
+      console.error('Error getting user money:', error);
+      return 1000;
+    }
+  },
+
+  updateUserMoney: (userId: string, amount: number): boolean => {
+    try {
+      const result = statements.updateUserMoney.run(amount, userId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error updating user money:', error);
+      return false;
+    }
+  },
+
+  deductUserMoney: (userId: string, cost: number): boolean => {
+    try {
+      // This will only deduct if user has enough money (money >= cost)
+      const result = statements.deductUserMoney.run(cost, userId, cost);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error deducting user money:', error);
+      return false;
     }
   }
 };

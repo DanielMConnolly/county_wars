@@ -9,7 +9,10 @@ import {
   updateUserHighlightColor,
   fetchUserGameTime,
   updateUserGameTime,
+  fetchUserMoney,
+  updateUserMoney,
 } from "./api_calls/CountyWarsHTTPRequests";
+import { getCountyCost } from "./utils/countyUtils";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
 
@@ -53,6 +56,45 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     } catch (error) {
       console.error('Error in addCounty:', error);
       // Don't throw the error, just log it to prevent crashes
+    }
+  };
+
+  // Helper function to conquer a county with cost deduction
+  const conquerCounty = async (county: County): Promise<boolean> => {
+    try {
+      const cost = getCountyCost(county.name);
+      
+      // Check if user has enough money
+      if (gameState.money < cost) {
+        console.log('Insufficient funds to conquer county:', county.name, 'Cost:', cost, 'Available:', gameState.money);
+        return false;
+      }
+
+      // Deduct the cost from user's money
+      const newMoney = gameState.money - cost;
+      
+      // Update money in database
+      const moneyUpdated = await updateUserMoney(userId, newMoney);
+      if (!moneyUpdated) {
+        console.error('Failed to update money in database');
+        return false;
+      }
+
+      // Update local state with new money amount
+      setGameState((prevState) => ({
+        ...prevState,
+        money: newMoney,
+      }));
+
+      // Now claim the county
+      const countyId = county.countyFP + county.stateFP;
+      addCounty(countyId);
+      
+      console.log(`Successfully conquered ${county.name} for $${cost}. Remaining money: $${newMoney}`);
+      return true;
+    } catch (error) {
+      console.error('Error in conquerCounty:', error);
+      return false;
     }
   };
 
@@ -151,11 +193,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       const ownedCounties = await fetchUserCounties(userId);
       const savedColor = await fetchUserHighlightColor(userId);
       const savedGameTime = await fetchUserGameTime(userId);
+      const userMoney = await fetchUserMoney(userId);
 
       setGameState(prevState => ({
         ...prevState,
         ownedCounties: new Set(ownedCounties),
         highlightColor: savedColor,
+        money: userMoney,
         gameTime: savedGameTime ? {
           ...savedGameTime,
         } : prevState.gameTime
@@ -252,6 +296,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     gameState,
     setGameState,
     addCounty,
+    conquerCounty,
     removeCounty,
     selectCounty,
     setMapStyle,

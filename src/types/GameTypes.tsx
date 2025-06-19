@@ -15,7 +15,7 @@ export type GameTime = {
 
 export type GameState = {
     ownedCounties: Set<string>,
-    resources: number,
+    money: number, // Changed from resources to money (USD)
     selectedCounty: County | null,
     mapStyle: string
     highlightColor: string,

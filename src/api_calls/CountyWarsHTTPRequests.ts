@@ -114,6 +114,50 @@ export async function updateUserGameTime(userId: string, gameTime: GameTime): Pr
   }
 }
 
+// Money management functions
+export async function fetchUserMoney(userId: string): Promise<number> {
+  try {
+    console.log('Fetching money for userId:', userId);
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/money`);
+    console.log('Money HTTP response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Fetched user money:', data.money);
+      return data.money;
+    } else {
+      console.error('Money HTTP request failed with status:', response.status);
+      return 1000; // Default starting money
+    }
+  } catch (error) {
+    console.error('Failed to fetch user money:', error);
+    return 1000; // Default starting money
+  }
+}
+
+export async function updateUserMoney(userId: string, amount: number): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/money`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ amount }),
+    });
+
+    if (!response.ok) {
+      console.error('Failed to update money:', response.status);
+      return false;
+    } else {
+      console.log('Money updated successfully:', amount);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to update money:', error);
+    return false;
+  }
+}
+
 // Authentication functions
 export async function signup(
   username: string,

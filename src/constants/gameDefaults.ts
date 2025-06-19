@@ -1,12 +1,19 @@
 export const GAME_DEFAULTS = {
   HIGHLIGHT_COLOR: '#EF4444', // Red
-  RESOURCES: 1000,
+  STARTING_MONEY: 1000, // Players start with $1000 USD
   RESTAURANTS: 0,
   MAP_STYLE: 'terrain',
   GAME_DURATION_HOURS: 1,
   START_YEAR: 1945,
   END_YEAR: 2025,
   START_MONTH: 1,
+} as const;
+
+// County conquest costs (based on difficulty)
+export const COUNTY_COSTS = {
+  EASY: 50,    // $50 to conquer an easy county
+  MEDIUM: 100, // $100 to conquer a medium county  
+  HARD: 200,   // $200 to conquer a hard county
 } as const;
 
 export const COLOR_OPTIONS = [

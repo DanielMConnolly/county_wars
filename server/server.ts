@@ -10,7 +10,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"], // Vite dev server
+    origin: true,
     methods: ["GET", "POST"]
   }
 });
@@ -21,20 +21,20 @@ app.use(express.json());
 // Response body parser middleware - converts JSON strings to JavaScript objects
 app.use((req: Request, res: Response, next: NextFunction) => {
   const originalJson = res.json;
-  
+
   res.json = function(body: any) {
     // Log the response for debugging
     console.log(`📤 Response [${req.method} ${req.path}]:`, {
       statusCode: res.statusCode,
       body: typeof body === 'string' ? parseJsonSafely(body) : body
     });
-    
+
     // Parse JSON strings in response body recursively
     const parsedBody = parseResponseBody(body);
-    
+
     return originalJson.call(this, parsedBody);
   };
-  
+
   next();
 });
 
@@ -54,11 +54,11 @@ function parseResponseBody(obj: any): any {
     const parsed = parseJsonSafely(obj);
     return parsed !== obj ? parseResponseBody(parsed) : obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(item => parseResponseBody(item));
   }
-  
+
   if (obj !== null && typeof obj === 'object') {
     const result: any = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -66,7 +66,7 @@ function parseResponseBody(obj: any): any {
     }
     return result;
   }
-  
+
   return obj;
 }
 
@@ -210,6 +210,50 @@ app.put('/api/users/:userId/game-time', (req: Request, res: Response): void => {
     }
   } catch (error) {
     console.error('Error updating game time:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user money
+app.get('/api/users/:userId/money', (req: Request, res: Response): void => {
+  const { userId } = req.params;
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+
+    const money = dbOperations.getUserMoney(userId);
+    res.json({ money });
+  } catch (error) {
+    console.error('Error fetching user money:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update user money
+app.put('/api/users/:userId/money', (req: Request, res: Response): void => {
+  const { userId } = req.params;
+  const { amount } = req.body;
+
+  if (typeof amount !== 'number') {
+    res.status(400).json({ error: 'Amount must be a number' });
+    return;
+  }
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+
+    // Update the money
+    const success = dbOperations.updateUserMoney(userId, amount);
+
+    if (success) {
+      res.json({ message: 'Money updated successfully', money: amount });
+    } else {
+      res.status(500).json({ error: 'Failed to update money' });
+    }
+  } catch (error) {
+    console.error('Error updating money:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
