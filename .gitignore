@@ -24,6 +24,7 @@ dist-ssr
 
 # Build outputs
 server/dist/
+dist-server/
 build/
 
 # Editor directories and files
