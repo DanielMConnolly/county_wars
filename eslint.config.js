@@ -61,12 +61,15 @@ export default [
     rules: {
       // TypeScript rules
       ...typescript.configs.recommended.rules,
-      "no-unused-vars": [
+      
+      // Disable base no-unused-vars rule in favor of TypeScript version
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          "varsIgnorePattern": "^_*",
-          "caughtErrorsIgnorePattern": "^_*",
-           "argsIgnorePattern": ".*"
+          "varsIgnorePattern": "^_",
+          "argsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
         }
       ],
 

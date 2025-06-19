@@ -15,7 +15,7 @@ export type GameTime = {
 
 export type GameState = {
     ownedCounties: Set<string>,
-    resources: number,
+    money: number, // Changed from resources to money (USD)
     selectedCounty: County | null,
     mapStyle: string
     highlightColor: string,
@@ -29,3 +29,13 @@ export type MapControls = {
     zoom: number,
     style: MapStyle
 }
+
+export interface User {
+    id: string;
+    username: string;
+    email: string;
+    created_at?: string;
+    last_active?: string;
+    highlight_color?: string;
+    game_time?: string;
+  }

@@ -12,7 +12,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
 
   const {gameState, resetGame} = useContext(GameStateContext);
   const { user } = useAuth();
-  
+
   const handleSettings = () => {
     setIsSettingsOpen(true);
   };
@@ -41,8 +41,8 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
         />
         <StatItem
           icon={<Coins className="w-5 h-5 text-yellow-400" />}
-          value={gameState.resources.toLocaleString()}
-          label="Resources"
+          value={`$${gameState.money.toLocaleString()}`}
+          label="Money"
           color="text-yellow-400"
         />
       </div>
@@ -67,7 +67,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           text="Settings"
           className="from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-600"
         />
-        
+
         {/* Authentication */}
         {user ? (
           <UserMenu />
@@ -79,7 +79,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
             className="from-green-600 to-green-500 hover:from-green-500 hover:to-green-600"
           />
         )}
-        
+
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           isOpen={isSettingsOpen}

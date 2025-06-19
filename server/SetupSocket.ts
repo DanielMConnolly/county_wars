@@ -5,6 +5,7 @@ import { dbOperations } from './database.js';
 declare module 'socket.io' {
   interface Socket {
     userId: string;
+    gameId: string;
   }
 }
 
@@ -15,19 +16,24 @@ export function setupSocket(io: Server) {
   // Authentication middleware for socket connections
   io.use((socket, next) => {
     const userId = socket.handshake.auth.userId;
+    const gameId = socket.handshake.auth.gameId || 'default-game';
     if (!userId) {
       return next(new Error('Authentication error'));
     }
     socket.userId = userId;
+    socket.gameId = gameId;
     next();
   });
 
   io.on('connection', (socket) => {
-    console.log(`User ${socket.userId} connected`);
+    console.log(`User ${socket.userId} connected to game ${socket.gameId}`);
 
     // Register user session and ensure user exists in database
-    userSessions.set(socket.id, socket.userId);
+    userSessions.set(socket.id, { userId: socket.userId, gameId: socket.gameId });
     dbOperations.createUser(socket.userId);
+
+    // Join the game-specific room
+    socket.join(`game-${socket.gameId}`);
 
     // Handle county ownership changes
     socket.on('claim-county', (data) => {
@@ -42,7 +48,7 @@ export function setupSocket(io: Server) {
         }
 
         // Attempt to claim the county using database
-        const success = dbOperations.claimCounty(userId, countyName);
+        const success = dbOperations.claimCounty(userId, socket.gameId, countyName);
 
         if (!success) {
           socket.emit('error', { message: 'County is already owned by another player' });
@@ -52,8 +58,8 @@ export function setupSocket(io: Server) {
         // Notify the user
         socket.emit('county-claimed', { countyName });
 
-        // Broadcast to all other users that this county is now taken
-        socket.broadcast.emit('county-taken', { countyName, userId });
+        // Broadcast to all other users in the same game that this county is now taken
+        socket.to(`game-${socket.gameId}`).emit('county-taken', { countyName, userId });
 
         console.log(`User ${userId} successfully claimed county: ${countyName}`);
       } catch (error) {
@@ -74,7 +80,7 @@ export function setupSocket(io: Server) {
         }
 
         // Attempt to release the county using database
-        const success = dbOperations.releaseCounty(userId, countyName);
+        const success = dbOperations.releaseCounty(userId, socket.gameId, countyName);
 
         if (!success) {
           socket.emit('error', { message: 'You do not own this county' });
@@ -84,8 +90,8 @@ export function setupSocket(io: Server) {
         // Notify the user
         socket.emit('county-released', { countyName });
 
-        // Broadcast to all other users that this county is now available
-        socket.broadcast.emit('county-available', { countyName });
+        // Broadcast to all other users in the same game that this county is now available
+        socket.to(`game-${socket.gameId}`).emit('county-available', { countyName });
 
         console.log(`User ${userId} released county: ${countyName}`);
       } catch (error) {
@@ -94,11 +100,12 @@ export function setupSocket(io: Server) {
       }
     });
 
-    // Get all owned counties for a user
+    // Get all owned counties for a user in this game
     socket.on('get-owned-counties', () => {
       try {
         const userId = socket.userId;
-        const ownedCounties = dbOperations.getUserCounties(userId);
+        const gameId = socket.gameId;
+        const ownedCounties = dbOperations.getUserCounties(userId, gameId);
         socket.emit('owned-counties', { ownedCounties });
       } catch (error) {
         console.error('Error getting owned counties:', error);
@@ -106,10 +113,11 @@ export function setupSocket(io: Server) {
       }
     });
 
-    // Get all taken counties (for display purposes)
+    // Get all taken counties in this game (for display purposes)
     socket.on('get-all-taken-counties', () => {
       try {
-        const allTakenCounties = dbOperations.getAllTakenCounties();
+        const gameId = socket.gameId;
+        const allTakenCounties = dbOperations.getAllTakenCounties(gameId);
         socket.emit('all-taken-counties', allTakenCounties);
       } catch (error) {
         console.error('Error getting all taken counties:', error);

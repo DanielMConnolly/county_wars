@@ -76,7 +76,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       user = dbOperations.getUserByEmail(username);
     }
 
-    if (!user) {
+    if (!user?.password_hash) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
@@ -121,9 +121,9 @@ router.get('/profile', authMiddleware, (req: AuthenticatedRequest, res: Response
 router.get('/verify', authMiddleware, (req: AuthenticatedRequest, res: Response): void => {
   try {
     const { password_hash, ...userInfo } = req.user!;
-    res.json({ 
-      valid: true, 
-      user: userInfo 
+    res.json({
+      valid: true,
+      user: userInfo
     });
   } catch (error) {
     console.error('Verify error:', error);
