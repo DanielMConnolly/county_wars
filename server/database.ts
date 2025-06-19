@@ -130,22 +130,26 @@ const initDatabase = () => {
   // Initialize prepared statements after tables are created
   statements = {
     insertUser: db.prepare('INSERT OR IGNORE INTO users (id, money) VALUES (?, 1000)'),
-    createUser: db.prepare('INSERT INTO users (id, username, email, password_hash, money) VALUES (?, ?, ?, ?, 1000)'),
+    createUser:
+     db.prepare('INSERT INTO users (id, username, email, password_hash, money) VALUES (?, ?, ?, ?, 1000)'),
     updateUserActivity: db.prepare('UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    
+
     // Game operations
     createGame: db.prepare('INSERT INTO games (id, name, created_by) VALUES (?, ?, ?)'),
     getGame: db.prepare('SELECT * FROM games WHERE id = ?'),
+    getAllGames: db.prepare('SELECT * FROM games ORDER BY created_at DESC'),
     getUserGames: db.prepare('SELECT * FROM games WHERE created_by = ? ORDER BY created_at DESC'),
-    
+
     // County operations (now game-specific)
     getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ? AND game_id = ?'),
-    claimCounty: db.prepare('INSERT OR IGNORE INTO user_counties (user_id, game_id, county_name) VALUES (?, ?, ?)'),
-    releaseCounty: db.prepare('DELETE FROM user_counties WHERE user_id = ? AND game_id = ? AND county_name = ?'),
+    claimCounty:
+     db.prepare('INSERT OR IGNORE INTO user_counties (user_id, game_id, county_name) VALUES (?, ?, ?)'),
+    releaseCounty:
+     db.prepare('DELETE FROM user_counties WHERE user_id = ? AND game_id = ? AND county_name = ?'),
     isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE game_id = ? AND county_name = ?'),
     getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties WHERE game_id = ?'),
     getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE game_id = ? AND county_name = ?'),
-    
+
     // User operations
     updateUserHighlightColor:
       db.prepare('UPDATE users SET highlight_color = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
@@ -158,7 +162,8 @@ const initDatabase = () => {
     getUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
     getUserMoney: db.prepare('SELECT money FROM users WHERE id = ?'),
     updateUserMoney: db.prepare('UPDATE users SET money = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    deductUserMoney: db.prepare('UPDATE users SET money = money - ?, last_active = CURRENT_TIMESTAMP WHERE id = ? AND money >= ?')
+    deductUserMoney: db.prepare(
+      'UPDATE users SET money = money - ?, last_active = CURRENT_TIMESTAMP WHERE id = ? AND money >= ?')
   };
 
   console.log('Database initialized successfully');
@@ -221,11 +226,13 @@ export const dbOperations = {
     const rows = statements.getUserCounties.all(userId, gameId) as { county_name: string }[];
     return rows.map(row => row.county_name);
   },
-  
+
+
   claimCounty: (userId: string, gameId: string, countyName: string): boolean => {
     try {
       // Check if county is already owned by someone else in this game
-      const existingOwner = statements.isCountyOwned.get(gameId, countyName) as { user_id: string } | undefined;
+      const existingOwner =
+       statements.isCountyOwned.get(gameId, countyName) as { user_id: string } | undefined;
       if (existingOwner && existingOwner.user_id !== userId) {
         return false; // County already owned by another user
       }
@@ -240,7 +247,7 @@ export const dbOperations = {
       return false;
     }
   },
-  
+
   releaseCounty: (userId: string, gameId: string, countyName: string): boolean => {
     try {
       const result = statements.releaseCounty.run(userId, gameId, countyName);
@@ -251,7 +258,7 @@ export const dbOperations = {
       return false;
     }
   },
-  
+
   isCountyOwned: (gameId: string, countyName: string): { owned: boolean, owner?: string } => {
     try {
       const owner = statements.getCountyOwner.get(gameId, countyName) as { user_id: string } | undefined;
@@ -261,7 +268,7 @@ export const dbOperations = {
       return { owned: false };
     }
   },
-  
+
   getAllTakenCounties: (gameId: string): Record<string, string> => {
     try {
       const rows = statements.getAllTakenCounties.all(gameId) as { county_name: string, user_id: string }[];
@@ -385,6 +392,8 @@ export const dbOperations = {
     }
   },
 
+
+
   updateUserMoney: (userId: string, amount: number): boolean => {
     try {
       const result = statements.updateUserMoney.run(amount, userId);
@@ -392,6 +401,17 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error updating user money:', error);
       return false;
+    }
+  },
+
+  getAllGames: (): any[] => {
+    try{
+      const result = statements.getAllGames.all();
+      return result;
+    }
+    catch (error) {
+      console.error('Error getting user money:', error);
+      return [];
     }
   },
 

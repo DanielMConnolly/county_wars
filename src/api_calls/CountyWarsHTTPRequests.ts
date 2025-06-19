@@ -259,7 +259,8 @@ export async function getUserProfile(
 }
 
 // Game management functions
-export async function createGame(name: string, createdBy: string): Promise<{ success: boolean; gameId?: string; error?: string }> {
+export async function createGame(name: string, createdBy: string):
+ Promise<{ success: boolean; gameId?: string; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`, {
       method: 'POST',
@@ -298,7 +299,8 @@ export async function fetchGame(gameId: string): Promise<{ success: boolean; gam
   }
 }
 
-export async function fetchUserGames(userId: string): Promise<{ success: boolean; games?: any[]; error?: string }> {
+export async function fetchUserGames(userId: string)
+: Promise<{ success: boolean; games?: any[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games`);
     const data = await response.json();
@@ -310,6 +312,22 @@ export async function fetchUserGames(userId: string): Promise<{ success: boolean
     }
   } catch (error) {
     console.error('Fetch user games request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, games: data.games };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch games' };
+    }
+  } catch (error) {
+    console.error('Fetch all games request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

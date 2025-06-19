@@ -278,7 +278,7 @@ app.put('/api/users/:userId/money', (req: Request, res: Response): void => {
 // Game management endpoints
 app.post('/api/games', (req: Request, res: Response): void => {
   const { name, createdBy } = req.body;
-  
+
   if (!name || !createdBy) {
     res.status(400).json({ error: 'Name and createdBy are required' });
     return;
@@ -287,7 +287,7 @@ app.post('/api/games', (req: Request, res: Response): void => {
   try {
     const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
     const success = dbOperations.createGame(gameId, name, createdBy);
-    
+
     if (success) {
       res.json({ gameId, name, createdBy, message: 'Game created successfully' });
     } else {
@@ -299,12 +299,29 @@ app.post('/api/games', (req: Request, res: Response): void => {
   }
 });
 
+app.get('/api/games', (req: Request, res: Response): void => {
+    try{
+        const games = dbOperations.getAllGames();
+        if(games){
+            res.json({ games });
+        }
+        else {
+          res.status(404).json({ error: 'Game not found' });
+        }
+    }
+    catch(error){
+        console.error('Error fetching games:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+
+});
+
 app.get('/api/games/:gameId', (req: Request, res: Response): void => {
   const { gameId } = req.params;
-  
+
   try {
     const game = dbOperations.getGame(gameId);
-    
+
     if (game) {
       res.json(game);
     } else {
@@ -318,7 +335,7 @@ app.get('/api/games/:gameId', (req: Request, res: Response): void => {
 
 app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
   const { userId } = req.params;
-  
+
   try {
     const games = dbOperations.getUserGames(userId);
     res.json({ games });
