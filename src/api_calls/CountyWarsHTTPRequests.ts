@@ -1,16 +1,6 @@
-import { GameTime } from '../types/GameTypes';
+import { GameTime, User } from '../types/GameTypes';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  created_at?: string;
-  last_active?: string;
-  highlight_color?: string;
-  game_time?: string;
-}
 
 interface AuthResponse {
   user: User;

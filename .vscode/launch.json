@@ -1,10 +1,42 @@
 {
-    "configurations": [
-        {
-            "type": "chrome",
-            "name": "https://localhost:3001",
-            "request": "launch",
-            "url": "https://localhost:3001"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/server/server.ts",
+      "runtimeArgs": [
+        "--loader",
+        "tsx/esm"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Attach to Server",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "type": "chrome",
+      "name": "Debug Frontend",
+      "request": "launch",
+      "url": "http://localhost:5173"
+    }
+  ]
 }

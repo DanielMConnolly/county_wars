@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { GameTime } from '../src/types/GameTypes';
+import { User } from './types/ServerTypes';
 
 // Initialize SQLite database
 const dbPath = path.join(process.cwd(), 'county-wars.db');
@@ -77,9 +78,10 @@ const initDatabase = () => {
 
   // Create unique indexes for authentication columns
   try {
-    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username) WHERE username IS NOT NULL`);
+    db.exec(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username) WHERE username IS NOT NULL`);
     db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL`);
-  } catch (error) {
+  } catch (_) {
     console.log('Note: Unique indexes for auth columns may already exist or have conflicts');
   }
 
@@ -231,7 +233,7 @@ export const dbOperations = {
   },
 
   // Game time operations
-  updateUserGameTime: (userId: string, gameTime: any): boolean => {
+  updateUserGameTime: (userId: string, gameTime: GameTime): boolean => {
     try {
       const gameTimeJson = JSON.stringify(gameTime);
       const result = statements.updateUserGameTime.run(gameTimeJson, userId);
@@ -256,7 +258,7 @@ export const dbOperations = {
   },
 
   // Authentication operations
-  getUserByUsername: (username: string): any => {
+  getUserByUsername: (username: string): User | null => {
     try {
       return statements.getUserByUsername.get(username);
     } catch (error) {
@@ -265,7 +267,7 @@ export const dbOperations = {
     }
   },
 
-  getUserByEmail: (email: string): any => {
+  getUserByEmail: (email: string): User | null => {
     try {
       return statements.getUserByEmail.get(email);
     } catch (error) {

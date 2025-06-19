@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "npx tsx server/server.ts",
+    "server:debug": "npx tsx --inspect server/server.ts",
     "jest-preview": "jest-preview",
     "test:frontend": "jest --config jest.frontend.config.js"
   },

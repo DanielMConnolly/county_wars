@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
@@ -17,6 +17,58 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// Response body parser middleware - converts JSON strings to JavaScript objects
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const originalJson = res.json;
+  
+  res.json = function(body: any) {
+    // Log the response for debugging
+    console.log(`📤 Response [${req.method} ${req.path}]:`, {
+      statusCode: res.statusCode,
+      body: typeof body === 'string' ? parseJsonSafely(body) : body
+    });
+    
+    // Parse JSON strings in response body recursively
+    const parsedBody = parseResponseBody(body);
+    
+    return originalJson.call(this, parsedBody);
+  };
+  
+  next();
+});
+
+// Helper function to safely parse JSON strings
+function parseJsonSafely(str: string): any {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return str; // Return original string if not valid JSON
+  }
+}
+
+// Recursively parse JSON strings in response body
+function parseResponseBody(obj: any): any {
+  if (typeof obj === 'string') {
+    // Try to parse as JSON
+    const parsed = parseJsonSafely(obj);
+    return parsed !== obj ? parseResponseBody(parsed) : obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => parseResponseBody(item));
+  }
+  
+  if (obj !== null && typeof obj === 'object') {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = parseResponseBody(value);
+    }
+    return result;
+  }
+  
+  return obj;
+}
 
 // Database is initialized automatically when imported
 console.log('Using SQLite database for data persistence');

@@ -29,3 +29,13 @@ export type MapControls = {
     zoom: number,
     style: MapStyle
 }
+
+export interface User {
+    id: string;
+    username: string;
+    email: string;
+    created_at?: string;
+    last_active?: string;
+    highlight_color?: string;
+    game_time?: string;
+  }
