@@ -1,50 +1,60 @@
-import { spawn } from 'child_process';
-import { promises as fs } from 'fs';
-import path from 'path';
+const { spawn } = require("child_process");
 
-let viteProcess;
 const PORT = 5173;
-const BASE_URL = `http://localhost:${PORT}`;
-
-// Write the URL to a file that tests can read
-const writeTestConfig = async () => {
-  const config = { baseUrl: BASE_URL };
-  await fs.writeFile(
-    path.join(process.cwd(), 'test-config.json'),
-    JSON.stringify(config, null, 2)
-  );
-};
+const SERVER_PORT = 3001;
 
 const waitForServer = async (url, timeout = 30000) => {
   const start = Date.now();
   while (Date.now() - start < timeout) {
+    console.log('Checking if server is ready');
     try {
       const response = await fetch(url);
-      if (response.ok) return true;
-    } catch (e) {
-      // Server not ready yet
+      console.log('Server ready: ', response);
+      return true;
+    } catch (_e) {
+      console.log('Server not ready yet');
     }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
   throw new Error(`Server not ready after ${timeout}ms`);
 };
 
-export default async function setup() {
-  console.log('Starting Vite dev server...');
-  
-  viteProcess = spawn('npm', ['run', 'dev'], {
+module.exports = async function setup() {
+  console.log('Starting test servers...');
+
+  // Start server with test database
+  const serverProcess = spawn('npm', ['run', 'server'], {
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, PORT: PORT.toString() }
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      TEST_DATABASE_PATH: './test_database.db'
+    }
   });
 
-  // Wait for server to be ready
-  await waitForServer(BASE_URL);
-  
-  // Write config for tests
-  await writeTestConfig();
-  
-  console.log(`Vite server ready at ${BASE_URL}`);
-  
-  // Store process globally for teardown
-  global.__VITE_PROCESS__ = viteProcess;
-}
+  // Store server process globally for teardown
+  global.__SERVER_PROCESS__ = serverProcess;
+
+  // Wait for server to be ready (check server port)
+  await waitForServer(`http://localhost:${SERVER_PORT}`);
+  console.log(`Server ready at http://localhost:${SERVER_PORT}`);
+
+  console.log('Starting Vite dev server...');
+
+  // Start client
+  const clientProcess = spawn('npm', ['run', 'dev'], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      PORT: PORT.toString(),
+      NODE_ENV: 'test'
+    }
+  });
+
+  // Store client process globally for teardown
+  global.__CLIENT_PROCESS__ = clientProcess;
+
+  // Wait for client to be ready
+  await waitForServer(`http://localhost:${PORT}`);
+  console.log(`Vite server ready at http://localhost:${PORT}`);
+};

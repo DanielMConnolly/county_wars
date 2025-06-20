@@ -8,9 +8,10 @@ import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import { useLocation, createBrowserRouter, RouterProvider } from "react-router-dom";
-import AuthModal from './auth/AuthModal';
-import WelcomeScreen from './components/WelcomeScreen';
+import { useLocation, createBrowserRouter, RouterProvider, useNavigate } from "react-router-dom";
+import LoginPage from './auth/LoginPage';
+import SignupPage from './auth/SignupPage';
+import WelcomeScreen from './WelcomeScreen';
 
 
 const App = () => {
@@ -18,6 +19,14 @@ const App = () => {
     {
       path: "/",
       element: <WelcomeScreen />,
+    },
+    {
+      path: "/login",
+      element: <LoginPage />,
+    },
+    {
+      path: "/signup",
+      element: <SignupPage />,
     },
     {
       path: '/game/:gameId', // Parameterized path for gameId
@@ -99,5 +108,6 @@ const AppContent = () => {
     </>
   );
 };
+
 
 export default App;
