@@ -64,7 +64,9 @@ const SignupPage: React.FC = () => {
               value={formData.username}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white
+               placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500
+                focus:border-transparent"
               placeholder="Enter your username"
             />
           </div>
@@ -102,7 +104,9 @@ const SignupPage: React.FC = () => {
                 onChange={handleInputChange}
                 required
                 minLength={6}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white
+                placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500
+                 focus:border-transparent pr-10"
                 placeholder="Enter your password"
               />
               <button
@@ -141,7 +145,7 @@ const SignupPage: React.FC = () => {
               placeholder="Confirm your password"
             />
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-              <p className="text-xs text-red-400 mt-1">
+              <p data-testid='passwords-do-not-match-text' className="text-xs text-red-400 mt-1">
                 Passwords do not match
               </p>
             )}
