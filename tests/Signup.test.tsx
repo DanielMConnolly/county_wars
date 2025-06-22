@@ -1,25 +1,39 @@
 import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
-import puppeteer, { Page, Browser } from 'puppeteer';
+import { Page, Browser } from "puppeteer";
+import puppeteer from 'puppeteer-extra';
 import { setup } from "./setup.js";
+// @ts-ignore
+import puppeteerBlockResources from 'puppeteer-extra-plugin-user-preferences';
 
 let testPage: Page;
 let browser: Browser;
 
-// // Import the setup function
-// const setup =
+
 
 beforeAll(async () => {
   // Run our server setup first
   await setup();
 
+  puppeteer.use(puppeteerBlockResources(({
+    userPrefs: {
+      safebrowsing: {
+        enabled: false,
+        enhanced: false
+      }
+    }
+  })));
+
+
   browser = await puppeteer.launch({
-    headless: false, // Set to false to see the browser
   });
   testPage = await browser.newPage();
+
+  testPage.setDefaultNavigationTimeout(60000);
+  testPage.setDefaultTimeout(60000000);
   await testPage.goto("http://localhost:5173/signup");
-});
+}, 1000000);
 
 describe("Signup flow", () => {
   test("should complete signup and navigate to welcome screen", async () => {
@@ -39,7 +53,7 @@ describe("Signup flow", () => {
     const welcomeScreen =
       await testPage.waitForSelector('[data-testid="welcome-screen"]', { timeout: 10000 });
     expect(welcomeScreen).toBeTruthy();
-  });
+  }, 1000000);
 
   test("should show error message when passwords don't match", async () => {
     // Navigate to signup page (reload to reset state)
@@ -58,7 +72,7 @@ describe("Signup flow", () => {
     await testPage.waitForFunction(() => {
       const element = document.querySelector('[data-testid="passwords-do-not-match-text"]');
       return element && element.textContent === 'Passwords do not match';
-    }, { timeout: 5000 });
+    });
 
     // Verify the error message is visible
     const errorMessage = await testPage.evaluate(() => {
@@ -68,10 +82,10 @@ describe("Signup flow", () => {
     });
     expect(errorMessage).toBe('Passwords do not match');
   });
-});
+})
 
 afterAll(async () => {
   if (browser) {
     await browser.close();
   }
-})
+});

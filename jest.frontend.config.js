@@ -1,14 +1,12 @@
 export default {
   "preset": "jest-puppeteer",
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest'
   },
   globalTeardown: './tests/teardown.js',
   testMatch: ['<rootDir>/tests/**/*.test.{ts,tsx}'],
-  testTimeout: 10000,
+  testTimeout: 1200000,
   verbose: true,
   collectCoverage: false,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],

@@ -13,13 +13,13 @@ const waitForServer = async (url: string, timeout = 50000) => {
   while (Date.now() - start < timeout) {
     console.log('Checking if server is ready');
     try {
-      await fetch(url);
-      console.log('Server ready');
+      // eslint-disable-next-line no-undef
+      await fetch(url, { signal: AbortSignal.timeout(5000) });
       return true;
     } catch (_e) {
       console.log('Server not ready yet');
     }
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
   throw new Error(`Server not ready after ${timeout}ms`);
 };
