@@ -34,7 +34,7 @@ describe("Signup flow", () => {
     const welcomeScreen =
       await testPage.waitForSelector(`[data-testid="${DataTestIDs.WELCOME_SCREEN}"]`);
     expect(welcomeScreen).toBeTruthy();
-  }, 1000000);
+  });
 
   test("should show error message when passwords don't match", async () => {
     // Navigate to signup page (reload to reset state)

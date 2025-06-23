@@ -56,5 +56,4 @@ const placeFranchise = async (testPage: Page, svgElements: Array<ElementHandle<a
 
     await testPage.waitForSelector(`[data-testid="${DataTestIDs.INFO_CARD}"]`);
     await testPage.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
-
 }

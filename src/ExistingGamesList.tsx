@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users } from 'lucide-react';
+import { DataTestIDs } from './DataTestIDs';
 
 interface Game {
   id: string;
@@ -32,7 +33,7 @@ export default function ExistingGamesList({
 
   if (games.length > 0) {
     return (
-      <div className="grid gap-4 max-h-96 overflow-y-auto">
+      <div className="grid gap-4 max-h-96 overflow-y-auto" data-testid={DataTestIDs.EXISTING_GAMES_LIST}>
         {games.map((game) => (
           <div
             key={game.id}

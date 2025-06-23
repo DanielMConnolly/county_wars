@@ -15,6 +15,8 @@ export default async function setupNewUser(testPage: Page){
 
     await testPage.click(`[data-testid="${DataTestIDs.SIGNUP_SUBMIT_BUTTON}"]`);
 
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.LOGGED_IN_USER_MENU}"]`);
+
 }
 
 function generateRandomString(length: number): string {
