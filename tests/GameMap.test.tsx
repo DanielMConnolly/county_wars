@@ -28,7 +28,7 @@ describe("County Wars GameMap", () => {
         expect(mapContainer).toBeTruthy();
     });
 
-    test("should load counties on the map", async () => {
+    test("Click on place franchise", async () => {
         await testPage.waitForSelector('.leaflet-container');
         await testPage.waitForSelector('.leaflet-overlay-pane svg');
         await testPage.waitForSelector('.leaflet-overlay-pane svg path');
@@ -38,8 +38,7 @@ describe("County Wars GameMap", () => {
         await testPage.waitForSelector('[data-testid="info-card"]');
         const infoCardElement = await testPage.$$('[data-testid="info-card"]');
         expect(infoCardElement.length).toBeGreaterThan(0);
-        await testPage.click('[data-testid="conquer-county-button"]');
-
+        await testPage.click('[data-testid="place-franchise-button"]');
     });
 });
 

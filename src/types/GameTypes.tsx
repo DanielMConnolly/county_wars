@@ -13,15 +13,24 @@ export type GameTime = {
     elapsedTime?: number; // How much time has elapsed (for save/restore)
 }
 
+export type Franchise = {
+    id: string;
+    lat: number;
+    lng: number;
+    name: string;
+    placedAt: number; // timestamp
+}
+
 export type GameState = {
     ownedCounties: Set<string>,
     money: number, // Changed from resources to money (USD)
     selectedCounty: County | null,
     mapStyle: string
     highlightColor: string,
-    restaurants: number,
     gameTime: GameTime,
     currentGameId: string | null,
+    clickedLocation: { lat: number, lng: number } | null,
+    franchises: Franchise[],
 }
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';

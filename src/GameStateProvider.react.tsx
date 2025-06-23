@@ -1,6 +1,6 @@
 import React, { useState, ReactNode, useEffect } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
-import { County, GameState } from "./types/GameTypes";
+import { County, GameState, Franchise } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
 import { connectToSocket } from "./services/connectToSocket";
 import {
@@ -200,6 +200,35 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
   };
 
+  const setClickedLocation = (location: { lat: number, lng: number } | null) => {
+    setGameState((prevState) => ({
+      ...prevState,
+      clickedLocation: location,
+    }));
+  };
+
+  const placeFranchise = (name: string) => {
+    if (!gameState.clickedLocation) {
+      console.error('No clicked location available for franchise placement');
+      return;
+    }
+
+    const newFranchise: Franchise = {
+      id: `franchise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      lat: gameState.clickedLocation.lat,
+      lng: gameState.clickedLocation.lng,
+      name: name,
+      placedAt: Date.now(),
+    };
+
+    setGameState((prevState) => ({
+      ...prevState,
+      franchises: [...prevState.franchises, newFranchise],
+    }));
+
+    console.log('Franchise placed:', newFranchise);
+  };
+
   // Listen for URL changes
   useEffect(() => {
     const handleGameNavigate = (event: any) => {
@@ -332,6 +361,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     resumeTime,
     setGameDuration,
     setCurrentGame,
+    setClickedLocation,
+    placeFranchise,
   };
 
   return (

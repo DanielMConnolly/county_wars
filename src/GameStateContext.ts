@@ -1,6 +1,6 @@
 
 import { createContext, useContext } from 'react';
-import { County, GameState } from './types/GameTypes';
+import { County, GameState, Franchise } from './types/GameTypes';
 import React from 'react';
 
 // Define the context type
@@ -21,6 +21,10 @@ export interface GameStateContextType {
   setGameDuration: (_hours: number) => void;
   // Game management functions
   setCurrentGame: (_gameId: string | null) => void;
+  // Location tracking
+  setClickedLocation: (_location: { lat: number, lng: number } | null) => void;
+  // Franchise management
+  placeFranchise: (_name: string) => void;
 }
 
 // Create the context

@@ -4,6 +4,8 @@ import {
   map,
   Polyline,
   Layer,
+  marker,
+  divIcon,
 } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
@@ -30,7 +32,7 @@ const highlightStyle = {
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-  const { gameState, selectCounty } = useContext(GameStateContext);
+  const { gameState, selectCounty, setClickedLocation } = useContext(GameStateContext);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<leaflet.Map>(null);
@@ -47,6 +49,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   // Store the county layer reference
   const countyLayerRef = useRef<leaflet.GeoJSON | null>(null);
   const gameStateRef = useRef(gameState);
+  const franchiseMarkersRef = useRef<leaflet.Marker[]>([]);
 
   // Initialize map (only once)
   useEffect(() => {
@@ -56,6 +59,12 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     if (mapRef.current != null) {
       mapInstance.current = map(mapRef.current).setView([39.8283, -98.5795], 4);
+      
+      // Add click handler for the map itself (not just counties)
+      mapInstance.current.on('click', (e) => {
+        console.log('🗺️ Map clicked at:', e.latlng);
+        setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+      });
     }
 
     const loadCounties = async () => {
@@ -175,6 +184,62 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     console.log(`Styled ${styledCount} owned counties`);
   }, [gameState.highlightColor, gameState.ownedCounties, isCountyLayerLoaded]);
+
+  // Update franchise markers when franchises change
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    // Clear existing franchise markers
+    franchiseMarkersRef.current.forEach(marker => {
+      if (mapInstance.current) {
+        mapInstance.current.removeLayer(marker);
+      }
+    });
+    franchiseMarkersRef.current = [];
+
+    // Add new franchise markers
+    gameState.franchises.forEach(franchise => {
+      const franchiseIcon = divIcon({
+        className: 'franchise-marker',
+        html: `<div style="
+          background: #3b82f6;
+          border: 2px solid white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        ">
+          <div style="
+            background: white;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+          "></div>
+        </div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+
+      const franchiseMarker = marker([franchise.lat, franchise.lng], {
+        icon: franchiseIcon
+      }).bindPopup(`
+        <div style="font-size: 14px;">
+          <strong>${franchise.name}</strong><br>
+          <small>Placed: ${new Date(franchise.placedAt).toLocaleString()}</small>
+        </div>
+      `);
+
+      if (mapInstance.current) {
+        franchiseMarker.addTo(mapInstance.current);
+        franchiseMarkersRef.current.push(franchiseMarker);
+      }
+    });
+
+    console.log(`Updated ${gameState.franchises.length} franchise markers`);
+  }, [gameState.franchises]);
 
   // Update map style
   useEffect(() => {

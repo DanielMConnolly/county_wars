@@ -42,7 +42,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
         />
         <StatItem
           icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}
-          value={gameState.restaurants.toLocaleString()}
+          value={gameState.franchises.length.toLocaleString()}
           label="Restaurants"
           color="text-orange-400"
         />
