@@ -4,6 +4,7 @@ import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Browser, ElementHandle, Page, } from 'puppeteer';
 import setupNewUser from "./setupNewUser";
+import { DataTestIDs } from '../src/DataTestIDs';
 
 let testPage: Page;
 let browser: Browser | undefined;
@@ -14,10 +15,10 @@ beforeAll(async () => {
     testPage.setDefaultNavigationTimeout(12000);
     testPage.setDefaultTimeout(12000)
     await setupNewUser(testPage);
-    await testPage.waitForSelector('[data-testid="create-game-button"]');
-    await testPage.click('[data-testid="create-game-button"]');
-    await testPage.type('[data-testid="game-name-input"]', "County Conquest");
-    await testPage.click('[data-testid="create-game-submit-button"]');
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
+    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
+    await testPage.type(`[data-testid="${DataTestIDs.GAME_NAME_INPUT}"]`, "County Conquest");
+    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_SUBMIT_BUTTON}"]`);
 });
 
 describe("County Wars GameMap", () => {
@@ -38,7 +39,7 @@ describe("County Wars GameMap", () => {
         await placeFranchise(testPage, svgElements);
         await placeFranchise(testPage, svgElements);
         const restaurantCountStatItem2 =
-            await testPage.$eval('[data-testid="franchise-count"]', el => el.textContent);
+            await testPage.$eval(`[data-testid="${DataTestIDs.FRANCHISE_COUNT}"]`, el => el.textContent);
         expect(restaurantCountStatItem2).toContain("2");
 
     });
@@ -53,7 +54,7 @@ const placeFranchise = async (testPage: Page, svgElements: Array<ElementHandle<a
     console.log("countyNumber: " + countyNumber);
     await svgElements[countyNumber].click();
 
-    await testPage.waitForSelector('[data-testid="info-card"]');
-    await testPage.click('[data-testid="place-franchise-button"]');
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.INFO_CARD}"]`);
+    await testPage.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
 
 }

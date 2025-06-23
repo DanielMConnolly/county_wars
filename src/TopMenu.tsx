@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
+import { DataTestIDs } from "./DataTestIDs";
 
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -40,7 +41,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           label="Counties"
           color="text-green-400"
         />
-        <div          data-testid="franchise-count">
+        <div          data-testid={DataTestIDs.FRANCHISE_COUNT}>
         <StatItem
           icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}
           value={gameState.franchises.length.toLocaleString()}

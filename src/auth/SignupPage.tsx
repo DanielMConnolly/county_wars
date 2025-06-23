@@ -3,6 +3,7 @@ import { X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api_calls/CountyWarsHTTPRequests';
+import { DataTestIDs } from '../DataTestIDs';
 
 const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -63,7 +64,7 @@ const SignupPage: React.FC = () => {
               type="text"
               id="username"
               name="username"
-              data-testid="signup-username-input"
+              data-testid={DataTestIDs.SIGNUP_USERNAME_INPUT}
               value={formData.username}
               onChange={handleInputChange}
               required
@@ -82,7 +83,7 @@ const SignupPage: React.FC = () => {
               type="email"
               id="email"
               name="email"
-              data-testid="signup-email-input"
+              data-testid={DataTestIDs.SIGNUP_EMAIL_INPUT}
               value={formData.email}
               onChange={handleInputChange}
               required
@@ -102,7 +103,7 @@ const SignupPage: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
-                data-testid="signup-password-input"
+                data-testid={DataTestIDs.SIGNUP_PASSWORD_INPUT}
                 value={formData.password}
                 onChange={handleInputChange}
                 required
@@ -137,7 +138,7 @@ const SignupPage: React.FC = () => {
               type="password"
               id="confirmPassword"
               name="confirmPassword"
-              data-testid="signup-confirm-password-input"
+              data-testid={DataTestIDs.SIGNUP_CONFIRM_PASSWORD_INPUT}
               value={formData.confirmPassword}
               onChange={handleInputChange}
               required
@@ -148,7 +149,7 @@ const SignupPage: React.FC = () => {
               placeholder="Confirm your password"
             />
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-              <p data-testid='passwords-do-not-match-text' className="text-xs text-red-400 mt-1">
+              <p data-testid={DataTestIDs.PASSWORDS_DO_NOT_MATCH_TEXT} className="text-xs text-red-400 mt-1">
                 Passwords do not match
               </p>
             )}
@@ -162,7 +163,7 @@ const SignupPage: React.FC = () => {
 
           <button
             type="submit"
-            data-testid="signup-submit-button"
+            data-testid={DataTestIDs.SIGNUP_SUBMIT_BUTTON}
             disabled=
             {loading || (formData.confirmPassword !=null && formData.password !== formData.confirmPassword)}
             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600

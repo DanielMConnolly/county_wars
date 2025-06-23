@@ -11,6 +11,7 @@ import {
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
+import { DataTestIDs } from './DataTestIDs';
 
 const InfoCard = () => {
   const { gameState, placeFranchise } = useContext(GameStateContext);
@@ -44,7 +45,7 @@ const InfoCard = () => {
 
   return (
     <div
-      data-testid="info-card"
+      data-testid={DataTestIDs.INFO_CARD}
       className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
@@ -86,7 +87,7 @@ const InfoCard = () => {
         )}
       </div>
       <button
-        data-testid="place-franchise-button"
+        data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={() => {
           if (selectedCounty != null) {
             placeFranchise(`${selectedCounty.name} Franchise`);

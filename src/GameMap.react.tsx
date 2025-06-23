@@ -12,6 +12,7 @@ import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
 import { MapControls } from "./types/GameTypes";
 import React from 'react';
+import { DataTestIDs } from "./DataTestIDs";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -269,7 +270,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       ref={mapRef}
       className="fixed top-16 left-0 right-0 bottom-0 z-[1]"
       style={{ height: "calc(100vh - 64px)" }}
-      data-testid="game-map"
+      data-testid={DataTestIDs.GAME_MAP}
     > </div>
   );
 };
