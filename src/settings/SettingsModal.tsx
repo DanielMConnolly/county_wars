@@ -18,7 +18,6 @@ export default function SettingsModal({
   const { setHighlightColor, gameState, setGameDuration } = useContext(GameStateContext);
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ModalView>('main');
-  const [selectedColor, setSelectedColor] = React.useState(gameState.highlightColor);
   const [selectedDuration, setSelectedDuration] = React.useState(gameState.gameTime.gameDurationHours);
   const [isCreatingGame, setIsCreatingGame] = useState(false);
   const [gameName, setGameName] = useState('');
@@ -135,13 +134,11 @@ export default function SettingsModal({
 
           {currentView === 'gameSettings' && (
             <GameSettingsPanel
-              selectedColor={selectedColor}
-              setSelectedColor={setSelectedColor}
+
               selectedDuration={selectedDuration}
               setSelectedDuration={setSelectedDuration}
               onBack={() => setCurrentView('main')}
               onSave={() => {
-                setHighlightColor(selectedColor);
                 if (selectedDuration !== gameState.gameTime.gameDurationHours) {
                   setGameDuration(selectedDuration);
                 }

@@ -25,7 +25,7 @@ export function GameSettingsPanel({
     label: color.name,
   }));
 
-  const {gameState} = useContext(GameStateContext);
+  const { gameState, setHighlightColor } = useContext(GameStateContext);
 
   const [selectedColor, setSelectedColor] = useState<string>(gameState.highlightColor);
 
@@ -80,7 +80,11 @@ export function GameSettingsPanel({
           Back
         </button>
         <button
-          onClick={onSave}
+          onClick={
+            () => {
+              onSave();
+              setHighlightColor(selectedColor);
+            }}
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg
            hover:bg-blue-700 transition-colors font-medium"
         >
