@@ -1,44 +1,23 @@
 import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
-import { Page, Browser } from "puppeteer";
-import puppeteer from 'puppeteer-extra';
-import { setup } from "./setup.js";
-// @ts-ignore
-import puppeteerBlockResources from 'puppeteer-extra-plugin-user-preferences';
+import { Page} from "puppeteer";
+import { setupTestPage , teardownBrowser} from "./setup.js";
+
 
 let testPage: Page;
-let browser: Browser;
-
 
 
 beforeAll(async () => {
-  // Run our server setup first
-  await setup();
+  testPage = await setupTestPage();
 
-  puppeteer.use(puppeteerBlockResources(({
-    userPrefs: {
-      safebrowsing: {
-        enabled: false,
-        enhanced: false
-      }
-    }
-  })));
-
-
-  browser = await puppeteer.launch({
-  });
-  testPage = await browser.newPage();
-
-  testPage.setDefaultNavigationTimeout(60000);
-  testPage.setDefaultTimeout(60000000);
   await testPage.goto("http://localhost:5173/signup");
-}, 1000000);
+});
 
 describe("Signup flow", () => {
   test("should complete signup and navigate to welcome screen", async () => {
     // Wait for signup form to load
-    await testPage.waitForSelector('[data-testid="signup-username-input"]', { timeout: 10000 });
+    await testPage.waitForSelector('[data-testid="signup-username-input"]');
 
     // Fill out the signup form
     await testPage.type('[data-testid="signup-username-input"]', 'testuser123');
@@ -51,7 +30,7 @@ describe("Signup flow", () => {
 
     // Wait for navigation to welcome screen and verify we're there
     const welcomeScreen =
-      await testPage.waitForSelector('[data-testid="welcome-screen"]', { timeout: 10000 });
+      await testPage.waitForSelector('[data-testid="welcome-screen"]');
     expect(welcomeScreen).toBeTruthy();
   }, 1000000);
 
@@ -60,7 +39,7 @@ describe("Signup flow", () => {
     await testPage.goto("http://localhost:5173/signup");
 
     // Wait for signup form to load
-    await testPage.waitForSelector('[data-testid="signup-username-input"]', { timeout: 10000 });
+    await testPage.waitForSelector('[data-testid="signup-username-input"]');
 
     // Fill out the form with mismatched passwords
     await testPage.type('[data-testid="signup-username-input"]', 'testuser456');
@@ -84,8 +63,7 @@ describe("Signup flow", () => {
   });
 })
 
+
 afterAll(async () => {
-  if (browser) {
-    await browser.close();
-  }
+  await teardownBrowser();
 });

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Plus, Crown } from 'lucide-react';
 import { useAuth } from './auth/AuthContext';
-import { fetchAllGames, createGame } from './api_calls/CountyWarsHTTPRequests';
+import { fetchAllGames } from './api_calls/CountyWarsHTTPRequests';
 import { GameStateContext } from './GameStateContext';
 import { useNavigate } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
+import CreateGameModal from './CreateGameModal';
 
 interface Game {
   id: string;
@@ -19,8 +20,7 @@ export default function WelcomeScreen() {
   const { user } = useAuth();
   const [games, setGames] = useState<Game[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
-  const [newGameName, setNewGameName] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const { setCurrentGame } = useContext(GameStateContext);
@@ -48,25 +48,9 @@ export default function WelcomeScreen() {
   };
 
 
-  const handleCreateGame = async () => {
-    if (!newGameName.trim() || !user) return;
-
-    setIsCreatingGame(true);
-    try {
-      const result = await createGame(newGameName.trim(), user.id);
-      if (result.success && result.gameId) {
-        setCurrentGame(result.gameId);
-        navigate(`/game/${result.gameId}`);
-      } else {
-        alert(result.error || 'Failed to create game');
-      }
-    } catch (error) {
-      console.error('Error creating game:', error);
-      alert('Failed to create game. Please try again.');
-    } finally {
-      setIsCreatingGame(false);
-      setNewGameName('');
-    }
+  const handleGameCreated = (gameId: string) => {
+    setCurrentGame(gameId);
+    navigate(`/game/${gameId}`);
   };
 
   const handleJoinGame = (gameId: string) => {
@@ -118,7 +102,7 @@ export default function WelcomeScreen() {
                 <h3 className="text-2xl font-bold text-white">Available Games</h3>
                 <button
                   data-testid="create-game-button"
-                  onClick={handleCreateGame}
+                  onClick={() => setIsModalOpen(true)}
                   className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700
                  hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg
                   transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
@@ -132,12 +116,18 @@ export default function WelcomeScreen() {
                 games={games}
                 isLoadingGames={isLoadingGames}
                 onJoinGame={handleJoinGame}
-                onCreateGame={handleCreateGame}
+                onCreateGame={() => setIsModalOpen(true)}
               />
             </div>
           </div>
         </div>
       </div>
+
+      <CreateGameModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onGameCreated={handleGameCreated}
+      />
     </div>
   );
 }

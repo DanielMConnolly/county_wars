@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../api_calls/CountyWarsHTTPRequests';
 
 const SignupPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +26,9 @@ const SignupPage: React.FC = () => {
 
     const success = await signup(formData.username, formData.email, formData.password);
 
+
     if (success) {
+      const success = await login(formData.username, formData.password);
       navigate('/');
       setFormData({ username: '', email: '', password: '', confirmPassword: '' });
     }

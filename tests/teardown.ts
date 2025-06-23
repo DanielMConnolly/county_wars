@@ -1,8 +1,8 @@
-const { promises: fs } = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import { promises as fs } from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
-const killProcessOnPort = async (port) => {
+const killProcessOnPort = async (port: number) => {
   try {
     // Find process using the port
     const result = execSync(`lsof -ti:${port}`, { encoding: 'utf8' }).trim();
@@ -23,27 +23,14 @@ const killProcessOnPort = async (port) => {
   }
 };
 
-module.exports = async function teardown() {
+export default async function teardown() {
+  await globalThis.__BROWSER_GLOBAL__?.close();
   console.log('Stopping test servers...');
-  
-  // Kill server process
-  const serverProcess = global.__SERVER_PROCESS__;
-  if (serverProcess) {
-    serverProcess.kill();
-    console.log('Server process killed');
-  }
-  
-  // Kill client process
-  const clientProcess = global.__CLIENT_PROCESS__;
-  if (clientProcess) {
-    clientProcess.kill();
-    console.log('Client process killed');
-  }
-  
+
   // Kill any remaining processes on the test ports
   await killProcessOnPort(3001);
   await killProcessOnPort(5173);
-  
+
   // Clean up test database
   try {
     await fs.unlink(path.join(process.cwd(), 'test_database.db'));
@@ -51,13 +38,13 @@ module.exports = async function teardown() {
   } catch (e) {
     // File might not exist, ignore
   }
-  
+
   // Clean up test config file
   try {
     await fs.unlink(path.join(process.cwd(), 'test-config.json'));
   } catch (e) {
     // File might not exist, ignore
   }
-  
+
   console.log('Test cleanup completed');
-};
+}
