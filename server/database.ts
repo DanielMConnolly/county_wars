@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { GameTime } from '../src/types/GameTypes';
+import { Franchise, GameTime } from '../src/types/GameTypes';
 import { User } from './types/ServerTypes';
 
 // Initialize SQLite database
@@ -33,6 +33,7 @@ const initDatabase = () => {
       created_by TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       is_active BOOLEAN DEFAULT 1,
+      elapsed_time INTEGER DEFAULT 0,
       FOREIGN KEY (created_by) REFERENCES users (id)
     )
   `);
@@ -48,6 +49,21 @@ const initDatabase = () => {
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (game_id) REFERENCES games (id),
       UNIQUE(user_id, game_id, county_name)
+    )
+  `);
+
+  // Create placed_franchises table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS placed_franchises (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      game_id TEXT NOT NULL,
+      lat REAL NOT NULL,
+      long REAL NOT NULL,
+      name TEXT NOT NULL,
+      time_placed DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (game_id) REFERENCES games (id)
     )
   `);
 
@@ -105,6 +121,15 @@ const initDatabase = () => {
     console.log('Game_id column added successfully');
   }
 
+  // Migration: Add elapsed_time column to games if it doesn't exist
+  try {
+    db.prepare('SELECT elapsed_time FROM games LIMIT 1').get();
+  } catch (_) {
+    console.log('Adding elapsed_time column to games table...');
+    db.exec(`ALTER TABLE games ADD COLUMN elapsed_time INTEGER DEFAULT 0`);
+    console.log('elapsed_time column added successfully');
+  }
+
   // Create indexes for better performance (after migrations)
   try {
     db.exec(`
@@ -112,6 +137,8 @@ const initDatabase = () => {
       CREATE INDEX IF NOT EXISTS idx_user_counties_game_id ON user_counties(game_id);
       CREATE INDEX IF NOT EXISTS idx_user_counties_county_name ON user_counties(county_name);
       CREATE INDEX IF NOT EXISTS idx_games_created_by ON games(created_by);
+      CREATE INDEX IF NOT EXISTS idx_placed_franchises_user_id ON placed_franchises(user_id);
+      CREATE INDEX IF NOT EXISTS idx_placed_franchises_game_id ON placed_franchises(game_id);
     `);
     console.log('Database indexes created successfully');
   } catch (error) {
@@ -139,6 +166,15 @@ const initDatabase = () => {
     getGame: db.prepare('SELECT * FROM games WHERE id = ?'),
     getAllGames: db.prepare('SELECT * FROM games ORDER BY created_at DESC'),
     getUserGames: db.prepare('SELECT * FROM games WHERE created_by = ? ORDER BY created_at DESC'),
+    updateGameElapsedTime: db.prepare('UPDATE games SET elapsed_time = ? WHERE id = ?'),
+    getGameElapsedTime: db.prepare('SELECT elapsed_time FROM games WHERE id = ?'),
+    deleteGame: db.prepare('DELETE FROM games WHERE id = ?'),
+
+    // Franchise operations
+    placeFranchise: db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
+    getUserFranchises: db.prepare('SELECT * FROM placed_franchises WHERE user_id = ? AND game_id = ?'),
+    getGameFranchises: db.prepare('SELECT * FROM placed_franchises WHERE game_id = ?'),
+    removeFranchise: db.prepare('DELETE FROM placed_franchises WHERE id = ? AND user_id = ?'),
 
     // County operations (now game-specific)
     getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ? AND game_id = ?'),
@@ -156,7 +192,6 @@ const initDatabase = () => {
     getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?'),
     updateUserGameTime:
       db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?'),
     getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
     getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
     getUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
@@ -328,19 +363,7 @@ export const dbOperations = {
     }
   },
 
-  // Game time operations
-  updateUserGameTime: (userId: string, gameTime: GameTime): boolean => {
-    try {
-      const gameTimeJson = JSON.stringify(gameTime);
-      const result = statements.updateUserGameTime.run(gameTimeJson, userId);
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error updating user game time:', error);
-      return false;
-    }
-  },
-
-  getUserGameTime: (userId: string): GameTime | null => {
+  getGameTime: (userId: string): GameTime | null => {
     try {
       const result = statements.getUserGameTime.get(userId) as { game_time: string } | undefined;
       if (result?.game_time) {
@@ -422,6 +445,84 @@ export const dbOperations = {
       return result.changes > 0;
     } catch (error) {
       console.error('Error deducting user money:', error);
+      return false;
+    }
+  },
+
+  // Game elapsed time operations
+  updateGameElapsedTime: (gameId: string, elapsedTime: number): boolean => {
+    try {
+      const result = statements.updateGameElapsedTime.run(elapsedTime, gameId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error updating game elapsed time:', error);
+      return false;
+    }
+  },
+
+  getGameElapsedTime: (gameId: string): number => {
+    try {
+      const result = statements.getGameElapsedTime.get(gameId) as { elapsed_time: number } | undefined;
+      return result?.elapsed_time || 0;
+    } catch (error) {
+      console.error('Error getting game elapsed time:', error);
+      return 0;
+    }
+  },
+
+  // Franchise operations
+  placeFranchise: (userId: string, gameId: string, lat: number, long: number, name: string): boolean => {
+    try {
+      const result = statements.placeFranchise.run(userId, gameId, lat, long, name);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error placing franchise:', error);
+      return false;
+    }
+  },
+
+  getUserFranchises: (userId: string, gameId: string): any[] => {
+    try {
+      return statements.getUserFranchises.all(userId, gameId) as any[];
+    } catch (error) {
+      console.error('Error getting user franchises:', error);
+      return [];
+    }
+  },
+
+  getGameFranchises: (gameId: string): Franchise[] => {
+    try {
+      console.log('Getting game franchises for game:', gameId);
+      console.log(statements.getGameFranchises.all(gameId) );
+      return statements.getGameFranchises.all(gameId);
+    } catch (error) {
+      console.error('Error getting game franchises:', error);
+      return [];
+    }
+  },
+
+  removeFranchise: (franchiseId: number, userId: string): boolean => {
+    try {
+      const result = statements.removeFranchise.run(franchiseId, userId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error removing franchise:', error);
+      return false;
+    }
+  },
+
+  // Delete game and all related data
+  deleteGame: (gameId: string): boolean => {
+    try {
+      // Delete related data first (due to foreign key constraints)
+      db.prepare('DELETE FROM user_counties WHERE game_id = ?').run(gameId);
+      db.prepare('DELETE FROM placed_franchises WHERE game_id = ?').run(gameId);
+      
+      // Then delete the game
+      const result = statements.deleteGame.run(gameId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error deleting game:', error);
       return false;
     }
   }

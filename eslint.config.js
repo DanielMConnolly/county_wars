@@ -61,7 +61,7 @@ export default [
     rules: {
       // TypeScript rules
       ...typescript.configs.recommended.rules,
-      
+
       // Disable base no-unused-vars rule in favor of TypeScript version
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
@@ -80,7 +80,7 @@ export default [
       // Custom overrides
       'react/react-in-jsx-scope': 'off', // Not needed in React 17+
       'react/prop-types': 'off', // Using TypeScript for prop validation
-      'max-len': ['error', { code: 110 }], // Enforce maximum line length of 110 characters
+      'max-len': ['error', { code: 120 }], // Enforce maximum line length of 110 characters
     },
     settings: {
       react: {

@@ -50,8 +50,6 @@ const AppContent = () => {
   const { gameState} = useContext(GameStateContext);
   const { selectedCounty} = gameState;
   const { user, loading } = useAuth();
-  const location = useLocation();
-  console.log(location.pathname);
 
   const {
     mapControls,

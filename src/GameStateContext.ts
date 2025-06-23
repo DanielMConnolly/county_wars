@@ -8,9 +8,6 @@ export interface GameStateContextType {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // Helper functions
-  addCounty: (_countyName: string) => void;
-  conquerCounty: (_county: County) => Promise<boolean>; // New function for conquering with cost
-  removeCounty: (_countyId: string) => void;
   selectCounty: (_countyName: County)=> void;
   setMapStyle: (_style: string) => void;
   setHighlightColor: (_color: string) => void;

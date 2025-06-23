@@ -3,7 +3,6 @@ import { GAME_DEFAULTS } from '../constants/gameDefaults';
 
 export const getDefaultState = (): GameState => {
   return {
-    ownedCounties: new Set<string>(),
     money: GAME_DEFAULTS.STARTING_MONEY,
     selectedCounty: null,
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
@@ -12,11 +11,9 @@ export const getDefaultState = (): GameState => {
     clickedLocation: null,
     franchises: [],
     gameTime: {
-      year: GAME_DEFAULTS.START_YEAR,
-      month: GAME_DEFAULTS.START_MONTH,
       isPaused: false,
       gameDurationHours: GAME_DEFAULTS.GAME_DURATION_HOURS,
-      startTime: Date.now(),
+      startTime: 0,
     },
   };
 };

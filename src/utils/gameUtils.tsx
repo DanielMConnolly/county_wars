@@ -38,12 +38,3 @@ export const getDifficultyLevel = (score: number): 'Easy' | 'Medium' | 'Hard' =>
   if (score <= 66) return 'Medium';
   return 'Hard';
 };
-
-
-export const useIsCountyOwned = (county: County | null) => {
-  const { gameState } = useContext(GameStateContext);
-  if (!county) return false;
-  const { ownedCounties } = gameState;
-  const countycode = county.stateFP + county.countyFP;
-  return ownedCounties.has(countycode);
-}

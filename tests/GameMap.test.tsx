@@ -3,7 +3,7 @@ import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Browser, ElementHandle, Page, } from 'puppeteer';
-import setupNewUser from "./setupNewUser";
+import {setupNewUser} from "./SetupUtils";
 import { DataTestIDs } from '../src/DataTestIDs';
 
 let testPage: Page;
@@ -56,5 +56,4 @@ const placeFranchise = async (testPage: Page, svgElements: Array<ElementHandle<a
 
     await testPage.waitForSelector(`[data-testid="${DataTestIDs.INFO_CARD}"]`);
     await testPage.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
-
 }

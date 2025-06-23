@@ -5,8 +5,6 @@ export type County = {
 }
 
 export type GameTime = {
-    year: number;
-    month: number;
     isPaused: boolean;
     gameDurationHours: number; // How long the full timeline takes in real hours
     startTime: number; // Timestamp when game started
@@ -16,13 +14,12 @@ export type GameTime = {
 export type Franchise = {
     id: string;
     lat: number;
-    lng: number;
+    long: number;
     name: string;
     placedAt: number; // timestamp
 }
 
 export type GameState = {
-    ownedCounties: Set<string>,
     money: number, // Changed from resources to money (USD)
     selectedCounty: County | null,
     mapStyle: string

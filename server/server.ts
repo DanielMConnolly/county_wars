@@ -186,14 +186,10 @@ app.get('/api/users/:userId/highlight-color', (req, res) => {
 });
 
 // Get user game time
-app.get('/api/users/:userId/game-time', (req, res) => {
-  const { userId } = req.params;
-
+app.get('/api/games/:gameID/game-time', (req, res) => {
+  const { gameID } = req.params;
   try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
-
-    const gameTime = dbOperations.getUserGameTime(userId);
+    const gameTime = dbOperations.getGameElapsedTime(gameID);
     res.json({ gameTime });
   } catch (error) {
     console.error('Error fetching game time:', error);
@@ -202,24 +198,24 @@ app.get('/api/users/:userId/game-time', (req, res) => {
 });
 
 // Update user game time
-app.put('/api/users/:userId/game-time', (req: Request, res: Response): void => {
-  const { userId } = req.params;
-  const { gameTime } = req.body;
+app.put('/api/games/:gameID/game-time', (req: Request, res: Response): void => {
+  const {gameID } = req.params;
+  const { elapsedTime } = req.body;
+  console.log("GAME TIME: ", elapsedTime);
+  console.log("GAME ID: ", gameID);
 
-  if (!gameTime) {
+  if (!elapsedTime) {
     res.status(400).json({ error: 'Game time is required' });
     return;
   }
 
   try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
 
     // Update the game time
-    const success = dbOperations.updateUserGameTime(userId, gameTime);
+    const success = dbOperations.updateGameElapsedTime(gameID, elapsedTime);
 
     if (success) {
-      res.json({ message: 'Game time updated successfully', gameTime });
+      res.json({ message: 'Game time updated successfully', elapsedTime });
     } else {
       res.status(500).json({ error: 'Failed to update game time' });
     }
@@ -341,6 +337,104 @@ app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
     res.json({ games });
   } catch (error) {
     console.error('Error fetching user games:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/games/:gameId', (req: Request, res: Response): void => {
+  const { gameId } = req.params;
+
+  try {
+    const success = dbOperations.deleteGame(gameId);
+
+    if (success) {
+      res.json({ message: 'Game deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting game:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Franchise management endpoints
+app.post('/api/franchises', (req: Request, res: Response): void => {
+  const { userId, gameId, lat, long, name } = req.body;
+
+  if (!userId || !gameId || lat === undefined || long === undefined || !name) {
+    res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
+    return;
+  }
+
+  if (typeof lat !== 'number' || typeof long !== 'number') {
+    res.status(400).json({ error: 'lat and long must be numbers' });
+    return;
+  }
+
+  try {
+    const success = dbOperations.placeFranchise(userId, gameId, lat, long, name);
+
+    if (success) {
+      res.json({ message: 'Franchise placed successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to place franchise' });
+    }
+  } catch (error) {
+    console.error('Error placing franchise:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/users/:userId/games/:gameId/franchises', (req: Request, res: Response): void => {
+  const { userId, gameId } = req.params;
+
+  try {
+    const franchises = dbOperations.getUserFranchises(userId, gameId);
+    res.json({ franchises });
+  } catch (error) {
+    console.error('Error fetching user franchises:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/games/:gameId/franchises', (req: Request, res: Response): void => {
+  const { gameId } = req.params;
+
+  try {
+    const franchises = dbOperations.getGameFranchises(gameId);
+    res.json({ franchises });
+  } catch (error) {
+    console.error('Error fetching game franchises:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/franchises/:franchiseId', (req: Request, res: Response): void => {
+  const { franchiseId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    res.status(400).json({ error: 'userId is required' });
+    return;
+  }
+
+  const franchiseIdNum = parseInt(franchiseId, 10);
+  if (isNaN(franchiseIdNum)) {
+    res.status(400).json({ error: 'franchiseId must be a valid number' });
+    return;
+  }
+
+  try {
+    const success = dbOperations.removeFranchise(franchiseIdNum, userId);
+
+    if (success) {
+      res.json({ message: 'Franchise removed successfully' });
+    } else {
+      res.status(404).json({ error: 'Franchise not found or not owned by user' });
+    }
+  } catch (error) {
+    console.error('Error removing franchise:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -2,7 +2,7 @@ import { Page } from "puppeteer";
 import { DataTestIDs } from '../src/DataTestIDs';
 
 
-export default async function setupNewUser(testPage: Page){
+export async function setupNewUser(testPage: Page){
     const randomUserName = generateRandomString(10);
     await testPage.goto('http://localhost:5173/signup');
     await testPage.waitForSelector(`[data-testid="${DataTestIDs.SIGNUP_USERNAME_INPUT}"]`);
@@ -15,6 +15,15 @@ export default async function setupNewUser(testPage: Page){
 
     await testPage.click(`[data-testid="${DataTestIDs.SIGNUP_SUBMIT_BUTTON}"]`);
 
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.LOGGED_IN_USER_MENU}"]`);
+}
+
+export async function createNewGame(testPage: Page, nameOfGame: string){
+  testPage.goto('http://localhost:5173')
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
+    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
+    await testPage.type(`[data-testid="${DataTestIDs.GAME_NAME_INPUT}"]`, nameOfGame);
+    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_SUBMIT_BUTTON}"]`);
 }
 
 function generateRandomString(length: number): string {

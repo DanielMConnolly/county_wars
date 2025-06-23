@@ -2,6 +2,8 @@ import React from 'react';
 import { Play, Pause } from 'lucide-react';
 import { useGameState } from './GameStateContext';
 import { GAME_DEFAULTS } from './constants/gameDefaults';
+import { DataTestIDs } from './DataTestIDs';
+import useGetMonthAndYear from './utils/useGetMonthAndYear';
 
 interface TimelineProps {
   className?: string;
@@ -14,11 +16,9 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
   const startYear = GAME_DEFAULTS.START_YEAR;
   const endYear = GAME_DEFAULTS.END_YEAR;
   const totalYears = endYear - startYear;
-  const currentYear = gameState.gameTime?.year || startYear;
-  const currentMonth = gameState.gameTime?.month || GAME_DEFAULTS.START_MONTH;
-
+  const {month, year} = useGetMonthAndYear();
   // Convert current time to decimal year for more precise progress
-  const decimalYear = currentYear + (currentMonth - 1) / 12;
+  const decimalYear = year + (month - 1) / 12;
   const progress = Math.min(Math.max((decimalYear - startYear) / totalYears * 100, 0), 100);
 
   const monthNames = [
@@ -26,7 +26,7 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const currentMonthName = monthNames[currentMonth - 1] || 'January';
+  const currentMonthName = monthNames[month - 1] || 'January';
 
   const handlePlayPauseClick = () => {
     if (gameState.gameTime?.isPaused) {
@@ -39,7 +39,8 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
   return (
     <div className={`timeline-container ${className}`}>
       <div className="timeline-header">
-        <button 
+        <button
+          data-testid={DataTestIDs.TIMELINE_PLAY_PAUSE_BUTTON}
           className="play-pause-btn"
           onClick={handlePlayPauseClick}
           aria-label={gameState.gameTime?.isPaused ? 'Resume game' : 'Pause game'}
@@ -50,9 +51,9 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
             <Pause className="w-5 h-5" />
           )}
         </button>
-        <div className="time-display">
+        <div className="time-display" data-testid={DataTestIDs.TIMELINE_TIME_DISPLAY}>
           <span className="month">{currentMonthName}</span>
-          <span className="year">{currentYear}</span>
+          <span className="year">{year}</span>
         </div>
         <div className="time-range">
           <span className="start-year">{startYear}</span>
