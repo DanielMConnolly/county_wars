@@ -1,15 +1,16 @@
 import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
-import { Page} from "puppeteer";
-import { setupTestPage , teardownBrowser} from "./setup.js";
+import puppeteer, { Browser, Page} from "puppeteer";
 
 
 let testPage: Page;
+let browser: Browser;
 
 
 beforeAll(async () => {
-  testPage = await setupTestPage();
+  browser = await puppeteer.launch({ headless: false });
+  testPage = await browser.newPage();
 
   await testPage.goto("http://localhost:5173/signup");
 });
@@ -22,8 +23,8 @@ describe("Signup flow", () => {
     // Fill out the signup form
     await testPage.type('[data-testid="signup-username-input"]', 'testuser123');
     await testPage.type('[data-testid="signup-email-input"]', 'testuser123@example.com');
-    await testPage.type('[data-testid="signup-password-input"]', 'password123');
-    await testPage.type('[data-testid="signup-confirm-password-input"]', 'password123');
+    await testPage.type('[data-testid="signup-password-input"]', 'dsffsdfsdpassword123');
+    await testPage.type('[data-testid="signup-confirm-password-input"]', 'dsffsdfsdpassword123');
 
     // Submit the form
     await testPage.click('[data-testid="signup-submit-button"]');
@@ -63,7 +64,6 @@ describe("Signup flow", () => {
   });
 })
 
-
 afterAll(async () => {
-  await teardownBrowser();
+  await browser.close();
 });

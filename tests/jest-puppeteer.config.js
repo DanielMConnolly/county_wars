@@ -4,6 +4,6 @@ module.exports = {
     slowMo: 30,
   },
   server: {
-    timeout: 120000
+    timeout: 12000
   }
 }

@@ -1,5 +1,4 @@
 export default {
-  testEnvironment: './tests/puppeteer_environment.ts',
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest'
