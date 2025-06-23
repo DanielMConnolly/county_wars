@@ -205,7 +205,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       const franchiseIcon = divIcon({
         className: 'franchise-marker',
         html: `<div style="
-          background: #3b82f6;
+          background: ${gameState.highlightColor};
           border: 2px solid white;
           border-radius: 50%;
           width: 20px;
@@ -242,7 +242,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     });
 
     console.log(`Updated ${gameState.franchises.length} franchise markers`);
-  }, [gameState.franchises]);
+  }, [gameState.franchises, gameState.highlightColor]);
 
   // Update map style
   useEffect(() => {
