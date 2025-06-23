@@ -27,4 +27,7 @@ export enum DataTestIDs {
   EXISTING_GAMES_LIST = 'existing-games-list',
 
   LOGGED_IN_USER_MENU = 'logged-in-user-menu',
+
+  TIMELINE_TIME_DISPLAY = 'timeline-time-display',
+  TIMELINE_PLAY_PAUSE_BUTTON = 'timeline-play-pause-button',
 }

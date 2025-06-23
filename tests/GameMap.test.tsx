@@ -3,7 +3,7 @@ import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Browser, ElementHandle, Page, } from 'puppeteer';
-import setupNewUser from "./setupNewUser";
+import setupNewUser from "./SetupUtils";
 import { DataTestIDs } from '../src/DataTestIDs';
 
 let testPage: Page;

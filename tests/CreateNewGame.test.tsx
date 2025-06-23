@@ -1,5 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
-import setupNewUser from './setupNewUser';
+import { createNewGame , setupNewUser} from './SetupUtils';
 import { DataTestIDs } from '../src/DataTestIDs';
 
 let testPage: Page;
@@ -15,10 +15,7 @@ beforeAll(async () => {
 
 describe("Create new game", () => {
   test("Verify that a game can be created and that it exists on the welcome screen after creation", async () => {
-    await testPage.waitForSelector(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
-    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
-    await testPage.type(`[data-testid="${DataTestIDs.GAME_NAME_INPUT}"]`, "County Conquest");
-    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_SUBMIT_BUTTON}"]`);
+    await createNewGame(testPage, "County Conquest");
 
     testPage.goto('http://localhost:5173')
     await testPage.waitForSelector(`[data-testid="${DataTestIDs.EXISTING_GAMES_LIST}"]`);

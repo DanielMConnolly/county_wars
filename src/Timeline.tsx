@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Pause } from 'lucide-react';
 import { useGameState } from './GameStateContext';
 import { GAME_DEFAULTS } from './constants/gameDefaults';
+import { DataTestIDs } from './DataTestIDs';
 
 interface TimelineProps {
   className?: string;
@@ -39,7 +40,8 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
   return (
     <div className={`timeline-container ${className}`}>
       <div className="timeline-header">
-        <button 
+        <button
+          data-testid={DataTestIDs.TIMELINE_PLAY_PAUSE_BUTTON}
           className="play-pause-btn"
           onClick={handlePlayPauseClick}
           aria-label={gameState.gameTime?.isPaused ? 'Resume game' : 'Pause game'}
@@ -50,7 +52,7 @@ export const Timeline: React.FC<TimelineProps> = ({ className = '' }) => {
             <Pause className="w-5 h-5" />
           )}
         </button>
-        <div className="time-display">
+        <div className="time-display" data-testid={DataTestIDs.TIMELINE_TIME_DISPLAY}>
           <span className="month">{currentMonthName}</span>
           <span className="year">{currentYear}</span>
         </div>
