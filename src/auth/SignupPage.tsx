@@ -163,7 +163,8 @@ const SignupPage: React.FC = () => {
           <button
             type="submit"
             data-testid="signup-submit-button"
-            disabled={loading || (formData.confirmPassword && formData.password !== formData.confirmPassword)}
+            disabled=
+            {loading || (formData.confirmPassword !=null && formData.password !== formData.confirmPassword)}
             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-600
              disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md
               transition-colors duration-200"

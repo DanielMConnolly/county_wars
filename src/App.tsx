@@ -12,6 +12,7 @@ import { useLocation, createBrowserRouter, RouterProvider, useNavigate } from "r
 import LoginPage from './auth/LoginPage';
 import SignupPage from './auth/SignupPage';
 import WelcomeScreen from './WelcomeScreen';
+import AuthModal from './auth/AuthModal';
 
 
 const App = () => {
