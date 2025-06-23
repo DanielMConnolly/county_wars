@@ -71,10 +71,10 @@ export async function updateUserHighlightColor(userId: string, color: string): P
   }
 }
 
-export async function fetchUserGameTime(userId: string): Promise<GameTime | null> {
+export async function fetchGameTime(gameID: string): Promise<number | null> {
   try {
-    console.log('Fetching game time for userId:', userId);
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/game-time`);
+    console.log('Fetching game time for game id: ', gameID);
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameID}/game-time`);
     console.log('Game time HTTP response status:', response.status);
 
     if (response.ok) {
@@ -91,21 +91,21 @@ export async function fetchUserGameTime(userId: string): Promise<GameTime | null
   }
 }
 
-export async function updateUserGameTime(userId: string, gameTime: GameTime): Promise<boolean> {
+export async function updateGameElapsedTime(gameID: string, elapsedTime: number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/game-time`, {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameID}/game-time`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ gameTime }),
+      body: JSON.stringify({ elapsedTime }),
     });
 
     if (!response.ok) {
       console.error('Failed to save game time:', response.status);
       return false;
     } else {
-      console.log('Game time saved successfully:', gameTime);
+      console.log('Game time saved successfully:', elapsedTime);
       return true;
     }
   } catch (error) {

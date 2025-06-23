@@ -33,6 +33,7 @@ const initDatabase = () => {
       created_by TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       is_active BOOLEAN DEFAULT 1,
+      elapsed_time INTEGER DEFAULT 0,
       FOREIGN KEY (created_by) REFERENCES users (id)
     )
   `);
@@ -105,6 +106,15 @@ const initDatabase = () => {
     console.log('Game_id column added successfully');
   }
 
+  // Migration: Add elapsed_time column to games if it doesn't exist
+  try {
+    db.prepare('SELECT elapsed_time FROM games LIMIT 1').get();
+  } catch (_) {
+    console.log('Adding elapsed_time column to games table...');
+    db.exec(`ALTER TABLE games ADD COLUMN elapsed_time INTEGER DEFAULT 0`);
+    console.log('elapsed_time column added successfully');
+  }
+
   // Create indexes for better performance (after migrations)
   try {
     db.exec(`
@@ -139,6 +149,8 @@ const initDatabase = () => {
     getGame: db.prepare('SELECT * FROM games WHERE id = ?'),
     getAllGames: db.prepare('SELECT * FROM games ORDER BY created_at DESC'),
     getUserGames: db.prepare('SELECT * FROM games WHERE created_by = ? ORDER BY created_at DESC'),
+    updateGameElapsedTime: db.prepare('UPDATE games SET elapsed_time = ? WHERE id = ?'),
+    getGameElapsedTime: db.prepare('SELECT elapsed_time FROM games WHERE id = ?'),
 
     // County operations (now game-specific)
     getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ? AND game_id = ?'),
@@ -156,7 +168,6 @@ const initDatabase = () => {
     getUserHighlightColor: db.prepare('SELECT highlight_color FROM users WHERE id = ?'),
     updateUserGameTime:
       db.prepare('UPDATE users SET game_time = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    getUserGameTime: db.prepare('SELECT game_time FROM users WHERE id = ?'),
     getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
     getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
     getUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
@@ -328,19 +339,7 @@ export const dbOperations = {
     }
   },
 
-  // Game time operations
-  updateUserGameTime: (userId: string, gameTime: GameTime): boolean => {
-    try {
-      const gameTimeJson = JSON.stringify(gameTime);
-      const result = statements.updateUserGameTime.run(gameTimeJson, userId);
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error updating user game time:', error);
-      return false;
-    }
-  },
-
-  getUserGameTime: (userId: string): GameTime | null => {
+  getGameTime: (userId: string): GameTime | null => {
     try {
       const result = statements.getUserGameTime.get(userId) as { game_time: string } | undefined;
       if (result?.game_time) {
@@ -423,6 +422,27 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error deducting user money:', error);
       return false;
+    }
+  },
+
+  // Game elapsed time operations
+  updateGameElapsedTime: (gameId: string, elapsedTime: number): boolean => {
+    try {
+      const result = statements.updateGameElapsedTime.run(elapsedTime, gameId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error updating game elapsed time:', error);
+      return false;
+    }
+  },
+
+  getGameElapsedTime: (gameId: string): number => {
+    try {
+      const result = statements.getGameElapsedTime.get(gameId) as { elapsed_time: number } | undefined;
+      return result?.elapsed_time || 0;
+    } catch (error) {
+      console.error('Error getting game elapsed time:', error);
+      return 0;
     }
   }
 };

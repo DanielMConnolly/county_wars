@@ -66,7 +66,7 @@ export const GameDurationSettings: React.FC<GameDurationSettingsProps> = ({
           icon={<Clock size={16} />}
         />
         <p className="text-xs text-gray-500 mt-1">
-          Current: {gameState.gameTime.year} - Progress will reset when duration changes
+           Progress will reset when duration changes
         </p>
       </div>
     </div>

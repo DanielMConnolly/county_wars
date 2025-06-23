@@ -5,8 +5,6 @@ export type County = {
 }
 
 export type GameTime = {
-    year: number;
-    month: number;
     isPaused: boolean;
     gameDurationHours: number; // How long the full timeline takes in real hours
     startTime: number; // Timestamp when game started

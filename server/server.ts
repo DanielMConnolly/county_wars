@@ -186,14 +186,10 @@ app.get('/api/users/:userId/highlight-color', (req, res) => {
 });
 
 // Get user game time
-app.get('/api/users/:userId/game-time', (req, res) => {
-  const { userId } = req.params;
-
+app.get('/api/games/:gameID/game-time', (req, res) => {
+  const { gameID } = req.params;
   try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
-
-    const gameTime = dbOperations.getUserGameTime(userId);
+    const gameTime = dbOperations.getGameElapsedTime(gameID);
     res.json({ gameTime });
   } catch (error) {
     console.error('Error fetching game time:', error);
@@ -202,24 +198,24 @@ app.get('/api/users/:userId/game-time', (req, res) => {
 });
 
 // Update user game time
-app.put('/api/users/:userId/game-time', (req: Request, res: Response): void => {
-  const { userId } = req.params;
-  const { gameTime } = req.body;
+app.put('/api/games/:gameID/game-time', (req: Request, res: Response): void => {
+  const {gameID } = req.params;
+  const { elapsedTime } = req.body;
+  console.log("GAME TIME: ", elapsedTime);
+  console.log("GAME ID: ", gameID);
 
-  if (!gameTime) {
+  if (!elapsedTime) {
     res.status(400).json({ error: 'Game time is required' });
     return;
   }
 
   try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
 
     // Update the game time
-    const success = dbOperations.updateUserGameTime(userId, gameTime);
+    const success = dbOperations.updateGameElapsedTime(gameID, elapsedTime);
 
     if (success) {
-      res.json({ message: 'Game time updated successfully', gameTime });
+      res.json({ message: 'Game time updated successfully', elapsedTime });
     } else {
       res.status(500).json({ error: 'Failed to update game time' });
     }
