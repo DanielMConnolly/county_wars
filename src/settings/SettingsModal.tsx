@@ -1,12 +1,10 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { X, Palette, Plus, Settings, Users } from 'lucide-react';
+import { X, Plus, Settings, Users } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
-import { COLOR_OPTIONS } from '../constants/gameDefaults';
-import { GameDurationSettings } from './GameDurationSettings';
-import { Dropdown, DropdownOption } from '../components/Dropdown';
+import { GameSettingsPanel } from './GameSettingsPanel';
 import { createGame, fetchAllGames } from '../api_calls/CountyWarsHTTPRequests';
-import { navigateToGame } from '../utils/gameUrl';
 import { useAuth } from '../auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 type ModalView = 'main' | 'gameSettings' | 'newGame' | 'joinGame';
 
@@ -26,12 +24,7 @@ export default function SettingsModal({
   const [gameName, setGameName] = useState('');
   const [allGames, setAllGames] = useState<any[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
-  const [showNewGameForm, setShowNewGameForm] = useState(false);
-
-  const colorOptions: DropdownOption[] = COLOR_OPTIONS.map(color => ({
-    value: color.value,
-    label: color.name,
-  }));
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (currentView === 'joinGame') {
@@ -104,7 +97,8 @@ export default function SettingsModal({
             <div className="space-y-4">
               <button
                 onClick={() => setCurrentView('gameSettings')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-4 border border-gray-200
+                rounded-lg hover:bg-gray-50 transition-colors text-left"
               >
                 <Settings size={20} className="text-blue-600" />
                 <div>
@@ -112,10 +106,11 @@ export default function SettingsModal({
                   <p className="text-sm text-gray-600">Configure colors and game duration</p>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => setCurrentView('newGame')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-4 border border-gray-200
+                 rounded-lg hover:bg-gray-50 transition-colors text-left"
               >
                 <Plus size={20} className="text-green-600" />
                 <div>
@@ -123,10 +118,11 @@ export default function SettingsModal({
                   <p className="text-sm text-gray-600">Create a new game</p>
                 </div>
               </button>
-              
+
               <button
                 onClick={() => setCurrentView('joinGame')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-4 border border-gray-200
+                 rounded-lg hover:bg-gray-50 transition-colors text-left"
               >
                 <Users size={20} className="text-purple-600" />
                 <div>
@@ -138,68 +134,20 @@ export default function SettingsModal({
           )}
 
           {currentView === 'gameSettings' && (
-            <div>
-              <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-3">Conquest Color</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose the color that will represent your conquered counties on the map.
-                </p>
-
-                <div>
-                  <Dropdown
-                    value={selectedColor}
-                    onChange={(value) => setSelectedColor(value as string)}
-                    options={colorOptions}
-                    label="County Highlight Color"
-                    icon={<Palette size={16} />}
-                    renderPreview={(value) => (
-                      <div
-                        className="w-4 h-4 rounded-full border border-gray-300"
-                        style={{ backgroundColor: value as string }}
-                      />
-                    )}
-                  />
-                  
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-6 h-6 rounded-full border border-gray-300"
-                        style={{ backgroundColor: selectedColor }}
-                      />
-                      <span className="text-sm text-gray-700">
-                        Selected: {COLOR_OPTIONS.find(c => c.value === selectedColor)?.name}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <GameDurationSettings 
-                selectedDuration={selectedDuration}
-                onDurationChange={setSelectedDuration}
-              />
-
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => setCurrentView('main')}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => {
-                    setHighlightColor(selectedColor);
-                    if (selectedDuration !== gameState.gameTime.gameDurationHours) {
-                      setGameDuration(selectedDuration);
-                    }
-                    handleModalClose();
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Save Settings
-                </button>
-              </div>
-            </div>
+            <GameSettingsPanel
+              selectedColor={selectedColor}
+              setSelectedColor={setSelectedColor}
+              selectedDuration={selectedDuration}
+              setSelectedDuration={setSelectedDuration}
+              onBack={() => setCurrentView('main')}
+              onSave={() => {
+                setHighlightColor(selectedColor);
+                if (selectedDuration !== gameState.gameTime.gameDurationHours) {
+                  setGameDuration(selectedDuration);
+                }
+                handleModalClose();
+              }}
+            />
           )}
 
           {currentView === 'newGame' && (
@@ -207,14 +155,15 @@ export default function SettingsModal({
               <p className="text-sm text-gray-600 mb-4">
                 Create a new game where counties are claimed within a specific game context.
               </p>
-              
+
               <div className="space-y-3">
                 <input
                   type="text"
                   value={gameName}
                   onChange={(e) => setGameName(e.target.value)}
                   placeholder="Enter game name..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg
+                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
                   disabled={isCreatingGame}
                   autoFocus
                 />
@@ -222,7 +171,8 @@ export default function SettingsModal({
                   <button
                     onClick={() => setCurrentView('main')}
                     disabled={isCreatingGame}
-                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700
+                     rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Back
                   </button>
@@ -232,7 +182,7 @@ export default function SettingsModal({
                         alert('Please enter a game name');
                         return;
                       }
-                      
+
                       if (!user) {
                         alert('You must be logged in to create a game');
                         return;
@@ -243,7 +193,7 @@ export default function SettingsModal({
                         const result = await createGame(gameName.trim(), user.id);
                         if (result.success && result.gameId) {
                           console.log('Game created successfully:', result.gameId);
-                          navigateToGame(result.gameId);
+                          navigate(`/game/${result.gameId}`);
                           handleModalClose();
                         } else {
                           alert(result.error || 'Failed to create game');
@@ -257,7 +207,8 @@ export default function SettingsModal({
                       }
                     }}
                     disabled={isCreatingGame || !gameName.trim()}
-                    className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg
+                     hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                     {isCreatingGame ? 'Creating...' : 'Create Game'}
                   </button>
@@ -271,10 +222,11 @@ export default function SettingsModal({
               <p className="text-sm text-gray-600 mb-4">
                 Browse and join any existing game.
               </p>
-              
+
               {isLoadingGames ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2
+                   border-purple-600 mx-auto"></div>
                   <p className="text-sm text-gray-600 mt-2">Loading games...</p>
                 </div>
               ) : allGames.length > 0 ? (
@@ -283,10 +235,11 @@ export default function SettingsModal({
                     <button
                       key={game.id}
                       onClick={() => {
-                        navigateToGame(game.id);
+                        navigate(`/game/${game.id}`);
                         handleModalClose();
                       }}
-                      className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="w-full p-3 text-left border border-gray-200
+                       rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="font-medium text-gray-800">{game.name}</div>
                       <div className="text-sm text-gray-600">
@@ -306,13 +259,15 @@ export default function SettingsModal({
               <div className="flex gap-3 pt-6 border-t border-gray-200">
                 <button
                   onClick={() => setCurrentView('main')}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700
+                   rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Back
                 </button>
                 <button
                   onClick={() => setCurrentView('newGame')}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg
+                   hover:bg-green-700 transition-colors font-medium"
                 >
                   Create New Game
                 </button>

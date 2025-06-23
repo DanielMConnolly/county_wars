@@ -1,11 +1,13 @@
 import React, { ReactNode, useContext, useState } from "react";
 import { Settings, RotateCcw, Map, UtensilsCrossed, Coins, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
 
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const {gameState, resetGame, setCurrentGame} = useContext(GameStateContext);
 
@@ -20,8 +22,15 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800 to-slate-700 flex items-center justify-between px-6 z-[1000] shadow-lg border-b border-slate-600">
-      <div className="text-2xl font-bold text-blue-400">Franchise Wars</div>
+    <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800 to-slate-700
+     flex items-center justify-between px-6 z-[1000] shadow-lg border-b border-slate-600">
+      <div
+        className="text-2xl font-bold text-blue-400 cursor-pointer
+          hover:text-blue-300 transition-colors duration-200"
+        onClick={() => navigate('/')}
+      >
+        Franchise Wars
+      </div>
 
       {/* Stats */}
       <div className="flex gap-8">
@@ -117,7 +126,8 @@ const MenuButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-2 bg-gradient-to-r ${className} rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2`}
+    className={`px-4 py-2 bg-gradient-to-r ${className} rounded-lg transition-all
+     duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2`}
   >
     {icon}
     {text}

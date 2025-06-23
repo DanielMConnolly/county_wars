@@ -1,42 +1,26 @@
 import React, { useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const [isLogin, setIsLogin] = useState(true);
+const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
-    email: '',
     password: '',
-    confirmPassword: '',
   });
 
-  const { login, signup, loading, error } = useAuth();
+  const { login, loading, error } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check password confirmation for signup
-    if (!isLogin && formData.password !== formData.confirmPassword) {
-      return; // Error will be shown by validation logic below
-    }
 
-    let success = false;
-    if (isLogin) {
-      success = await login(formData.username, formData.password);
-    } else {
-      success = await signup(formData.username, formData.email, formData.password);
-    }
+    const success = await login(formData.username, formData.password);
 
     if (success) {
-      onClose();
-      setFormData({ username: '', email: '', password: '', confirmPassword: '' });
+      navigate('/');
+      setFormData({ username: '', password: '' });
     }
   };
 
@@ -47,22 +31,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     });
   };
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
-    setFormData({ username: '', email: '', password: '', confirmPassword: '' });
-  };
-
-  if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000]">
       <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md mx-4 border border-slate-600">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">
-            {isLogin ? 'Login' : 'Sign Up'}
-          </h2>
+          <h2 className="text-2xl font-bold text-white">Login</h2>
           <button
-            onClick={onClose}
+            onClick={() => navigate('/')}
             className="text-gray-400 hover:text-white transition-colors"
           >
             <X className="w-6 h-6" />
@@ -81,30 +56,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               value={formData.username}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md
-               text-white placeholder-gray-400 focus:outline-none focus:ring-2
-                focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter your username"
             />
           </div>
-
-          {!isLogin && (
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter your email"
-              />
-            </div>
-          )}
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
@@ -134,36 +89,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 )}
               </button>
             </div>
-            {!isLogin && (
-              <p className="text-xs text-gray-400 mt-1">
-                Password must be at least 6 characters long
-              </p>
-            )}
           </div>
-
-          {!isLogin && (
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                required
-                minLength={6}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm your password"
-              />
-              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <p className="text-xs text-red-400 mt-1">
-                  Passwords do not match
-                </p>
-              )}
-            </div>
-          )}
 
           {error && (
             <div className="text-red-400 text-sm bg-red-900/20 border border-red-900/30 rounded-md p-3">
@@ -176,18 +102,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
           >
-            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
+            {loading ? 'Please wait...' : 'Login'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-gray-400">
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}
+            Don't have an account?
             <button
-              onClick={toggleMode}
+              onClick={() => navigate('/signup')}
               className="text-blue-400 hover:text-blue-300 ml-1 font-medium"
             >
-              {isLogin ? 'Sign up' : 'Login'}
+              Sign up
             </button>
           </p>
         </div>
@@ -196,4 +122,4 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   );
 };
 
-export default AuthModal;
+export default LoginPage;

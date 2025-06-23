@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, LogOut, ChevronDown } from 'lucide-react';
+import { User, LogOut, ChevronDown, LogIn, UserPlus } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const UserMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,7 +27,27 @@ const UserMenu: React.FC = () => {
     setIsOpen(false);
   };
 
-  if (!user) return null;
+  // Show login/signup buttons when not authenticated
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => navigate('/login')}
+          className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 text-sm font-medium"
+        >
+          <LogIn className="w-4 h-4" />
+          Login
+        </button>
+        <button
+          onClick={() => navigate('/signup')}
+          className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 text-sm font-medium"
+        >
+          <UserPlus className="w-4 h-4" />
+          Sign Up
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>

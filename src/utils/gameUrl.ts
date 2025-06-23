@@ -1,4 +1,4 @@
-// URL utilities for game routing
+
 
 export const getGameIdFromUrl = (): string | null => {
   const path = window.location.pathname;
@@ -6,16 +6,9 @@ export const getGameIdFromUrl = (): string | null => {
   return match ? match[1] : null;
 };
 
-export const navigateToGame = (gameId: string) => {
-  const newUrl = `/game/${gameId}`;
-  window.history.pushState({ gameId }, '', newUrl);
-  // Dispatch a custom event to notify components of URL change
-  window.dispatchEvent(new CustomEvent('gameNavigate', { detail: { gameId } }));
-};
 
 export const navigateToHome = () => {
   window.history.pushState({}, '', '/');
-  window.dispatchEvent(new CustomEvent('gameNavigate', { detail: { gameId: null } }));
 };
 
 export const getCurrentGameId = (): string => {

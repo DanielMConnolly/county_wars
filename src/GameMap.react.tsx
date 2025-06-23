@@ -53,30 +53,36 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     if (!mapRef.current || mapInstance.current) return;
 
     console.log('Initializing map...');
-    
+
     if (mapRef.current != null) {
       mapInstance.current = map(mapRef.current).setView([39.8283, -98.5795], 4);
     }
 
     const loadCounties = async () => {
       try {
-        console.log('Fetching counties.geojson...');
-        const response = await fetch("counties.geojson");
-        
+        console.log('🗺️ Starting county layer initialization...');
+        console.log('📡 Fetching counties.geojson...');
+
+        const response = await fetch("/counties.geojson");
+
         if (!response.ok) {
           throw new Error(`Failed to fetch counties: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
-        console.log('Counties data loaded, creating layer...');
+        console.log('✅ Counties data loaded successfully');
+        console.log(`📊 Counties data contains ${data.features ? data.features.length : 0} features`);
 
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
           onEachFeature: function (feature, layer: Polyline) {
             layer.on("click", () => {
+              console.log('🖱️ County clicked:', feature.properties?.NAME);
+
               setCurrentHighlighted(prevLayer => {
                 if (!prevLayer) return layer;
-                const countyId = prevLayer?.feature?.properties.COUNTYFP + prevLayer?.feature?.properties.STATEFP;
+                const countyId
+                 = prevLayer?.feature?.properties.COUNTYFP + prevLayer?.feature?.properties.STATEFP;
                 if (gameStateRef.current.ownedCounties.has(countyId)) {
                   prevLayer?.setStyle({
                     ...highlightStyle,
@@ -111,13 +117,15 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         if (mapInstance.current) {
           layer.addTo(mapInstance.current);
-          console.log('County layer loaded and added to map successfully');
+          console.log('🎯 County layer successfully added to map!');
+          console.log('📍 Map bounds:', mapInstance.current.getBounds());
           setIsCountyLayerLoaded(true);
         } else {
-          console.error('Map instance not available when trying to add county layer');
+          console.error('❌ Map instance not available when trying to add county layer');
+          setIsCountyLayerLoaded(false);
         }
       } catch (error) {
-        console.error("Error loading counties:", error);
+        console.error("❌ Error loading counties:", error);
         setIsCountyLayerLoaded(false);
       }
     };
