@@ -40,12 +40,14 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           label="Counties"
           color="text-green-400"
         />
+        <div          data-testid="franchise-count">
         <StatItem
           icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}
           value={gameState.franchises.length.toLocaleString()}
           label="Restaurants"
           color="text-orange-400"
         />
+        </div>
         <StatItem
           icon={<Coins className="w-5 h-5 text-yellow-400" />}
           value={`$${gameState.money.toLocaleString()}`}
@@ -101,7 +103,7 @@ const StatItem = ({
 }: {
   color: string;
   icon: any;
-  value: any;
+  value: string | number;
   label: string;
 }) => (
   <div className="flex items-center gap-2">
@@ -121,7 +123,7 @@ const MenuButton = ({
 }: {
   onClick: () => void;
   icon: ReactNode;
-  text: string;
+  text: string | number;
   className: string;
 }) => (
   <button

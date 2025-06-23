@@ -2,7 +2,7 @@
 import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
-import puppeteer, { Browser, Page, } from 'puppeteer';
+import puppeteer, { Browser, ElementHandle, Page, } from 'puppeteer';
 import setupNewUser from "./setupNewUser";
 
 let testPage: Page;
@@ -34,14 +34,26 @@ describe("County Wars GameMap", () => {
         await testPage.waitForSelector('.leaflet-overlay-pane svg path');
         const svgElements = await testPage.$$('.leaflet-overlay-pane svg path');
         expect(svgElements.length).toBeGreaterThan(0);
-        await svgElements[100].click();
-        await testPage.waitForSelector('[data-testid="info-card"]');
-        const infoCardElement = await testPage.$$('[data-testid="info-card"]');
-        expect(infoCardElement.length).toBeGreaterThan(0);
-        await testPage.click('[data-testid="place-franchise-button"]');
+
+        await placeFranchise(testPage, svgElements);
+        await placeFranchise(testPage, svgElements);
+        const restaurantCountStatItem2 =
+            await testPage.$eval('[data-testid="franchise-count"]', el => el.textContent);
+        expect(restaurantCountStatItem2).toContain("2");
+
     });
 });
 
 afterAll(async () => {
     await browser?.close();
 });
+
+const placeFranchise = async (testPage: Page, svgElements: Array<ElementHandle<any>>) => {
+    const countyNumber = Math.floor(Math.random() * 3001)
+    console.log("countyNumber: " + countyNumber);
+    await svgElements[countyNumber].click();
+
+    await testPage.waitForSelector('[data-testid="info-card"]');
+    await testPage.click('[data-testid="place-franchise-button"]');
+
+}
