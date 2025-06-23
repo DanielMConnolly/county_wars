@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import SettingsModal from "./settings/SettingsModal";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
+import { DataTestIDs } from "./DataTestIDs";
 
 const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -40,12 +41,14 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           label="Counties"
           color="text-green-400"
         />
+        <div          data-testid={DataTestIDs.FRANCHISE_COUNT}>
         <StatItem
           icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}
-          value={gameState.restaurants.toLocaleString()}
+          value={gameState.franchises.length.toLocaleString()}
           label="Restaurants"
           color="text-orange-400"
         />
+        </div>
         <StatItem
           icon={<Coins className="w-5 h-5 text-yellow-400" />}
           value={`$${gameState.money.toLocaleString()}`}
@@ -101,7 +104,7 @@ const StatItem = ({
 }: {
   color: string;
   icon: any;
-  value: any;
+  value: string | number;
   label: string;
 }) => (
   <div className="flex items-center gap-2">
@@ -121,7 +124,7 @@ const MenuButton = ({
 }: {
   onClick: () => void;
   icon: ReactNode;
-  text: string;
+  text: string | number;
   className: string;
 }) => (
   <button

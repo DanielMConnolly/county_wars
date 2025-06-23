@@ -9,46 +9,46 @@ on:
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-        
+
     - name: Install dependencies
       run: npm ci
-      
+
     - name: Setup Chrome
       uses: browser-actions/setup-chrome@latest
-      
+
     - name: Build project
       run: npm run build
-      
+
     - name: Start server in background
       run: |
         npm run server &
         SERVER_PID=$!
         echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-        
-    - name: Start frontend in background  
+
+    - name: Start frontend in background
       run: |
         npm run preview &
         FRONTEND_PID=$!
         echo "FRONTEND_PID=$FRONTEND_PID" >> $GITHUB_ENV
-        
+
     - name: Wait for services to be ready
       run: |
         timeout 60 bash -c 'until curl -f http://localhost:3001/health 2>/dev/null; do sleep 2; done' || echo "Server health check failed"
         timeout 60 bash -c 'until curl -f http://localhost:5173 2>/dev/null; do sleep 2; done' || echo "Frontend health check failed"
-        
+
     - name: Run E2E tests
-      run: npm run test:e2e
-      
+      run: npm run test:frontend
+
     - name: Cleanup
       run: |
         kill $SERVER_PID $FRONTEND_PID || true

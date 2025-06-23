@@ -2,8 +2,9 @@
 import "jest-puppeteer";
 import "expect-puppeteer";
 import '@testing-library/jest-dom';
-import puppeteer, { Browser, Page, } from 'puppeteer';
+import puppeteer, { Browser, ElementHandle, Page, } from 'puppeteer';
 import setupNewUser from "./setupNewUser";
+import { DataTestIDs } from '../src/DataTestIDs';
 
 let testPage: Page;
 let browser: Browser | undefined;
@@ -14,10 +15,10 @@ beforeAll(async () => {
     testPage.setDefaultNavigationTimeout(12000);
     testPage.setDefaultTimeout(12000)
     await setupNewUser(testPage);
-    await testPage.waitForSelector('[data-testid="create-game-button"]');
-    await testPage.click('[data-testid="create-game-button"]');
-    await testPage.type('[data-testid="game-name-input"]', "County Conquest");
-    await testPage.click('[data-testid="create-game-submit-button"]');
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
+    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_BUTTON}"]`);
+    await testPage.type(`[data-testid="${DataTestIDs.GAME_NAME_INPUT}"]`, "County Conquest");
+    await testPage.click(`[data-testid="${DataTestIDs.CREATE_GAME_SUBMIT_BUTTON}"]`);
 });
 
 describe("County Wars GameMap", () => {
@@ -28,17 +29,18 @@ describe("County Wars GameMap", () => {
         expect(mapContainer).toBeTruthy();
     });
 
-    test("should load counties on the map", async () => {
+    test("Click on place franchise", async () => {
         await testPage.waitForSelector('.leaflet-container');
         await testPage.waitForSelector('.leaflet-overlay-pane svg');
         await testPage.waitForSelector('.leaflet-overlay-pane svg path');
         const svgElements = await testPage.$$('.leaflet-overlay-pane svg path');
         expect(svgElements.length).toBeGreaterThan(0);
-        await svgElements[100].click();
-        await testPage.waitForSelector('[data-testid="info-card"]');
-        const infoCardElement = await testPage.$$('[data-testid="info-card"]');
-        expect(infoCardElement.length).toBeGreaterThan(0);
-        await testPage.click('[data-testid="conquer-county-button"]');
+
+        await placeFranchise(testPage, svgElements);
+        await placeFranchise(testPage, svgElements);
+        const restaurantCountStatItem2 =
+            await testPage.$eval(`[data-testid="${DataTestIDs.FRANCHISE_COUNT}"]`, el => el.textContent);
+        expect(restaurantCountStatItem2).toContain("2");
 
     });
 });
@@ -46,3 +48,13 @@ describe("County Wars GameMap", () => {
 afterAll(async () => {
     await browser?.close();
 });
+
+const placeFranchise = async (testPage: Page, svgElements: Array<ElementHandle<any>>) => {
+    const countyNumber = Math.floor(Math.random() * 3001)
+    console.log("countyNumber: " + countyNumber);
+    await svgElements[countyNumber].click();
+
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.INFO_CARD}"]`);
+    await testPage.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
+
+}

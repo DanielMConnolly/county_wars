@@ -1,18 +1,19 @@
 import { Page } from "puppeteer";
+import { DataTestIDs } from '../src/DataTestIDs';
 
 
 export default async function setupNewUser(testPage: Page){
     const randomUserName = generateRandomString(10);
     await testPage.goto('http://localhost:5173/signup');
-    await testPage.waitForSelector('[data-testid="signup-username-input"]');
+    await testPage.waitForSelector(`[data-testid="${DataTestIDs.SIGNUP_USERNAME_INPUT}"]`);
 
     // Fill out the signup form
-    await testPage.type('[data-testid="signup-username-input"]', randomUserName);
-    await testPage.type('[data-testid="signup-email-input"]', `${randomUserName}@example.com`);
-    await testPage.type('[data-testid="signup-password-input"]', 'sdffsdsdfpassword123');
-    await testPage.type('[data-testid="signup-confirm-password-input"]', 'sdffsdsdfpassword123');
+    await testPage.type(`[data-testid="${DataTestIDs.SIGNUP_USERNAME_INPUT}"]`, randomUserName);
+    await testPage.type(`[data-testid="${DataTestIDs.SIGNUP_EMAIL_INPUT}"]`, `${randomUserName}@example.com`);
+    await testPage.type(`[data-testid="${DataTestIDs.SIGNUP_PASSWORD_INPUT}"]`, 'sdffsdsdfpassword123');
+    await testPage.type(`[data-testid="${DataTestIDs.SIGNUP_CONFIRM_PASSWORD_INPUT}"]`, 'sdffsdsdfpassword123');
 
-    await testPage.click('[data-testid="signup-submit-button"]');
+    await testPage.click(`[data-testid="${DataTestIDs.SIGNUP_SUBMIT_BUTTON}"]`);
 
 }
 

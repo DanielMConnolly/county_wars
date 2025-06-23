@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { createGame } from './api_calls/CountyWarsHTTPRequests';
 import { useAuth } from './auth/AuthContext';
+import { DataTestIDs } from './DataTestIDs';
 
 interface CreateGameModalProps {
   isOpen: boolean;
@@ -67,7 +68,7 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
               Game Name
             </label>
             <input
-              data-testid="game-name-input"
+              data-testid={DataTestIDs.GAME_NAME_INPUT}
               type="text"
               id="gameName"
               value={gameName}
@@ -91,7 +92,7 @@ export default function CreateGameModal({ isOpen, onClose, onGameCreated }: Crea
               Cancel
             </button>
             <button
-              data-testid="create-game-submit-button"
+              data-testid={DataTestIDs.CREATE_GAME_SUBMIT_BUTTON}
               type="submit"
               disabled={isCreating || !gameName.trim()}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700

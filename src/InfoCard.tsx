@@ -1,23 +1,20 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap } from 'lucide-react';
 import {
-  calculateDifficultyScoreBasedOnPopulation,
   useIsCountyOwned,
-  getDifficultyLevel,
-  getDifficultyColor
 } from './utils/gameUtils';
-import { 
-  calculateCountyDifficulty, 
-  getCountyCost, 
+import {
+  calculateCountyDifficulty,
+  getCountyCost,
   getDifficultyDisplayName,
-  getDifficultyColor as getNewDifficultyColor 
+  getDifficultyColor as getNewDifficultyColor
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
-import { County, GameState } from './types/GameTypes';
+import { DataTestIDs } from './DataTestIDs';
 
 const InfoCard = () => {
-  const { gameState, conquerCounty } = useContext(GameStateContext);
+  const { gameState, placeFranchise } = useContext(GameStateContext);
   const { selectedCounty } = gameState;
 
   if (!selectedCounty) {
@@ -25,7 +22,6 @@ const InfoCard = () => {
   }
   const [population, setPopulation] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [difficultyScore, setDifficultyScore] = useState<number | null>(null);
   const isCountyOwned = useIsCountyOwned(selectedCounty);
 
   useEffect(() => {
@@ -37,12 +33,9 @@ const InfoCard = () => {
       setLoading(true);
       const countyPopulation = await fetchPopulationData(selectedCounty);
       if (countyPopulation) {
-        const difficultyScore = calculateDifficultyScoreBasedOnPopulation(countyPopulation);
         setPopulation(countyPopulation);
-        setDifficultyScore(difficultyScore);
       } else {
         setPopulation(null);
-        setDifficultyScore(null);
       }
       setLoading(false);
     };
@@ -50,12 +43,9 @@ const InfoCard = () => {
   }, [selectedCounty]);
 
 
-  const buttonText = getButtonText(selectedCounty, gameState);
-  const isButtonDisabled = getIsButtonDisabled(selectedCounty, gameState);
-
   return (
     <div
-      data-testid="info-card"
+      data-testid={DataTestIDs.INFO_CARD}
       className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
@@ -97,20 +87,21 @@ const InfoCard = () => {
         )}
       </div>
       <button
-        data-testid="conquer-county-button"
-        onClick={async () => {
+        data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
+        onClick={() => {
           if (selectedCounty != null) {
-            await conquerCounty(selectedCounty);
+            placeFranchise(`${selectedCounty.name} Franchise`);
           }
         }}
-        disabled={isButtonDisabled}
-        className={`w-full mt-6 px-4 py-3 rounded-lg font-bold transition-all duration-300 ${isButtonDisabled
+        disabled={!gameState.clickedLocation}
+        className={`w-full mt-6 px-4 py-3 rounded-lg font-bold
+           transition-all duration-300 ${!gameState.clickedLocation
             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            : 'bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 ' +
+            : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 ' +
             'text-white hover:scale-105 hover:shadow-lg'
           }`}
       >
-        {buttonText}
+        {gameState.clickedLocation ? 'Place Franchise' : 'Click Map to Place'}
       </button>
     </div>
   );
@@ -123,29 +114,5 @@ const InfoRow = ({ label, value, className }: { label: string, value: string, cl
   </div>
 );
 
-const getButtonText = (county: County, gameState: GameState): string => {
-  if (gameState.ownedCounties.has(county.countyFP + county.stateFP)) {
-    return 'Already Owned';
-  }
-  if (gameState.gameTime.isPaused) {
-    return 'Game Paused';
-  }
-  const cost = getCountyCost(county.name);
-  if (gameState.money < cost) {
-    return `Insufficient Funds ($${cost})`;
-  }
-  return `Conquer Territory ($${cost})`;
-};
-
-const getIsButtonDisabled = (county: County, gameState: GameState): boolean => {
-  if (gameState.gameTime.isPaused) {
-    return true;
-  }
-  if (gameState.ownedCounties.has(county.countyFP + county.stateFP)) {
-    return true;
-  }
-  const cost = getCountyCost(county.name);
-  return gameState.money < cost;
-};
 
 export default InfoCard;

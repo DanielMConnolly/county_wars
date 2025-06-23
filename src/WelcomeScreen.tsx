@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
 import CreateGameModal from './CreateGameModal';
+import { DataTestIDs } from './DataTestIDs';
 
 interface Game {
   id: string;
@@ -61,7 +62,7 @@ export default function WelcomeScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900
      to-slate-900 flex flex-col"
-      data-testid="welcome-screen"
+      data-testid={DataTestIDs.WELCOME_SCREEN}
     >
       {/* Top Menu Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800
@@ -101,7 +102,7 @@ export default function WelcomeScreen() {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-white">Available Games</h3>
                 <button
-                  data-testid="create-game-button"
+                  data-testid={DataTestIDs.CREATE_GAME_BUTTON}
                   onClick={() => setIsModalOpen(true)}
                   className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700
                  hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg
