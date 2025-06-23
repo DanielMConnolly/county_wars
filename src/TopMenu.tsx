@@ -35,12 +35,6 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
 
       {/* Stats */}
       <div className="flex gap-8">
-        <StatItem
-          icon={<Map className="w-5 h-5 text-green-400" />}
-          value={gameState.ownedCounties.size}
-          label="Counties"
-          color="text-green-400"
-        />
         <div          data-testid={DataTestIDs.FRANCHISE_COUNT}>
         <StatItem
           icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}

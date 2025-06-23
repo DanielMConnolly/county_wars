@@ -4,7 +4,6 @@ import { County, GameState, Franchise } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
 import { connectToSocket } from "./services/connectToSocket";
 import {
-  fetchUserCounties,
   fetchUserHighlightColor,
   updateUserHighlightColor,
   fetchUserMoney,
@@ -42,81 +41,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   });
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  // Helper function to add a county
-  const addCounty = (countyName: string) => {
-    try {
-      if (isConnected) {
-        console.log('Socket connected, claiming county via socket');
-        socketService.claimCounty(countyName);
-      } else {
-        console.log('Socket not connected, updating state directly');
-        setGameState((prevState) => ({
-          ...prevState,
-          ownedCounties: new Set([...prevState.ownedCounties, countyName]),
-        }));
-      }
-      console.log('addCounty completed successfully');
-    } catch (error) {
-      console.error('Error in addCounty:', error);
-      // Don't throw the error, just log it to prevent crashes
-    }
-  };
-
-  // Helper function to conquer a county with cost deduction
-  const conquerCounty = async (county: County): Promise<boolean> => {
-    try {
-      const cost = getCountyCost(county.name);
-
-      // Check if user has enough money
-      if (gameState.money < cost) {
-        console.log('Insufficient funds to conquer county:',
-          county.name, 'Cost:', cost, 'Available:', gameState.money);
-        return false;
-      }
-
-      // Deduct the cost from user's money
-      const newMoney = gameState.money - cost;
-
-      // Update money in database
-      const moneyUpdated = await updateUserMoney(userId, newMoney);
-      if (!moneyUpdated) {
-        console.error('Failed to update money in database');
-        return false;
-      }
-
-      // Update local state with new money amount
-      setGameState((prevState) => ({
-        ...prevState,
-        money: newMoney,
-      }));
-
-      // Now claim the county
-      const countyId = county.countyFP + county.stateFP;
-      addCounty(countyId);
-
-      console.log(`Successfully conquered ${county.name} for $${cost}. Remaining money: $${newMoney}`);
-      return true;
-    } catch (error) {
-      console.error('Error in conquerCounty:', error);
-      return false;
-    }
-  };
-
-  // Helper function to remove a county
-  const removeCounty = (countyId: string) => {
-    if (isConnected) {
-      socketService.releaseCounty(countyId);
-    } else {
-      setGameState((prevState) => {
-        const newOwnedCounties = new Set(prevState.ownedCounties);
-        newOwnedCounties.delete(countyId);
-        return {
-          ...prevState,
-          ownedCounties: newOwnedCounties,
-        };
-      });
-    }
-  };
 
   // Helper function to select a county
   const selectCounty = (countyInfo: County) => {
@@ -136,12 +60,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
   const resetGame = () => {
     if (window.confirm("Are you sure you want to reset the game?")) {
-      // Release all owned counties first
-      if (isConnected) {
-        gameState.ownedCounties.forEach(countyId => {
-          socketService.releaseCounty(countyId);
-        });
-      }
       setGameState(getDefaultState());
     }
   };
@@ -248,13 +166,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   useEffect(() => {
     const fetchInitialData = async () => {
       console.log('Fetching initial data for userId:', userId, 'gameId:', gameId);
-      const ownedCounties = await fetchUserCounties(userId, gameId);
       const savedColor = await fetchUserHighlightColor(userId);
       const userMoney = await fetchUserMoney(userId);
 
       setGameState(prevState => ({
         ...prevState,
-        ownedCounties: new Set(ownedCounties),
         highlightColor: savedColor,
         money: userMoney,
       }));
@@ -367,9 +283,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const contextValue: GameStateContextType = {
     gameState,
     setGameState,
-    addCounty,
-    conquerCounty,
-    removeCounty,
     selectCounty,
     setMapStyle,
     setHighlightColor,

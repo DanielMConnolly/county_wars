@@ -7,27 +7,6 @@ interface AuthResponse {
   token: string;
 }
 
-
-export async function fetchUserCounties(userId: string, gameId: string): Promise<string[]> {
-  try {
-    console.log('Fetching initial counties for userId:', userId, 'gameId:', gameId);
-    const response = await fetch(`${API_BASE_URL}/api/counties/${userId}/${gameId}`);
-    console.log('Counties HTTP response status:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Fetched initial counties via HTTP:', data.ownedCounties);
-      return data.ownedCounties;
-    } else {
-      console.error('Counties HTTP request failed with status:', response.status);
-      return [];
-    }
-  } catch (error) {
-    console.error('Failed to fetch initial counties:', error);
-    return [];
-  }
-}
-
 export async function fetchUserHighlightColor(userId: string): Promise<string> {
   try {
     console.log('Fetching highlight color for userId:', userId);

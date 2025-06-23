@@ -1,9 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap } from 'lucide-react';
 import {
-  useIsCountyOwned,
-} from './utils/gameUtils';
-import {
   calculateCountyDifficulty,
   getCountyCost,
   getDifficultyDisplayName,
@@ -22,7 +19,6 @@ const InfoCard = () => {
   }
   const [population, setPopulation] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const isCountyOwned = useIsCountyOwned(selectedCounty);
 
   useEffect(() => {
     const fetchPopulation = async () => {
@@ -66,13 +62,6 @@ const InfoCard = () => {
               value={loading ? 'Loading...' : population ? population.toLocaleString() : 'Unknown'}
               className="text-blue-300"
             />
-
-            <InfoRow
-              label="Status:"
-              value={isCountyOwned ? 'Owned' : 'Neutral'}
-              className={isCountyOwned ? 'text-green-400' : 'text-yellow-400'}
-            />
-
             <InfoRow
               label="Difficulty:"
               value={getDifficultyDisplayName(calculateCountyDifficulty(selectedCounty.name))}

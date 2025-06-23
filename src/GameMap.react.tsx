@@ -10,7 +10,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
-import {MapControls } from "./types/GameTypes";
+import { MapControls } from "./types/GameTypes";
 import React from 'react';
 import { DataTestIDs } from "./DataTestIDs";
 import { fetchGameTime, getGameFranchises } from "./api_calls/CountyWarsHTTPRequests";
@@ -114,17 +114,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
               console.log('🖱️ County clicked:', feature.properties?.NAME);
 
               setCurrentHighlighted(prevLayer => {
-                if (!prevLayer) return layer;
-                const countyId
-                  = prevLayer?.feature?.properties.COUNTYFP + prevLayer?.feature?.properties.STATEFP;
-                if (gameStateRef.current.ownedCounties.has(countyId)) {
-                  prevLayer?.setStyle({
-                    ...highlightStyle,
-                    fillColor: gameStateRef.current.highlightColor,
-                  });
-                } else {
                   prevLayer?.setStyle(defaultStyle);
-                }
                 return layer;
               });
 
@@ -186,29 +176,16 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       return;
     }
 
-    console.log('Updating county styles. Owned counties:', Array.from(gameState.ownedCounties));
-
-    const updatedHighlightStyle = {
-      ...highlightStyle,
-      fillColor: gameState.highlightColor
-    };
-
     let styledCount = 0;
     countyLayerRef.current.eachLayer((layer: Layer) => {
       if (!(layer instanceof Polyline)) return;
 
-      const countyId = layer.feature?.properties.COUNTYFP + layer.feature?.properties.STATEFP;
+      layer.setStyle(defaultStyle);
 
-      if (gameState.ownedCounties.has(countyId)) {
-        layer.setStyle(updatedHighlightStyle);
-        styledCount++;
-      } else {
-        layer.setStyle(defaultStyle);
-      }
     });
 
     console.log(`Styled ${styledCount} owned counties`);
-  }, [gameState.highlightColor, gameState.ownedCounties, isCountyLayerLoaded]);
+  }, [gameState.highlightColor, isCountyLayerLoaded]);
 
   // Update franchise markers when franchises change
   useEffect(() => {

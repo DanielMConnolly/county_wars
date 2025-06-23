@@ -20,7 +20,6 @@ export type Franchise = {
 }
 
 export type GameState = {
-    ownedCounties: Set<string>,
     money: number, // Changed from resources to money (USD)
     selectedCounty: County | null,
     mapStyle: string
