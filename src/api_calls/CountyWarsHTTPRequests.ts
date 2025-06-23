@@ -1,4 +1,4 @@
-import { GameTime, User } from '../types/GameTypes';
+import { Franchise, GameTime, User } from '../types/GameTypes';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
 
@@ -328,6 +328,98 @@ export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]
     }
   } catch (error) {
     console.error('Fetch all games request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// Franchise management functions
+export async function placeFranchise(
+  userId: string,
+  gameId: string,
+  lat: number,
+  long: number,
+  name: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/franchises`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, gameId, lat, long, name }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: data.error || 'Failed to place franchise' };
+    }
+  } catch (error) {
+    console.error('Place franchise request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function getUserFranchises(
+  userId: string,
+  gameId: string
+): Promise<{ success: boolean; franchises?: any[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/franchises`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, franchises: data.franchises };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch franchises' };
+    }
+  } catch (error) {
+    console.error('Fetch user franchises request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function getGameFranchises(
+  gameId: string
+): Promise<{ success: boolean; franchises?: Franchise[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/franchises`);
+    const data = await response.json();
+    if (response.ok) {
+      return { success: true, franchises: data.franchises };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch game franchises' };
+    }
+  } catch (error) {
+    console.error('Fetch game franchises request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function removeFranchise(
+  franchiseId: number,
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/franchises/${franchiseId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: data.error || 'Failed to remove franchise' };
+    }
+  } catch (error) {
+    console.error('Remove franchise request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

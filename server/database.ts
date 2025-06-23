@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
-import { GameTime } from '../src/types/GameTypes';
+import { Franchise, GameTime } from '../src/types/GameTypes';
 import { User } from './types/ServerTypes';
 
 // Initialize SQLite database
@@ -49,6 +49,21 @@ const initDatabase = () => {
       FOREIGN KEY (user_id) REFERENCES users (id),
       FOREIGN KEY (game_id) REFERENCES games (id),
       UNIQUE(user_id, game_id, county_name)
+    )
+  `);
+
+  // Create placed_franchises table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS placed_franchises (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      game_id TEXT NOT NULL,
+      lat REAL NOT NULL,
+      long REAL NOT NULL,
+      name TEXT NOT NULL,
+      time_placed DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (game_id) REFERENCES games (id)
     )
   `);
 
@@ -122,6 +137,8 @@ const initDatabase = () => {
       CREATE INDEX IF NOT EXISTS idx_user_counties_game_id ON user_counties(game_id);
       CREATE INDEX IF NOT EXISTS idx_user_counties_county_name ON user_counties(county_name);
       CREATE INDEX IF NOT EXISTS idx_games_created_by ON games(created_by);
+      CREATE INDEX IF NOT EXISTS idx_placed_franchises_user_id ON placed_franchises(user_id);
+      CREATE INDEX IF NOT EXISTS idx_placed_franchises_game_id ON placed_franchises(game_id);
     `);
     console.log('Database indexes created successfully');
   } catch (error) {
@@ -151,6 +168,12 @@ const initDatabase = () => {
     getUserGames: db.prepare('SELECT * FROM games WHERE created_by = ? ORDER BY created_at DESC'),
     updateGameElapsedTime: db.prepare('UPDATE games SET elapsed_time = ? WHERE id = ?'),
     getGameElapsedTime: db.prepare('SELECT elapsed_time FROM games WHERE id = ?'),
+
+    // Franchise operations
+    placeFranchise: db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
+    getUserFranchises: db.prepare('SELECT * FROM placed_franchises WHERE user_id = ? AND game_id = ?'),
+    getGameFranchises: db.prepare('SELECT * FROM placed_franchises WHERE game_id = ?'),
+    removeFranchise: db.prepare('DELETE FROM placed_franchises WHERE id = ? AND user_id = ?'),
 
     // County operations (now game-specific)
     getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ? AND game_id = ?'),
@@ -443,6 +466,47 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error getting game elapsed time:', error);
       return 0;
+    }
+  },
+
+  // Franchise operations
+  placeFranchise: (userId: string, gameId: string, lat: number, long: number, name: string): boolean => {
+    try {
+      const result = statements.placeFranchise.run(userId, gameId, lat, long, name);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error placing franchise:', error);
+      return false;
+    }
+  },
+
+  getUserFranchises: (userId: string, gameId: string): any[] => {
+    try {
+      return statements.getUserFranchises.all(userId, gameId) as any[];
+    } catch (error) {
+      console.error('Error getting user franchises:', error);
+      return [];
+    }
+  },
+
+  getGameFranchises: (gameId: string): Franchise[] => {
+    try {
+      console.log('Getting game franchises for game:', gameId);
+      console.log(statements.getGameFranchises.all(gameId) );
+      return statements.getGameFranchises.all(gameId);
+    } catch (error) {
+      console.error('Error getting game franchises:', error);
+      return [];
+    }
+  },
+
+  removeFranchise: (franchiseId: number, userId: string): boolean => {
+    try {
+      const result = statements.removeFranchise.run(franchiseId, userId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error removing franchise:', error);
+      return false;
     }
   }
 };

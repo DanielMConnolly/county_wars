@@ -341,6 +341,87 @@ app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
   }
 });
 
+// Franchise management endpoints
+app.post('/api/franchises', (req: Request, res: Response): void => {
+  const { userId, gameId, lat, long, name } = req.body;
+
+  if (!userId || !gameId || lat === undefined || long === undefined || !name) {
+    res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
+    return;
+  }
+
+  if (typeof lat !== 'number' || typeof long !== 'number') {
+    res.status(400).json({ error: 'lat and long must be numbers' });
+    return;
+  }
+
+  try {
+    const success = dbOperations.placeFranchise(userId, gameId, lat, long, name);
+
+    if (success) {
+      res.json({ message: 'Franchise placed successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to place franchise' });
+    }
+  } catch (error) {
+    console.error('Error placing franchise:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/users/:userId/games/:gameId/franchises', (req: Request, res: Response): void => {
+  const { userId, gameId } = req.params;
+
+  try {
+    const franchises = dbOperations.getUserFranchises(userId, gameId);
+    res.json({ franchises });
+  } catch (error) {
+    console.error('Error fetching user franchises:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/games/:gameId/franchises', (req: Request, res: Response): void => {
+  const { gameId } = req.params;
+
+  try {
+    const franchises = dbOperations.getGameFranchises(gameId);
+    res.json({ franchises });
+  } catch (error) {
+    console.error('Error fetching game franchises:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/franchises/:franchiseId', (req: Request, res: Response): void => {
+  const { franchiseId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    res.status(400).json({ error: 'userId is required' });
+    return;
+  }
+
+  const franchiseIdNum = parseInt(franchiseId, 10);
+  if (isNaN(franchiseIdNum)) {
+    res.status(400).json({ error: 'franchiseId must be a valid number' });
+    return;
+  }
+
+  try {
+    const success = dbOperations.removeFranchise(franchiseIdNum, userId);
+
+    if (success) {
+      res.json({ message: 'Franchise removed successfully' });
+    } else {
+      res.status(404).json({ error: 'Franchise not found or not owned by user' });
+    }
+  } catch (error) {
+    console.error('Error removing franchise:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Catch-all handler for React Router in production
 if (process.env.NODE_ENV === 'production') {
   app.get(/.*/, (req, res) => {

@@ -14,7 +14,7 @@ export type GameTime = {
 export type Franchise = {
     id: string;
     lat: number;
-    lng: number;
+    long: number;
     name: string;
     placedAt: number; // timestamp
 }

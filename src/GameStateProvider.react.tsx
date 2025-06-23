@@ -9,13 +9,14 @@ import {
   updateUserHighlightColor,
   fetchUserMoney,
   updateUserMoney,
-  fetchGameTime,
   updateGameElapsedTime,
+  placeFranchise as placeFranchiseAPI,
 } from "./api_calls/CountyWarsHTTPRequests";
 import { getCountyCost } from "./utils/countyUtils";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
+import useInterval from "./utils/useInterval";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -207,7 +208,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }));
   };
 
-  const placeFranchise = (name: string) => {
+  const placeFranchise = async (name: string) => {
     if (!gameState.clickedLocation) {
       console.error('No clicked location available for franchise placement');
       return;
@@ -216,10 +217,12 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     const newFranchise: Franchise = {
       id: `franchise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       lat: gameState.clickedLocation.lat,
-      lng: gameState.clickedLocation.lng,
+      long: gameState.clickedLocation.lng,
       name: name,
       placedAt: Date.now(),
     };
+
+    await placeFranchiseAPI(userId, gameId, gameState.clickedLocation.lat, gameState.clickedLocation.lng, name);
 
     setGameState((prevState) => ({
       ...prevState,
@@ -247,7 +250,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       console.log('Fetching initial data for userId:', userId, 'gameId:', gameId);
       const ownedCounties = await fetchUserCounties(userId, gameId);
       const savedColor = await fetchUserHighlightColor(userId);
-      const savedGameTime = await fetchGameTime(gameId);
       const userMoney = await fetchUserMoney(userId);
 
       setGameState(prevState => ({
@@ -255,10 +257,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         ownedCounties: new Set(ownedCounties),
         highlightColor: savedColor,
         money: userMoney,
-        gameTime: savedGameTime ? {
-         elapsedTime: savedGameTime,
-         ...prevState.gameTime,
-        } : prevState.gameTime
       }));
     };
     fetchInitialData();
@@ -278,57 +276,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   }, [userId, gameId]);
 
   // Time progression logic
-  useEffect(() => {
-    const interval = setInterval(async() => {
-      if (gameState.gameTime.isPaused == true) {
-        return;
-      }
-      setGameState((prevState) => {
-        let elapsedTime;
-        if (prevState?.gameTime?.elapsedTime != null) {
-          elapsedTime = 1000 + prevState?.gameTime?.elapsedTime;
-        }
-        else {
-          elapsedTime = 1000;
-        }
-
-        const totalGameMs = prevState.gameTime.gameDurationHours * 60 * 60 * 1000;
-
-        // Calculate progress (0 to 1)
-        const progress = Math.min(elapsedTime / totalGameMs, 1);
-
-        // Total months from 1945 to 2025 (80 years * 12 months)
-        const totalMonths = 80 * 12;
-        const currentMonthIndex = Math.floor(progress * totalMonths);
-
-        // Convert back to year and month
-        const year = 1945 + Math.floor(currentMonthIndex / 12);
-        const month = (currentMonthIndex % 12) + 1;
-
-        // Don't update if we're already at the end
-        if (year >= 2025 && month >= 12) {
-          return {
-            ...prevState,
-            gameTime: {
-              ...prevState.gameTime,
-              elapsedTime: elapsedTime,
-              year: 2025,
-              month: 12,
-              isPaused: true, // Auto-pause when reaching the end
-            },
-          };
-        }
-
-        return {
-          ...prevState,
-          gameTime: {
-            ...prevState.gameTime,
-            elapsedTime: elapsedTime,
-            year,
-            month,
-          },
-        };
-      });
+  useInterval(
+    async () => {
+      console.log('Autosaving game time:', gameState.gameTime);
       let currentGameId = gameState.currentGameId;
       if (currentGameId == null) {
         // Try to get game ID from URL if not in state
@@ -342,38 +292,77 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
           return;
         }
       }
-      const success = await updateGameElapsedTime(currentGameId, gameState.gameTime.elapsedTime??0);
-      if (!success) return;
-    }, 1000); // Update every second
+      const success = await updateGameElapsedTime(currentGameId, gameState.gameTime.elapsedTime ?? 12222);
+      if (!success) {
+        console.warn('Failed to autosave game time');
+      }
+    }, 15000
+  )
 
-    return () => clearInterval(interval);
-  }, [gameState.gameTime.isPaused, gameState.gameTime.startTime, gameState.gameTime.elapsedTime]);
+  useInterval(()=> {
+    if (gameState.gameTime.isPaused == true) {
+      return;
+    }
+    setGameState((prevState) => {
+      let elapsedTime;
+      if (prevState?.gameTime?.elapsedTime != null) {
+        elapsedTime = 1000 + prevState?.gameTime?.elapsedTime;
+      }
+      else {
+        elapsedTime = 1000;
+      }
 
-  // Autosave game time every 15 seconds
-  // useEffect(() => {
-  //   const saveInterval = setInterval(async () => {
-  //     console.log('Autosaving game time:', gameState.gameTime);
-  //     let currentGameId = gameState.currentGameId;
-  //     if (currentGameId == null) {
-  //       // Try to get game ID from URL if not in state
-  //       const urlGameId = getCurrentGameId();
-  //       if (urlGameId) {
-  //         currentGameId = urlGameId;
-  //         // Update state with the game ID from URL
-  //         setGameState(prev => ({ ...prev, currentGameId: urlGameId }));
-  //       } else {
-  //         console.log('No current game id, skipping autosave');
-  //         return;
-  //       }
-  //     }
-  //    const success = await updateGameElapsedTime(currentGameId, gameState.gameTime.elapsedTime??0);
-  //     if (!success) {
-  //       console.warn('Failed to autosave game time');
-  //     }
-  //   }, 15000); // Save every 15 seconds
+      const totalGameMs = prevState.gameTime.gameDurationHours * 60 * 60 * 1000;
 
-  //   return () => clearInterval(saveInterval);
-  // }, [gameState.gameTime, userId, gameState.currentGameId]);
+      // Calculate progress (0 to 1)
+      const progress = Math.min(elapsedTime / totalGameMs, 1);
+
+      // Total months from 1945 to 2025 (80 years * 12 months)
+      const totalMonths = 80 * 12;
+      const currentMonthIndex = Math.floor(progress * totalMonths);
+
+      // Convert back to year and month
+      const year = 1945 + Math.floor(currentMonthIndex / 12);
+      const month = (currentMonthIndex % 12) + 1;
+
+      // Don't update if we're already at the end
+      if (year >= 2025 && month >= 12) {
+        return {
+          ...prevState,
+          gameTime: {
+            ...prevState.gameTime,
+            elapsedTime: elapsedTime,
+            year: 2025,
+            month: 12,
+            isPaused: true, // Auto-pause when reaching the end
+          },
+        };
+      }
+
+      return {
+        ...prevState,
+        gameTime: {
+          ...prevState.gameTime,
+          elapsedTime: elapsedTime,
+          year,
+          month,
+        },
+      };
+    });
+    let currentGameId = gameState.currentGameId;
+    if (currentGameId == null) {
+      // Try to get game ID from URL if not in state
+      const urlGameId = getCurrentGameId();
+      if (urlGameId) {
+        currentGameId = urlGameId;
+        // Update state with the game ID from URL
+        setGameState(prev => ({ ...prev, currentGameId: urlGameId }));
+      } else {
+        console.log('No current game id, skipping autosave');
+        return;
+      }
+    }
+  }, 1000);
 
   const contextValue: GameStateContextType = {
     gameState,

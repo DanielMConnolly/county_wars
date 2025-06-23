@@ -88,9 +88,9 @@ const InfoCard = () => {
       </div>
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
-        onClick={() => {
+        onClick={async () => {
           if (selectedCounty != null) {
-            placeFranchise(`${selectedCounty.name} Franchise`);
+            await placeFranchise(`${selectedCounty.name} Franchise`);
           }
         }}
         disabled={!gameState.clickedLocation}
