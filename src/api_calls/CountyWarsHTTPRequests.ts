@@ -332,6 +332,25 @@ export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]
   }
 }
 
+export async function deleteGame(gameId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
+      method: 'DELETE',
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: data.error || 'Failed to delete game' };
+    }
+  } catch (error) {
+    console.error('Delete game request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 // Franchise management functions
 export async function placeFranchise(
   userId: string,

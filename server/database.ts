@@ -168,6 +168,7 @@ const initDatabase = () => {
     getUserGames: db.prepare('SELECT * FROM games WHERE created_by = ? ORDER BY created_at DESC'),
     updateGameElapsedTime: db.prepare('UPDATE games SET elapsed_time = ? WHERE id = ?'),
     getGameElapsedTime: db.prepare('SELECT elapsed_time FROM games WHERE id = ?'),
+    deleteGame: db.prepare('DELETE FROM games WHERE id = ?'),
 
     // Franchise operations
     placeFranchise: db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
@@ -506,6 +507,22 @@ export const dbOperations = {
       return result.changes > 0;
     } catch (error) {
       console.error('Error removing franchise:', error);
+      return false;
+    }
+  },
+
+  // Delete game and all related data
+  deleteGame: (gameId: string): boolean => {
+    try {
+      // Delete related data first (due to foreign key constraints)
+      db.prepare('DELETE FROM user_counties WHERE game_id = ?').run(gameId);
+      db.prepare('DELETE FROM placed_franchises WHERE game_id = ?').run(gameId);
+      
+      // Then delete the game
+      const result = statements.deleteGame.run(gameId);
+      return result.changes > 0;
+    } catch (error) {
+      console.error('Error deleting game:', error);
       return false;
     }
   }

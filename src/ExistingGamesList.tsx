@@ -1,6 +1,7 @@
 import React from 'react';
-import { Users } from 'lucide-react';
+import { Users, Trash2 } from 'lucide-react';
 import { DataTestIDs } from './DataTestIDs';
+import { deleteGame } from './api_calls/CountyWarsHTTPRequests';
 
 interface Game {
   id: string;
@@ -14,6 +15,7 @@ interface ExistingGamesListProps {
   isLoadingGames: boolean;
   onJoinGame: (gameId: string) => void;
   onCreateGame: () => void;
+  onGameDeleted: () => void; // Callback to refresh the games list
 }
 
 export default function ExistingGamesList({
@@ -21,7 +23,25 @@ export default function ExistingGamesList({
   isLoadingGames,
   onJoinGame,
   onCreateGame,
+  onGameDeleted,
 }: ExistingGamesListProps) {
+  const handleDeleteGame = async (gameId: string, gameName: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the join game click
+    
+    if (window.confirm(`Are you sure you want to delete the game "${gameName}"? This action cannot be undone.`)) {
+      try {
+        const result = await deleteGame(gameId);
+        if (result.success) {
+          onGameDeleted(); // Refresh the games list
+        } else {
+          alert(`Failed to delete game: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error deleting game:', error);
+        alert('Failed to delete game. Please try again.');
+      }
+    }
+  };
   if (isLoadingGames) {
     return (
       <div className="text-center py-12">
@@ -51,7 +71,14 @@ export default function ExistingGamesList({
                    • {new Date(game.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => handleDeleteGame(game.id, game.name, e)}
+                  className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg font-medium transition-colors"
+                  title="Delete Game"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
                 <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium">
                   Join
                 </div>

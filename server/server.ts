@@ -341,6 +341,23 @@ app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
   }
 });
 
+app.delete('/api/games/:gameId', (req: Request, res: Response): void => {
+  const { gameId } = req.params;
+
+  try {
+    const success = dbOperations.deleteGame(gameId);
+
+    if (success) {
+      res.json({ message: 'Game deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Game not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting game:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Franchise management endpoints
 app.post('/api/franchises', (req: Request, res: Response): void => {
   const { userId, gameId, lat, long, name } = req.body;

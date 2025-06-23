@@ -118,6 +118,7 @@ export default function WelcomeScreen() {
                 isLoadingGames={isLoadingGames}
                 onJoinGame={handleJoinGame}
                 onCreateGame={() => setIsModalOpen(true)}
+                onGameDeleted={loadGames}
               />
             </div>
           </div>

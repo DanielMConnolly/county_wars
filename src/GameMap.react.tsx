@@ -10,7 +10,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
 import { GameStateContext } from "./GameStateContext";
-import { Franchise, MapControls } from "./types/GameTypes";
+import {MapControls } from "./types/GameTypes";
 import React from 'react';
 import { DataTestIDs } from "./DataTestIDs";
 import { fetchGameTime, getGameFranchises } from "./api_calls/CountyWarsHTTPRequests";
