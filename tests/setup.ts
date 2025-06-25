@@ -14,13 +14,11 @@ declare global {
 const waitForServer = async (url: string, timeout = 50000) => {
   const start = Date.now();
   while (Date.now() - start < timeout) {
-    console.log('Checking if server is ready');
     try {
       // eslint-disable-next-line no-undef
       await fetch(url, { signal: AbortSignal.timeout(5000) });
       return true;
     } catch (_e) {
-      console.log('Server not ready yet');
     }
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
@@ -28,10 +26,8 @@ const waitForServer = async (url: string, timeout = 50000) => {
 };
 
 export async function setup(): Promise<void> {
-  console.log('Starting test servers...');
 
   // Initialize test database schema
-  console.log('Initializing test database...');
   const { execSync } = require('child_process');
   try {
     execSync('npx prisma db push', {
@@ -41,9 +37,7 @@ export async function setup(): Promise<void> {
       },
       stdio: 'inherit'
     });
-    console.log('Test database initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize test database:', error);
     throw error;
   }
 
@@ -60,7 +54,6 @@ export async function setup(): Promise<void> {
 
   // Log server errors for debugging
   serverProcess.stderr?.on('data', (data) => {
-    console.error('SERVER ERROR:', data.toString());
   });
 
   // Store server process globally for teardown
@@ -69,9 +62,7 @@ export async function setup(): Promise<void> {
 
   // Wait for server to be ready (check server port)
   await waitForServer(`http://localhost:${SERVER_PORT}`);
-  console.log(`Server ready at http://localhost:${SERVER_PORT}`);
 
-  console.log('Starting Vite dev server...');
 
   // Start client
   const clientProcess = spawn('npm', ['run', 'dev'], {
@@ -89,7 +80,6 @@ export async function setup(): Promise<void> {
 
   // Wait for client to be ready
   await waitForServer(`http://localhost:${PORT}`);
-  console.log(`Vite server ready at http://localhost:${PORT}`);
 
 };
 

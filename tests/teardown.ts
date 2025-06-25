@@ -11,21 +11,17 @@ const killProcessOnPort = async (port: number) => {
       for (const pid of pids) {
         try {
           execSync(`kill -9 ${pid.trim()}`);
-          console.log(`Killed process ${pid} on port ${port}`);
         } catch (e) {
-          console.log(`Failed to kill process ${pid}: ${e}`);
         }
       }
     }
   } catch (e) {
     // No process found on port, which is fine
-    console.log(`No process found on port ${port}`);
   }
 };
 
 export default async function teardown() {
   await globalThis.__BROWSER_GLOBAL__?.close();
-  console.log('Stopping test servers...');
 
   // Kill any remaining processes on the test ports
   await killProcessOnPort(3001);
@@ -44,7 +40,6 @@ export default async function teardown() {
   for (const dbPath of testDbPaths) {
     try {
       await fs.unlink(dbPath);
-      console.log(`Test database file cleaned up: ${dbPath}`);
     } catch (e) {
       // File might not exist, ignore
     }
@@ -57,5 +52,4 @@ export default async function teardown() {
     // File might not exist, ignore
   }
 
-  console.log('Test cleanup completed');
 }

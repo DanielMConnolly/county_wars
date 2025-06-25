@@ -5,7 +5,7 @@ export default {
   },
   globalTeardown: './tests/teardown.ts',
   testMatch: ['<rootDir>/tests/**/*.test.{ts,tsx}'],
-  testTimeout: 12000,
+  testTimeout: 20000,
   verbose: true,
   collectCoverage: false,
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],

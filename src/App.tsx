@@ -13,6 +13,8 @@ import LoginPage from './auth/LoginPage';
 import SignupPage from './auth/SignupPage';
 import WelcomeScreen from './WelcomeScreen';
 import AuthModal from './auth/AuthModal';
+import { ToastProvider } from './Toast/ToastContext';
+import ToastContainer from './Toast/ToastContainer';
 
 
 const App = () => {
@@ -38,9 +40,11 @@ const App = () => {
     <div className="h-screen bg-gray-900 text-white overflow-hidden relative">
 
       <AuthProvider>
-        <GameStateProvider>
-        <RouterProvider router={router} />
-        </GameStateProvider>
+        <ToastProvider>
+          <GameStateProvider>
+            <RouterProvider router={router} />
+          </GameStateProvider>
+        </ToastProvider>
       </AuthProvider>
     </div>
   );
@@ -86,6 +90,7 @@ const AppContent = () => {
   // Show main game interface for authenticated users with a selected game
   return (
     <>
+      <ToastContainer />
       <TopMenu />
 
       <MapControls

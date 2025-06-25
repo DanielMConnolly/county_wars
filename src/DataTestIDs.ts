@@ -40,4 +40,14 @@ export enum DataTestIDs {
   SETTINGS_COLOR_SELECTOR_OPTION = "SETTINGS_COLOR_SELECTOR_OPTION",
   GAME_SETTINGS_BUTTON_SAVE = "GAME_SETTINGS_BUTTON_SAVE",
   FRANCHISE_MARKER = "FRANCHISE_MARKER",
+
+  // Game Information
+  GAME_INFO_BUTTON = 'game-info-button',
+  GAME_INFO_MODAL = 'game-info-modal',
+  GAME_INFO_FRANCHISES_TAB = 'game-info-franchises-tab',
+  GAME_INFO_FRANCHISES_COUNT = 'game-info-franchises-count',
+  GAME_INFO_CLOSE_BUTTON = 'game-info-close-button',
+
+  // Toast Notifications
+  TOAST_NOTIFICATION = 'toast-notification',
 }
