@@ -145,14 +145,14 @@ app.put('/api/users/:userId/highlight-color', async function(req: Request, res: 
 });
 
 // Get user highlight color
-app.get('/api/users/:userId/highlight-color', (req, res) => {
+app.get('/api/users/:userId/highlight-color', async (req, res) => {
   const { userId } = req.params;
 
   try {
     // Ensure user exists in database
-    dbOperations.createUser(userId);
+    await dbOperations.createUser(userId);
 
-    const color = dbOperations.getUserHighlightColor(userId);
+    const color = await dbOperations.getUserHighlightColor(userId);
     res.json({ color });
   } catch (error) {
     console.error('Error fetching highlight color:', error);
