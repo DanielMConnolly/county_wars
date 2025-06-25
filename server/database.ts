@@ -38,6 +38,21 @@ const initDatabase = () => {
     )
   `);
 
+  // Create user_game_money table for per-game money tracking
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_game_money (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      game_id TEXT NOT NULL,
+      money INTEGER DEFAULT 1000,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      FOREIGN KEY (game_id) REFERENCES games (id),
+      UNIQUE(user_id, game_id)
+    )
+  `);
+
   // Create placed_franchises table
   db.exec(`
     CREATE TABLE IF NOT EXISTS placed_franchises (
@@ -122,6 +137,8 @@ const initDatabase = () => {
       CREATE INDEX IF NOT EXISTS idx_games_created_by ON games(created_by);
       CREATE INDEX IF NOT EXISTS idx_placed_franchises_user_id ON placed_franchises(user_id);
       CREATE INDEX IF NOT EXISTS idx_placed_franchises_game_id ON placed_franchises(game_id);
+      CREATE INDEX IF NOT EXISTS idx_user_game_money_user_id ON user_game_money(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_game_money_game_id ON user_game_money(game_id);
     `);
     console.log('Database indexes created successfully');
   } catch (error) {
@@ -174,10 +191,13 @@ const initDatabase = () => {
     getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
     getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
     getUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
-    getUserMoney: db.prepare('SELECT money FROM users WHERE id = ?'),
-    updateUserMoney: db.prepare('UPDATE users SET money = ?, last_active = CURRENT_TIMESTAMP WHERE id = ?'),
-    deductUserMoney: db.prepare(
-      'UPDATE users SET money = money - ?, last_active = CURRENT_TIMESTAMP WHERE id = ? AND money >= ?')
+    
+    // User-game money operations
+    getUserGameMoney: db.prepare('SELECT money FROM user_game_money WHERE user_id = ? AND game_id = ?'),
+    insertUserGameMoney: db.prepare('INSERT OR IGNORE INTO user_game_money (user_id, game_id, money) VALUES (?, ?, ?)'),
+    updateUserGameMoney: db.prepare('UPDATE user_game_money SET money = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND game_id = ?'),
+    deductUserGameMoney: db.prepare(
+      'UPDATE user_game_money SET money = money - ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND game_id = ? AND money >= ?')
   };
 
   console.log('Database initialized successfully');
@@ -316,27 +336,40 @@ export const dbOperations = {
     }
   },
 
-  // Money operations
-  getUserMoney: (userId: string): number => {
+  // Money operations - now per game
+  getUserGameMoney: (userId: string, gameId: string): number => {
     try {
-      const result = statements.getUserMoney.get(userId) as { money: number } | undefined;
+      // First, ensure the user-game money record exists
+      statements.insertUserGameMoney.run(userId, gameId, 1000);
+      
+      const result = statements.getUserGameMoney.get(userId, gameId) as { money: number } | undefined;
       return result?.money || 1000; // Default to starting money if not found
     } catch (error) {
-      console.error('Error getting user money:', error);
+      console.error('Error getting user game money:', error);
       return 1000;
     }
   },
 
-
-
-  updateUserMoney: (userId: string, amount: number): boolean => {
+  updateUserGameMoney: (userId: string, gameId: string, amount: number): boolean => {
     try {
-      const result = statements.updateUserMoney.run(amount, userId);
+      // Ensure the record exists first
+      statements.insertUserGameMoney.run(userId, gameId, 1000);
+      
+      const result = statements.updateUserGameMoney.run(amount, userId, gameId);
       return result.changes > 0;
     } catch (error) {
-      console.error('Error updating user money:', error);
+      console.error('Error updating user game money:', error);
       return false;
     }
+  },
+
+  // Legacy method for backward compatibility - uses default game
+  getUserMoney: (userId: string): number => {
+    return dbOperations.getUserGameMoney(userId, 'default-game');
+  },
+
+  updateUserMoney: (userId: string, amount: number): boolean => {
+    return dbOperations.updateUserGameMoney(userId, 'default-game', amount);
   },
 
   getAllGames: (): any[] => {
@@ -350,15 +383,23 @@ export const dbOperations = {
     }
   },
 
-  deductUserMoney: (userId: string, cost: number): boolean => {
+  deductUserGameMoney: (userId: string, gameId: string, cost: number): boolean => {
     try {
+      // Ensure the record exists first
+      statements.insertUserGameMoney.run(userId, gameId, 1000);
+      
       // This will only deduct if user has enough money (money >= cost)
-      const result = statements.deductUserMoney.run(cost, userId, cost);
+      const result = statements.deductUserGameMoney.run(cost, userId, gameId, cost);
       return result.changes > 0;
     } catch (error) {
-      console.error('Error deducting user money:', error);
+      console.error('Error deducting user game money:', error);
       return false;
     }
+  },
+
+  // Legacy method for backward compatibility
+  deductUserMoney: (userId: string, cost: number): boolean => {
+    return dbOperations.deductUserGameMoney(userId, 'default-game', cost);
   },
 
   // Game elapsed time operations
@@ -429,6 +470,7 @@ export const dbOperations = {
       // Delete related data first (due to foreign key constraints)
       db.prepare('DELETE FROM user_counties WHERE game_id = ?').run(gameId);
       db.prepare('DELETE FROM placed_franchises WHERE game_id = ?').run(gameId);
+      db.prepare('DELETE FROM user_game_money WHERE game_id = ?').run(gameId);
 
       // Then delete the game
       const result = statements.deleteGame.run(gameId);

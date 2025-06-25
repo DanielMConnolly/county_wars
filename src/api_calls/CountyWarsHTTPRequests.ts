@@ -93,30 +93,30 @@ export async function updateGameElapsedTime(gameID: string, elapsedTime: number)
   }
 }
 
-// Money management functions
-export async function fetchUserMoney(userId: string): Promise<number> {
+// Money management functions - now with game context
+export async function fetchUserGameMoney(userId: string, gameId: string): Promise<number> {
   try {
-    console.log('Fetching money for userId:', userId);
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/money`);
+    console.log('Fetching money for userId:', userId, 'in game:', gameId);
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/money`);
     console.log('Money HTTP response status:', response.status);
 
     if (response.ok) {
       const data = await response.json();
-      console.log('Fetched user money:', data.money);
+      console.log('Fetched user game money:', data.money);
       return data.money;
     } else {
       console.error('Money HTTP request failed with status:', response.status);
       return 1000; // Default starting money
     }
   } catch (error) {
-    console.error('Failed to fetch user money:', error);
+    console.error('Failed to fetch user game money:', error);
     return 1000; // Default starting money
   }
 }
 
-export async function updateUserMoney(userId: string, amount: number): Promise<boolean> {
+export async function updateUserGameMoney(userId: string, gameId: string, amount: number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/money`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/money`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -135,6 +135,15 @@ export async function updateUserMoney(userId: string, amount: number): Promise<b
     console.error('Failed to update money:', error);
     return false;
   }
+}
+
+// Legacy functions for backward compatibility (use default game)
+export async function fetchUserMoney(userId: string): Promise<number> {
+  return fetchUserGameMoney(userId, 'default-game');
+}
+
+export async function updateUserMoney(userId: string, amount: number): Promise<boolean> {
+  return updateUserGameMoney(userId, 'default-game', amount);
 }
 
 

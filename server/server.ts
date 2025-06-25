@@ -200,7 +200,51 @@ app.put('/api/games/:gameID/game-time', (req: Request, res: Response): void => {
   }
 });
 
-// Get user money
+// Get user money for a specific game
+app.get('/api/users/:userId/games/:gameId/money', (req: Request, res: Response): void => {
+  const { userId, gameId } = req.params;
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+
+    const money = dbOperations.getUserGameMoney(userId, gameId);
+    res.json({ money });
+  } catch (error) {
+    console.error('Error fetching user game money:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update user money for a specific game
+app.put('/api/users/:userId/games/:gameId/money', (req: Request, res: Response): void => {
+  const { userId, gameId } = req.params;
+  const { amount } = req.body;
+
+  if (typeof amount !== 'number') {
+    res.status(400).json({ error: 'Amount must be a number' });
+    return;
+  }
+
+  try {
+    // Ensure user exists in database
+    dbOperations.createUser(userId);
+
+    // Update the money
+    const success = dbOperations.updateUserGameMoney(userId, gameId, amount);
+
+    if (success) {
+      res.json({ message: 'Money updated successfully', money: amount });
+    } else {
+      res.status(500).json({ error: 'Failed to update money' });
+    }
+  } catch (error) {
+    console.error('Error updating money:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Legacy endpoints for backward compatibility (use default game)
 app.get('/api/users/:userId/money', (req: Request, res: Response): void => {
   const { userId } = req.params;
 
@@ -216,7 +260,6 @@ app.get('/api/users/:userId/money', (req: Request, res: Response): void => {
   }
 });
 
-// Update user money
 app.put('/api/users/:userId/money', (req: Request, res: Response): void => {
   const { userId } = req.params;
   const { amount } = req.body;
@@ -380,15 +423,15 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
     // Calculate franchise cost
     const franchiseCost = getCountyCost(countyName);
 
-    // Check if user has enough money
-    const userMoney = dbOperations.getUserMoney(userId);
+    // Check if user has enough money in this game
+    const userMoney = dbOperations.getUserGameMoney(userId, gameId);
     if (userMoney < franchiseCost) {
       res.status(400).json({ error: 'Insufficient funds to place franchise' });
       return;
     }
 
     // Deduct money and place franchise in a transaction-like manner
-    const moneyDeducted = dbOperations.deductUserMoney(userId, franchiseCost);
+    const moneyDeducted = dbOperations.deductUserGameMoney(userId, gameId, franchiseCost);
     if (!moneyDeducted) {
       res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
       return;
@@ -397,8 +440,8 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
     const franchisePlaced = dbOperations.placeFranchise(userId, gameId, lat, long, name);
     if (!franchisePlaced) {
       // If franchise placement failed, refund the money
-      const currentMoney = dbOperations.getUserMoney(userId);
-      dbOperations.updateUserMoney(userId, currentMoney + franchiseCost);
+      const currentMoney = dbOperations.getUserGameMoney(userId, gameId);
+      dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
       res.status(500).json({ error: 'Failed to place franchise' });
       return;
     }
@@ -406,7 +449,7 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
     res.json({
       message: 'Franchise placed successfully',
       cost: franchiseCost,
-      remainingMoney: dbOperations.getUserMoney(userId)
+      remainingMoney: dbOperations.getUserGameMoney(userId, gameId)
     });
   } catch (error) {
     console.error('Error placing franchise:', error);
