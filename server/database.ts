@@ -113,15 +113,6 @@ const initDatabase = () => {
     console.log('Money column added successfully');
   }
 
-  // Migration: Add game_id column to user_counties if it doesn't exist
-  try {
-    db.prepare('SELECT game_id FROM user_counties LIMIT 1').get();
-  } catch (_) {
-    console.log('Adding game_id column to user_counties table...');
-    db.exec(`ALTER TABLE user_counties ADD COLUMN game_id TEXT DEFAULT 'default-game'`);
-    console.log('Game_id column added successfully');
-  }
-
   // Migration: Add elapsed_time column to games if it doesn't exist
   try {
     db.prepare('SELECT elapsed_time FROM games LIMIT 1').get();
@@ -175,9 +166,9 @@ const initDatabase = () => {
      db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
     getUserFranchises: db.prepare('SELECT * FROM placed_franchises WHERE user_id = ? AND game_id = ?'),
     getGameFranchises: db.prepare(`
-      SELECT pf.*, u.username 
-      FROM placed_franchises pf 
-      JOIN users u ON pf.user_id = u.id 
+      SELECT pf.*, u.username
+      FROM placed_franchises pf
+      JOIN users u ON pf.user_id = u.id
       WHERE pf.game_id = ?
     `),
     removeFranchise: db.prepare('DELETE FROM placed_franchises WHERE id = ? AND user_id = ?'),
@@ -191,7 +182,7 @@ const initDatabase = () => {
     getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
     getUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
     getUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
-    
+
     // User-game money operations
     getUserGameMoney: db.prepare('SELECT money FROM user_game_money WHERE user_id = ? AND game_id = ?'),
     insertUserGameMoney: db.prepare('INSERT OR IGNORE INTO user_game_money (user_id, game_id, money) VALUES (?, ?, ?)'),
@@ -341,7 +332,7 @@ export const dbOperations = {
     try {
       // First, ensure the user-game money record exists
       statements.insertUserGameMoney.run(userId, gameId, 1000);
-      
+
       const result = statements.getUserGameMoney.get(userId, gameId) as { money: number } | undefined;
       return result?.money || 1000; // Default to starting money if not found
     } catch (error) {
@@ -354,7 +345,7 @@ export const dbOperations = {
     try {
       // Ensure the record exists first
       statements.insertUserGameMoney.run(userId, gameId, 1000);
-      
+
       const result = statements.updateUserGameMoney.run(amount, userId, gameId);
       return result.changes > 0;
     } catch (error) {
@@ -387,7 +378,7 @@ export const dbOperations = {
     try {
       // Ensure the record exists first
       statements.insertUserGameMoney.run(userId, gameId, 1000);
-      
+
       // This will only deduct if user has enough money (money >= cost)
       const result = statements.deductUserGameMoney.run(cost, userId, gameId, cost);
       return result.changes > 0;
