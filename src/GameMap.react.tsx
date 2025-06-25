@@ -5,7 +5,6 @@ import {
   Polyline,
   Layer,
   marker,
-  divIcon,
 } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import leaflet from "leaflet";
@@ -15,6 +14,7 @@ import React from 'react';
 import { DataTestIDs } from "./DataTestIDs";
 import { fetchGameTime, getGameFranchises } from "./api_calls/CountyWarsHTTPRequests";
 import { getCurrentGameId } from "./utils/gameUrl";
+import { createFranchiseIcon } from "./FranchiseIcon";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -22,14 +22,6 @@ const defaultStyle = {
   opacity: 1,
   color: "white",
   fillOpacity: 0.3,
-};
-
-const highlightStyle = {
-  fillColor: "#ff7800",
-  weight: 3,
-  opacity: 1,
-  color: "#666",
-  fillOpacity: 0.7,
 };
 
 
@@ -61,8 +53,8 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<leaflet.Map>(null);
+  const clickRef = useRef<leaflet.Marker<any>>(null);
 
-  const [_, setCurrentHighlighted] = useState<Polyline | null>(null);
   const [isCountyLayerLoaded, setIsCountyLayerLoaded] = useState<boolean>(false);
   useEffect(() => {
     gameStateRef.current = gameState;
@@ -111,15 +103,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
           style: defaultStyle,
           onEachFeature: function (feature, layer: Polyline) {
             layer.on("click", () => {
-              console.log('🖱️ County clicked:', feature.properties?.NAME);
-
-              setCurrentHighlighted(prevLayer => {
-                  prevLayer?.setStyle(defaultStyle);
-                return layer;
-              });
-
-              // Apply selection highlight to the newly selected county
-              layer.setStyle(highlightStyle);
               selectCounty(
                 {
                   name: layer.feature?.properties.NAME,
@@ -202,31 +185,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     // Add new franchise markers
     gameState.franchises.forEach(franchise => {
 
-      const franchiseIcon = divIcon({
-        className: 'franchise-marker',
-        html: `<div
-          data-testid="${DataTestIDs.FRANCHISE_MARKER}"
-          style="
-          background: ${gameState.highlightColor};
-          border: 2px solid white;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        ">
-          <div style="
-            background: white;
-            border-radius: 50%;
-            width: 8px;
-            height: 8px;
-          "></div>
-        </div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-      });
+      const franchiseIcon = createFranchiseIcon(gameState.highlightColor);
 
       const franchiseMarker = marker([franchise.lat, franchise.long], {
         icon: franchiseIcon
@@ -245,6 +204,32 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     console.log(`Updated ${gameState.franchises.length} franchise markers`);
   }, [gameState.franchises, gameState.highlightColor]);
+
+  useEffect(() => {
+
+    const clickedLocation = gameState.clickedLocation;
+
+    if (!clickedLocation) return;
+    console.log('Clicked location:', clickedLocation);
+    const franchiseIcon = createFranchiseIcon();
+
+    const franchiseMarker = marker([clickedLocation.lat, clickedLocation.lng], {
+      icon: franchiseIcon
+    }).bindPopup(`
+      <div style="font-size: 14px;">
+        <strong>${'adsdas'}</strong><br>
+        <small>Placed: ${'adsads'}</small>
+      </div>
+    `);
+
+
+    if (mapInstance.current) {
+      clickRef.current?.removeFrom(mapInstance.current);
+      franchiseMarker.addTo(mapInstance.current);
+      clickRef.current = franchiseMarker;
+    }
+
+  }, [gameState.clickedLocation]);
 
   // Update map style
   useEffect(() => {
