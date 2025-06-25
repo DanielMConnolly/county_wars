@@ -86,9 +86,7 @@ const AppContent = () => {
   // Show main game interface for authenticated users with a selected game
   return (
     <>
-      <TopMenu
-        onToggleMapStyle={toggleMapStyle}
-      />
+      <TopMenu />
 
       <MapControls
         mapControls={mapControls}

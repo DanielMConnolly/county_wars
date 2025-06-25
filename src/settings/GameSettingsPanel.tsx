@@ -1,8 +1,10 @@
 import React, { useContext, useState } from 'react';
-import { Palette } from 'lucide-react';
+import { Palette, Map } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { COLOR_OPTIONS } from '../constants/GAMEDEFAULTS';
 import { GameDurationSettings } from './GameDurationSettings';
+import { mapStyles } from '../data/mapStyles';
+import { MapStyle } from '../types/GameTypes';
 import { Dropdown, DropdownOption } from '../components/Dropdown';
 import { DataTestIDs } from '../DataTestIDs';
 
@@ -24,9 +26,15 @@ export function GameSettingsPanel({
     label: color.name,
   }));
 
-  const { gameState, setHighlightColor } = useContext(GameStateContext);
+  const { gameState, setHighlightColor, setMapStyle } = useContext(GameStateContext);
 
   const [selectedColor, setSelectedColor] = useState<string>(gameState.highlightColor);
+  const [selectedMapStyle, setSelectedMapStyle] = useState<MapStyle>(gameState.mapStyle as MapStyle);
+
+  const mapStyleOptions: DropdownOption[] = Object.keys(mapStyles).map(style => ({
+    value: style,
+    label: style.charAt(0).toUpperCase() + style.slice(1),
+  }));
 
   return (
     <div>
@@ -67,6 +75,32 @@ export function GameSettingsPanel({
         </div>
       </div>
 
+      <div className="mb-6">
+        <h3 className="text-lg font-medium text-gray-800 mb-3">Map Style</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Choose how the map is displayed.
+        </p>
+
+        <div>
+          <Dropdown
+            value={selectedMapStyle}
+            onChange={(value) => setSelectedMapStyle(value as MapStyle)}
+            options={mapStyleOptions}
+            label="Map Display Style"
+            icon={<Map size={16} />}
+          />
+
+          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Map size={20} className="text-blue-600" />
+              <span className="text-sm text-gray-700">
+                Selected: {selectedMapStyle.charAt(0).toUpperCase() + selectedMapStyle.slice(1)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <GameDurationSettings
         selectedDuration={selectedDuration}
         onDurationChange={setSelectedDuration}
@@ -86,6 +120,7 @@ export function GameSettingsPanel({
             () => {
               onSave();
               setHighlightColor(selectedColor);
+              setMapStyle(selectedMapStyle);
             }}
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg
            hover:bg-blue-700 transition-colors font-medium"

@@ -62,7 +62,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const resetGame = () => {
     if (window.confirm("Are you sure you want to reset the game?")) {
       setGameState(getDefaultState());
-      setPreviousYear(GAME_DEFAULTS.START_YEAR);
     }
   };
 
@@ -109,7 +108,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         month: GAME_DEFAULTS.START_MONTH,
       },
     }));
-    setPreviousYear(GAME_DEFAULTS.START_YEAR);
   };
 
   const setCurrentGame = (gameId: string | null) => {
