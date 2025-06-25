@@ -392,7 +392,13 @@ export async function getGameFranchises(
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/franchises`);
     const data = await response.json();
     if (response.ok) {
-      return { success: true, franchises: data.franchises };
+      const retFranchises: Franchise[] = data.franchises.map((franchise: any) => {
+          return {
+            ...franchise,
+            userId: franchise.user_id
+          }
+      });
+      return { success: true, franchises: retFranchises};
     } else {
       return { success: false, error: data.error || 'Failed to fetch game franchises' };
     }

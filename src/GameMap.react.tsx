@@ -15,6 +15,8 @@ import { DataTestIDs } from "./DataTestIDs";
 import { fetchGameTime, getGameFranchises } from "./api_calls/CountyWarsHTTPRequests";
 import { getCurrentGameId } from "./utils/gameUrl";
 import { createFranchiseIcon } from "./FranchiseIcon";
+import { useAuth } from "./auth/AuthContext";
+import { getFranchiseColor } from "./utils/colorUtils";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -28,13 +30,13 @@ const defaultStyle = {
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
   const { gameState, selectCounty, setClickedLocation, setGameState } = useContext(GameStateContext);
+  const { user } = useAuth();
   const gameID = getCurrentGameId();
 
   useEffect(() => {
 
     async function loadFranchiseData() {
       const franchises = (await getGameFranchises(gameID)).franchises;
-
       const elapsedTime = await fetchGameTime(gameID);
       if (franchises == null) return;
       setGameState(gameState => ({
@@ -184,15 +186,21 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     // Add new franchise markers
     gameState.franchises.forEach(franchise => {
+      if (!user) return; // Skip if no user is available
 
-      const franchiseIcon = createFranchiseIcon(gameState.highlightColor);
+      const franchiseColor = getFranchiseColor(franchise, user.id, gameState.highlightColor);
+      const franchiseIcon = createFranchiseIcon(franchiseColor);
+
+      const isOwnedByUser = franchise.userId === user.id;
+      const ownershipText = isOwnedByUser ? 'Your franchise' : `Owned by ${franchise.userId}`;
 
       const franchiseMarker = marker([franchise.lat, franchise.long], {
         icon: franchiseIcon
       }).bindPopup(`
         <div style="font-size: 14px;">
           <strong>${franchise.name}</strong><br>
-          <small>Placed: ${new Date(franchise.placedAt).toLocaleString()}</small>
+          <small>Placed: ${new Date(franchise.placedAt).toLocaleString()}</small><br>
+          <small style="color: ${isOwnedByUser ? '#10b981' : '#6b7280'};">${ownershipText}</small>
         </div>
       `);
 
@@ -203,7 +211,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     });
 
     console.log(`Updated ${gameState.franchises.length} franchise markers`);
-  }, [gameState.franchises, gameState.highlightColor]);
+  }, [gameState.franchises, gameState.highlightColor, user]);
 
   useEffect(() => {
 

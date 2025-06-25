@@ -1,19 +1,25 @@
 import React, { ReactNode, useContext, useState } from "react";
-import { Settings, UtensilsCrossed, Coins } from "lucide-react";
+import { Settings, UtensilsCrossed, Coins, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SettingsModal from "./settings/SettingsModal";
+import GameInformation from "./GameInformation.react";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
 import { DataTestIDs } from "./DataTestIDs";
 
 const TopMenu = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isGameInfoOpen, setIsGameInfoOpen] = useState(false);
   const navigate = useNavigate();
 
   const {gameState} = useContext(GameStateContext);
 
   const handleSettings = () => {
     setIsSettingsOpen(true);
+  };
+
+  const handleGameInfo = () => {
+    setIsGameInfoOpen(true);
   };
 
 
@@ -49,6 +55,12 @@ const TopMenu = () => {
       {/* Menu Buttons */}
       <div className="flex gap-3 items-center">
         <MenuButton
+          onClick={handleGameInfo}
+          icon={<Info className="w-4 h-4" />}
+          text="Game Info"
+          className="from-green-600 to-green-500 hover:from-green-500 hover:to-green-600"
+        />
+        <MenuButton
           dataTestID={DataTestIDs.SETTINGS_BUTTON}
           onClick={handleSettings}
           icon={<Settings className="w-4 h-4" />}
@@ -62,6 +74,11 @@ const TopMenu = () => {
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           isOpen={isSettingsOpen}
+        />
+
+        <GameInformation
+          onClose={() => setIsGameInfoOpen(false)}
+          isOpen={isGameInfoOpen}
         />
       </div>
     </div>
