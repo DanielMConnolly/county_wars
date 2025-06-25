@@ -19,11 +19,16 @@ export const connectToSocket = async ({
     setIsConnected(true);
 
     socketService.on('franchise-added', (franchiseData: Franchise) => {
-      console.log('Received franchise-added event:', franchiseData);
-      setGameState((prevState) => ({
-        ...prevState,
-        franchises: [...prevState.franchises, franchiseData]
-      }));
+      console.log('🎯 CLIENT: Received franchise-added event:', franchiseData);
+      setGameState((prevState) => {
+        console.log('🎯 CLIENT: Updating franchise list. Current count:', prevState.franchises.length);
+        const newState = {
+          ...prevState,
+          franchises: [...prevState.franchises, franchiseData]
+        };
+        console.log('🎯 CLIENT: New franchise count:', newState.franchises.length);
+        return newState;
+      });
     });
 
     socketService.on('error', (data: { message: string }) => {

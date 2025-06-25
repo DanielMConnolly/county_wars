@@ -5,16 +5,13 @@ import '@testing-library/jest-dom';
 import puppeteer, { Browser, Page, } from 'puppeteer';
 import { createNewGame, setupNewUser } from "./SetupUtils";
 import { DataTestIDs } from '../src/DataTestIDs';
-import { placeFranchise } from "./TestUtils";
+import { placeFranchise, wait, clickOnTerritory } from "./TestUtils";
 
 let testPage: Page;
 let browser: Browser | undefined;
 
 
 
-async function wait(seconds: number) {
-    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
-}
 
 
 beforeAll(async () => {
@@ -64,7 +61,7 @@ describe("Assert the Game Map is working as expected", () => {
     test("should not allow place a franchise in the same area twice", async () => {
         await testPage.mouse.wheel({ deltaY: -1600 });
         await wait(1);
-        await clickOnCenter(testPage);
+        await clickOnTerritory(testPage);
         await testPage.waitForSelector(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
         await testPage.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
         await wait(1);
@@ -74,7 +71,7 @@ describe("Assert the Game Map is working as expected", () => {
         const franchiseCountAfterFirst =
             await testPage.$eval(`[data-testid="${DataTestIDs.FRANCHISE_COUNT}"]`, el => el.textContent);
 
-        await clickOnCenter(testPage, 16);
+        await clickOnTerritory(testPage, 0, -16);
 
         await testPage.waitForSelector(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
         await testPage.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
@@ -92,15 +89,6 @@ describe("Assert the Game Map is working as expected", () => {
     });
 });
 
-const clickOnCenter = async (testPage: Page, offset?: number ) => {
-    const viewport = testPage.viewport();
-    const viewportWidth = viewport!.width;
-    const viewportHeight = viewport!.height;
-    const centerX = viewportWidth / 2;
-    const centerY = viewportHeight / 2;
-    const offsetVal= offset ? offset : 0;
-    await testPage.mouse.click(centerX, centerY- offsetVal);
-}
 
 afterAll(async () => {
     await browser?.close();

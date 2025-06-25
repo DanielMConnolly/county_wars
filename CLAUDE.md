@@ -5,6 +5,7 @@
 - Use `import/export` instead of `require()`
 - Use arrow functions, const/let instead of var, template literals, etc.
 - Follow existing code patterns and conventions in the project
+- **Avoid code duplication**: When encountering duplicate functions or logic, prefer extracting them into utility functions in appropriate utils files rather than duplicating the code
 
 ## Build Process
 After making any changes to TypeScript files, always run:

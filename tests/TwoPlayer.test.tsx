@@ -1,0 +1,124 @@
+import "jest-puppeteer";
+import "expect-puppeteer";
+import '@testing-library/jest-dom';
+import puppeteer, { Browser, Page } from 'puppeteer';
+import { createNewGame, setupNewUser } from "./SetupUtils";
+import { DataTestIDs } from '../src/DataTestIDs';
+import { wait, clickOnTerritory, getFranchiseCount, placeFranchiseAt, waitForFranchiseUpdate } from './TestUtils';
+
+let playerAPage: Page;
+let playerBPage: Page;
+let browserA: Browser;
+let browserB: Browser;
+let gameId: string;
+
+async function joinSameGame(playerAPage: Page, playerBPage: Page, gameName: string) {
+    // Player A creates the game
+    await createNewGame(playerAPage, gameName);
+
+    // Extract game ID from URL
+    const url = playerAPage.url();
+    const match = url.match(/\/game\/(.+)/);
+    gameId = match ? match[1] : 'default-game';
+
+    // Player B navigates to the same game
+    await playerBPage.goto(`http://localhost:5173/game/${gameId}`);
+    await playerBPage.waitForSelector('.leaflet-container');
+}
+
+
+beforeAll(async () => {
+    // Launch two separate browsers for two different users
+    browserA = await puppeteer.launch({ headless: false, slowMo: 20 });
+    browserB = await puppeteer.launch({ headless: false, slowMo: 20 });
+
+    playerAPage = await browserA.newPage();
+    playerBPage = await browserB.newPage();
+
+    // Set up two different users
+    console.log('Setting up Player A...');
+    await setupNewUser(playerAPage);
+    console.log('Setting up Player B...');
+    await setupNewUser(playerBPage);
+
+    // Both players join the same game
+    console.log('Players joining same game...');
+    await joinSameGame(playerAPage, playerBPage, "Two Player Test Game");
+    console.log('Setup complete');
+}, 60000); // 60 second timeout for setup
+
+describe("Two Player Territory Claiming", () => {
+    test("When Player A claims territory, Player B should see it on their map", async () => {
+        // Wait for both maps to load
+        await playerAPage.waitForSelector('.leaflet-container');
+        await playerBPage.waitForSelector('.leaflet-container');
+
+        // Get initial franchise counts for both players
+        const initialCountA = await getFranchiseCount(playerAPage);
+        const initialCountB = await getFranchiseCount(playerBPage);
+
+        console.log(`Initial counts - Player A: ${initialCountA}, Player B: ${initialCountB}`);
+
+        // Player A places a franchise
+        const franchisePlaced = await placeFranchiseAt(playerAPage, 0, 0);
+        expect(franchisePlaced).toBe(true);
+
+        // Wait for Player A's franchise count to update
+        const updatedCountA = await getFranchiseCount(playerAPage);
+        expect(updatedCountA).toBe(initialCountA + 1);
+
+        // Wait for Player B to see the update via socket connection
+        const playerBSawUpdate = await waitForFranchiseUpdate(playerBPage, initialCountB + 1);
+        expect(playerBSawUpdate).toBe(true);
+
+        const finalCountB = await getFranchiseCount(playerBPage);
+        console.log(`Final counts - Player A: ${updatedCountA}, Player B: ${finalCountB}`);
+
+        // Verify both players see the same total franchise count
+        expect(finalCountB).toBe(updatedCountA);
+    });
+
+    // test("Player B should not be able to place franchise in same location as Player A", async () => {
+    //     // Player A places another franchise at a specific location
+    //     const franchisePlacedA = await placeFranchiseAt(playerAPage, 50, 50);
+    //     expect(franchisePlacedA).toBe(true);
+
+    //     // Wait for the update to propagate
+    //     await wait(2);
+
+    //     // Player B tries to place franchise at the same location
+    //     const franchisePlacedB = await placeFranchiseAt(playerBPage, 50, 50);
+
+    //     // This should fail because the territory is already claimed
+    //     expect(franchisePlacedB).toBe(false);
+    // });
+
+    // test("Both players can place franchises in different territories", async () => {
+    //     const countABefore = await getFranchiseCount(playerAPage);
+    //     const countBBefore = await getFranchiseCount(playerBPage);
+
+    //     // Player A places franchise at one location
+    //     const franchisePlacedA = await placeFranchiseAt(playerAPage, -100, -100);
+    //     expect(franchisePlacedA).toBe(true);
+
+    //     // Player B places franchise at different location
+    //     const franchisePlacedB = await placeFranchiseAt(playerBPage, 100, 100);
+    //     expect(franchisePlacedB).toBe(true);
+
+    //     // Wait for updates to propagate
+    //     await wait(3);
+
+    //     // Both players should see both franchises
+    //     const finalCountA = await getFranchiseCount(playerAPage);
+    //     const finalCountB = await getFranchiseCount(playerBPage);
+
+    //     expect(finalCountA).toBe(countABefore + 2);
+    //     expect(finalCountB).toBe(countBBefore + 2);
+    //     expect(finalCountA).toBe(finalCountB);
+    // });
+});
+
+afterAll(async () => {
+    await browserA?.close();
+    await browserB?.close();
+});
