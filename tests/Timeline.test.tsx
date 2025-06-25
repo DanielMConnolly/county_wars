@@ -10,7 +10,7 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 
 beforeAll(async () => {
-    browser = await puppeteer.launch({headless: false});
+    browser = await puppeteer.launch();
     page = await browser.newPage();
     await setupNewUser(page);
     await createNewGame(page, "Test Game");

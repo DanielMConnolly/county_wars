@@ -21,7 +21,6 @@ export const getFranchiseCount = async (page: Page): Promise<number> => {
         const match = countText?.match(/(\d+)/);
         return match ? parseInt(match[1]) : 0;
     } catch (error) {
-        console.error('Error getting franchise count:', error);
         return 0;
     }
 };
@@ -35,7 +34,6 @@ export const placeFranchiseAt = async (page: Page, offsetX: number = 0, offsetY:
             // Check if place franchise button exists and is enabled
             const placeFranchiseButton = await page.$(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
             if (!placeFranchiseButton) {
-                console.log(`Attempt ${attempt + 1}: No place franchise button found`);
                 continue;
             }
             
@@ -45,18 +43,14 @@ export const placeFranchiseAt = async (page: Page, offsetX: number = 0, offsetY:
             );
             
             if (isDisabled) {
-                console.log(`Attempt ${attempt + 1}: Place franchise button is disabled`);
                 continue;
             }
             
             await page.click(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`);
             await page.click(`[data-testid="${DataTestIDs.CLOSE_INFO_CARD_BUTTON}"]`);
-            console.log(`Attempt ${attempt + 1}: Successfully placed franchise`);
             return true;
         } catch (error) {
-            console.log(`Attempt ${attempt + 1} failed:`, error instanceof Error ? error.message : error);
             if (attempt === retries - 1) {
-                console.error('All attempts failed to place franchise:', error);
             }
         }
     }

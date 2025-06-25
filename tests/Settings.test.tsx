@@ -16,7 +16,7 @@ async function wait(seconds: number) {
 }
 
 beforeAll(async () => {
-    browser = await puppeteer.launch({headless: false, slowMo: 20});
+    browser = await puppeteer.launch();
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "New Game");
@@ -62,10 +62,10 @@ const changeFranchiseColor = async (testPage: Page, color: string) => {
     await testPage.waitForSelector(`[data-testid="${DataTestIDs.SETTINGS_COLOR_SELECTOR}"]`);
     await testPage.click(`[data-testid="${DataTestIDs.SETTINGS_COLOR_SELECTOR}"]`);
     await testPage.select(`[data-testid="${DataTestIDs.SETTINGS_COLOR_SELECTOR}"] select`, color);
-    
+
     // Wait for save button and ensure it's clickable
     await testPage.waitForSelector(`[data-testid="${DataTestIDs.GAME_SETTINGS_BUTTON_SAVE}"]`, { visible: true });
-    
+
     // Scroll the save button into view
     await testPage.evaluate((testId) => {
         const button = document.querySelector(`[data-testid="${testId}"]`);
@@ -73,10 +73,10 @@ const changeFranchiseColor = async (testPage: Page, color: string) => {
             button.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, DataTestIDs.GAME_SETTINGS_BUTTON_SAVE);
-    
+
     // Wait a bit for scrolling and any animations
     await wait(0.5);
-    
+
     // Try clicking with JavaScript instead of Puppeteer's click
     await testPage.evaluate((testId) => {
         const button = document.querySelector(`[data-testid="${testId}"]`) as HTMLButtonElement;

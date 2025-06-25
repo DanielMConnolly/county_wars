@@ -29,22 +29,18 @@ async function joinSameGame(playerAPage: Page, playerBPage: Page, gameName: stri
 
 beforeAll(async () => {
     // Launch two separate browsers for two different users
-    browserA = await puppeteer.launch({ headless: false, slowMo: 20 });
-    browserB = await puppeteer.launch({ headless: false, slowMo: 20 });
+    browserA = await puppeteer.launch();
+    browserB = await puppeteer.launch();
 
     playerAPage = await browserA.newPage();
     playerBPage = await browserB.newPage();
 
     // Set up two different users
-    console.log('Setting up Player A...');
     await setupNewUser(playerAPage);
-    console.log('Setting up Player B...');
     await setupNewUser(playerBPage);
 
     // Both players join the same game
-    console.log('Players joining same game...');
     await joinSameGame(playerAPage, playerBPage, "Two Player Test Game");
-    console.log('Setup complete');
 }, 60000); // 60 second timeout for setup
 
 describe("Two Player Territory Claiming", () => {
@@ -57,7 +53,6 @@ describe("Two Player Territory Claiming", () => {
         const initialCountA = await getFranchiseCount(playerAPage);
         const initialCountB = await getFranchiseCount(playerBPage);
 
-        console.log(`Initial counts - Player A: ${initialCountA}, Player B: ${initialCountB}`);
 
         // Player A places a franchise
         const franchisePlaced = await placeFranchiseAt(playerAPage, 0, 0);
@@ -72,7 +67,6 @@ describe("Two Player Territory Claiming", () => {
         expect(playerBSawUpdate).toBe(true);
 
         const finalCountB = await getFranchiseCount(playerBPage);
-        console.log(`Final counts - Player A: ${updatedCountA}, Player B: ${finalCountB}`);
 
         // Verify both players see the same total franchise count
         expect(finalCountB).toBe(updatedCountA);
