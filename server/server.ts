@@ -244,49 +244,6 @@ app.put('/api/users/:userId/games/:gameId/money', (req: Request, res: Response):
   }
 });
 
-// Legacy endpoints for backward compatibility (use default game)
-app.get('/api/users/:userId/money', (req: Request, res: Response): void => {
-  const { userId } = req.params;
-
-  try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
-
-    const money = dbOperations.getUserMoney(userId);
-    res.json({ money });
-  } catch (error) {
-    console.error('Error fetching user money:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.put('/api/users/:userId/money', (req: Request, res: Response): void => {
-  const { userId } = req.params;
-  const { amount } = req.body;
-
-  if (typeof amount !== 'number') {
-    res.status(400).json({ error: 'Amount must be a number' });
-    return;
-  }
-
-  try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
-
-    // Update the money
-    const success = dbOperations.updateUserMoney(userId, amount);
-
-    if (success) {
-      res.json({ message: 'Money updated successfully', money: amount });
-    } else {
-      res.status(500).json({ error: 'Failed to update money' });
-    }
-  } catch (error) {
-    console.error('Error updating money:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Game management endpoints
 app.post('/api/games', (req: Request, res: Response): void => {
   const { name, createdBy } = req.body;

@@ -354,15 +354,6 @@ export const dbOperations = {
     }
   },
 
-  // Legacy method for backward compatibility - uses default game
-  getUserMoney: (userId: string): number => {
-    return dbOperations.getUserGameMoney(userId, 'default-game');
-  },
-
-  updateUserMoney: (userId: string, amount: number): boolean => {
-    return dbOperations.updateUserGameMoney(userId, 'default-game', amount);
-  },
-
   getAllGames: (): any[] => {
     try{
       const result = statements.getAllGames.all();
