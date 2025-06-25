@@ -7,10 +7,11 @@ import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
   fetchUserMoney,
+  updateUserMoney,
   updateGameElapsedTime,
   placeFranchise as placeFranchiseAPI,
 } from "./api_calls/CountyWarsHTTPRequests";
-import { GAME_DEFAULTS } from "./constants/gameDefaults";
+import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
@@ -39,6 +40,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     return newUserId;
   });
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [previousYear, setPreviousYear] = useState<number>(GAME_DEFAULTS.START_YEAR);
 
 
   // Helper function to select a county
@@ -60,6 +62,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const resetGame = () => {
     if (window.confirm("Are you sure you want to reset the game?")) {
       setGameState(getDefaultState());
+      setPreviousYear(GAME_DEFAULTS.START_YEAR);
     }
   };
 
@@ -106,6 +109,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         month: GAME_DEFAULTS.START_MONTH,
       },
     }));
+    setPreviousYear(GAME_DEFAULTS.START_YEAR);
   };
 
   const setCurrentGame = (gameId: string | null) => {
@@ -276,8 +280,23 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         };
       }
 
+      // Check if a new year has started to award annual income
+      let newMoney = prevState.money;
+      if (year > previousYear) {
+        newMoney = prevState.money + 1000;
+        console.log(`New year ${year}! Awarding $1000 annual income. New balance: $${newMoney}`);
+        
+        // Update server with new money amount
+        updateUserMoney(userId, newMoney).then(success => {
+          if (!success) {
+            console.warn('Failed to update money on server for annual income');
+          }
+        });
+      }
+
       return {
         ...prevState,
+        money: newMoney,
         gameTime: {
           ...prevState.gameTime,
           elapsedTime: elapsedTime,
@@ -286,6 +305,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         },
       };
     });
+    
+    // Update previousYear tracking after state update
+    const currentYear = Math.floor((gameState.gameTime.elapsedTime ?? 0) / (gameState.gameTime.gameDurationHours * 60 * 60 * 1000) * 80 * 12 / 12) + 1945;
+    if (currentYear > previousYear) {
+      setPreviousYear(currentYear);
+    }
+    
     let currentGameId = gameState.currentGameId;
     if (currentGameId == null) {
       // Try to get game ID from URL if not in state
@@ -299,7 +325,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         return;
       }
     }
-  }, 1000);
+  }, GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN);
 
   const contextValue: GameStateContextType = {
     gameState,

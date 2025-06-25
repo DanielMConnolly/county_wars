@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { Palette } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
-import { COLOR_OPTIONS } from '../constants/gameDefaults';
+import { COLOR_OPTIONS } from '../constants/GAMEDEFAULTS';
 import { GameDurationSettings } from './GameDurationSettings';
 import { Dropdown, DropdownOption } from '../components/Dropdown';
 import { DataTestIDs } from '../DataTestIDs';
