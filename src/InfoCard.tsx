@@ -4,7 +4,8 @@ import {
   calculateCountyDifficulty,
   getCountyCost,
   getDifficultyDisplayName,
-  getDifficultyColor as getNewDifficultyColor
+  getDifficultyColor as getNewDifficultyColor,
+  calculateDistanceMiles
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
@@ -19,6 +20,13 @@ const InfoCard = () => {
   }
   const [population, setPopulation] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const isLocationTooCloseToFranchise = (lat: number, lng: number): boolean => {
+    return gameState.franchises.some(franchise => {
+      const distance = calculateDistanceMiles(lat, lng, franchise.lat, franchise.long);
+      return distance < 5;
+    });
+  };
 
   useEffect(() => {
     const fetchPopulation = async () => {
@@ -82,15 +90,19 @@ const InfoCard = () => {
             await placeFranchise(`${selectedCounty.name} Franchise`);
           }
         }}
-        disabled={!gameState.clickedLocation}
+        disabled={!gameState.clickedLocation || (gameState.clickedLocation && isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng))}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold
-           transition-all duration-300 ${!gameState.clickedLocation
+           transition-all duration-300 ${!gameState.clickedLocation || (gameState.clickedLocation && isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng))
             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
             : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 ' +
             'text-white hover:scale-105 hover:shadow-lg'
           }`}
       >
-        {gameState.clickedLocation ? 'Place Franchise' : 'Click Map to Place'}
+        {!gameState.clickedLocation 
+          ? 'Click Map to Place' 
+          : (gameState.clickedLocation && isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng))
+            ? 'Too Close to Existing Franchise'
+            : 'Place Franchise'}
       </button>
     </div>
   );

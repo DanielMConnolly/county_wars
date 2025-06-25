@@ -7,11 +7,9 @@ import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
   fetchUserMoney,
-  updateUserMoney,
   updateGameElapsedTime,
   placeFranchise as placeFranchiseAPI,
 } from "./api_calls/CountyWarsHTTPRequests";
-import { getCountyCost } from "./utils/countyUtils";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
@@ -247,9 +245,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
           ...prevState,
           gameTime: {
             ...prevState.gameTime,
-            elapsedTime: elapsedTime,
-            year: 2025,
-            month: 12,
             isPaused: true, // Auto-pause when reaching the end
           },
         };
