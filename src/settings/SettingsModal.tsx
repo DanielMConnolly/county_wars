@@ -5,6 +5,7 @@ import { GameSettingsPanel } from './GameSettingsPanel';
 import { createGame, fetchAllGames } from '../api_calls/CountyWarsHTTPRequests';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { DataTestIDs } from '../DataTestIDs';
 
 type ModalView = 'main' | 'gameSettings' | 'newGame' | 'joinGame';
 
@@ -15,7 +16,7 @@ export default function SettingsModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { setHighlightColor, gameState, setGameDuration } = useContext(GameStateContext);
+  const { gameState, setGameDuration } = useContext(GameStateContext);
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ModalView>('main');
   const [selectedDuration, setSelectedDuration] = React.useState(gameState.gameTime.gameDurationHours);
@@ -95,6 +96,7 @@ export default function SettingsModal({
           {currentView === 'main' && (
             <div className="space-y-4">
               <button
+                data-testid={DataTestIDs.GAME_SETTINGS_BUTTON}
                 onClick={() => setCurrentView('gameSettings')}
                 className="w-full flex items-center gap-3 p-4 border border-gray-200
                 rounded-lg hover:bg-gray-50 transition-colors text-left"
@@ -134,7 +136,6 @@ export default function SettingsModal({
 
           {currentView === 'gameSettings' && (
             <GameSettingsPanel
-
               selectedDuration={selectedDuration}
               setSelectedDuration={setSelectedDuration}
               onBack={() => setCurrentView('main')}
