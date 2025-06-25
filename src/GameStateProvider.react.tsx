@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect } from "react";
+import React, { useState, ReactNode, useEffect, useContext } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState, Franchise } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
@@ -17,6 +17,7 @@ import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
 import { getCountyCost } from "./utils/countyUtils";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
+import { useAuth } from "./auth/AuthContext";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -27,20 +28,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
   const [gameId, setGameId] = useState<string>(getCurrentGameId());
-  const [userId] = useState<string>(() => {
-    // Try to get existing userId from localStorage
-    const savedUserId = localStorage.getItem('county-wars-user-id');
-    if (savedUserId) {
-      console.log('Using existing userId:', savedUserId);
-      return savedUserId;
-    }
-    // Generate new userId and save it
-    const newUserId = `user_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('Generated new userId:', newUserId);
-    localStorage.setItem('county-wars-user-id', newUserId);
-    return newUserId;
-  });
+  const {user} = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
+
+  const userId = user?.id;
 
 
   // Helper function to select a county
@@ -66,6 +57,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   const setHighlightColor = async (color: string) => {
+    if (userId == null) return;
     setGameState((prevState) => ({
       ...prevState,
       highlightColor: color,
@@ -128,6 +120,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   const placeFranchise = async (name: string) => {
+    if (userId == null) return;
     if (!gameState.clickedLocation) {
       console.error('No clicked location available for franchise placement');
       return;
@@ -195,7 +188,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
-      console.log('Fetching initial data for userId:', userId, 'gameId:', gameId);
+      if (userId == null) return;
       const savedColor = await fetchUserHighlightColor(userId);
       const userMoney = await fetchUserMoney(userId);
 
@@ -210,6 +203,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
   // Socket connection and event handling
   useEffect(() => {
+    const userId = user?.id;
+    if (userId == null) return;
     console.log('Socket effect running, userId:', userId);
 
     // Skip if already connected to avoid reconnections
@@ -246,7 +241,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   )
 
   useInterval(() => {
-    if (gameState.gameTime.isPaused == true) {
+    if (gameState.gameTime.isPaused == true || userId == null) {
       return;
     }
     setGameState((prevState) => {

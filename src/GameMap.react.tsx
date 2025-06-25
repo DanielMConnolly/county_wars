@@ -188,7 +188,11 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     gameState.franchises.forEach(franchise => {
       if (!user) return; // Skip if no user is available
 
+<<<<<<< HEAD
       const franchiseColor = getFranchiseColor(franchise, user.id, gameState.highlightColor);
+=======
+      const franchiseColor = getFranchiseColor(franchise, user.id, gameState.highlightColor, gameState.franchises);
+>>>>>>> f7965c1 (different colors for different players)
       const franchiseIcon = createFranchiseIcon(franchiseColor);
 
       const isOwnedByUser = franchise.userId === user.id;
