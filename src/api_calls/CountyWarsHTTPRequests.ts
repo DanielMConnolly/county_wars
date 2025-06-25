@@ -375,24 +375,6 @@ export async function placeFranchise(
   }
 }
 
-export async function getUserFranchises(
-  userId: string,
-  gameId: string
-): Promise<{ success: boolean; franchises?: any[]; error?: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/franchises`);
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, franchises: data.franchises };
-    } else {
-      return { success: false, error: data.error || 'Failed to fetch franchises' };
-    }
-  } catch (error) {
-    console.error('Fetch user franchises request failed:', error);
-    return { success: false, error: 'Network error. Please try again.' };
-  }
-}
 
 export async function getGameFranchises(
   gameId: string

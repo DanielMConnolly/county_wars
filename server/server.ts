@@ -414,17 +414,6 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
   }
 });
 
-app.get('/api/users/:userId/games/:gameId/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId } = req.params;
-
-  try {
-    const franchises = await dbOperations.getUserFranchises(userId, gameId);
-    res.json({ franchises });
-  } catch (error) {
-    console.error('Error fetching user franchises:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;

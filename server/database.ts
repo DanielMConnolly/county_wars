@@ -251,21 +251,6 @@ export const dbOperations = {
     }
   },
 
-  getUserFranchises: async (userId: string, gameId: string): Promise<PlacedFranchise[]> => {
-    try {
-      const franchises = await prisma.placedFranchise.findMany({
-        where: {
-          userId,
-          gameId,
-        },
-        orderBy: { timePlaced: 'desc' },
-      });
-      return franchises;
-    } catch (error) {
-      console.error('Error getting user franchises:', error);
-      return [];
-    }
-  },
 
   getGameFranchises: async (gameId: string): Promise<PlacedFranchise[]> => {
     try {
@@ -291,75 +276,6 @@ export const dbOperations = {
       return result.count > 0;
     } catch (error) {
       console.error('Error removing franchise:', error);
-      return false;
-    }
-  },
-
-  // Auth operations
-  getUserById: async (userId: string): Promise<User | null> => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-      });
-      return user;
-    } catch (error) {
-      console.error('Error getting user by ID:', error);
-      return null;
-    }
-  },
-
-  getUserByUsername: async (username: string): Promise<User | null> => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { username },
-      });
-      return user;
-    } catch (error) {
-      console.error('Error getting user by username:', error);
-      return null;
-    }
-  },
-
-  getUserByEmail: async (email: string): Promise<User | null> => {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { email },
-      });
-      return user;
-    } catch (error) {
-      console.error('Error getting user by email:', error);
-      return null;
-    }
-  },
-
-  createUserWithAuth: async (userId: string, username: string, email: string, passwordHash: string): Promise<User | null> => {
-    try {
-      const user = await prisma.user.create({
-        data: {
-          id: userId,
-          username,
-          email,
-          passwordHash,
-          highlightColor: 'red',
-          money: 1000,
-        },
-      });
-      return user;
-    } catch (error) {
-      console.error('Error creating user with auth:', error);
-      return null;
-    }
-  },
-
-  updateUserActivity: async (userId: string): Promise<boolean> => {
-    try {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { lastActive: new Date() },
-      });
-      return true;
-    } catch (error) {
-      console.error('Error updating user activity:', error);
       return false;
     }
   },
