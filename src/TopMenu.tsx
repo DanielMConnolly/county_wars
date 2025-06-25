@@ -5,6 +5,7 @@ import SettingsModal from "./settings/SettingsModal";
 import GameInformation from "./GameInformation.react";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
+import { useAuth } from "./auth/AuthContext";
 import { DataTestIDs } from "./DataTestIDs";
 
 const TopMenu = () => {
@@ -13,6 +14,12 @@ const TopMenu = () => {
   const navigate = useNavigate();
 
   const {gameState} = useContext(GameStateContext);
+  const { user } = useAuth();
+
+  // Filter franchises to show only the current user's franchises
+  const userFranchises = gameState.franchises.filter(franchise => 
+    user && franchise.userId === user.id
+  );
 
   const handleSettings = () => {
     setIsSettingsOpen(true);
@@ -39,7 +46,7 @@ const TopMenu = () => {
         <div          data-testid={DataTestIDs.FRANCHISE_COUNT}>
         <StatItem
           icon={<UtensilsCrossed className="w-5 h-5 text-orange-400" />}
-          value={gameState.franchises.length.toLocaleString()}
+          value={userFranchises.length.toLocaleString()}
           label="Restaurants"
           color="text-orange-400"
         />

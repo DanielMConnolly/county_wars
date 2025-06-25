@@ -3,7 +3,7 @@ import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { createNewGame, setupNewUser } from "./SetupUtils";
-import {getFranchiseCount, placeFranchiseAt, wait, waitForFranchiseUpdate, clickOnTerritory, checkInfoCardAppears } from './TestUtils';
+import {getFranchiseCount, placeFranchiseAt, wait, clickOnTerritory, checkInfoCardAppears } from './TestUtils';
 
 let playerAPage: Page;
 let playerBPage: Page;
@@ -61,14 +61,13 @@ describe("Two Player Territory Claiming", () => {
         const updatedCountA = await getFranchiseCount(playerAPage);
         expect(updatedCountA).toBe(initialCountA + 1);
 
-        // Wait for Player B to see the update via socket connection
-        const playerBSawUpdate = await waitForFranchiseUpdate(playerBPage, initialCountB + 1);
-        expect(playerBSawUpdate).toBe(true);
-
+        // Player B's count should remain the same since they didn't place any franchises
+        // (now that TopMenu shows user-specific count, not total count)
         const finalCountB = await getFranchiseCount(playerBPage);
+        expect(finalCountB).toBe(initialCountB);
 
-        // Verify both players see the same total franchise count
-        expect(finalCountB).toBe(updatedCountA);
+        // Verify Player A's count increased by 1
+        expect(updatedCountA).toBe(initialCountA + 1);
     });
 
     test("Player B should not be able to place franchise in same location as Player A", async () => {
@@ -101,13 +100,12 @@ describe("Two Player Territory Claiming", () => {
         // Wait for updates to propagate
         await wait(3);
 
-        // Both players should see both franchises
+        // Each player should see their own franchise (1 each)
         const finalCountA = await getFranchiseCount(playerAPage);
         const finalCountB = await getFranchiseCount(playerBPage);
 
-        expect(finalCountA).toBe(countABefore + 2);
-        expect(finalCountB).toBe(countBBefore + 2);
-        expect(finalCountA).toBe(finalCountB);
+        expect(finalCountA).toBe(countABefore + 1);
+        expect(finalCountB).toBe(countBBefore + 1);
     });
 });
 

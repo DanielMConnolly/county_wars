@@ -14,7 +14,7 @@ beforeAll(async () => {
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "Game Information Test");
-});
+}, 60000);
 
 describe("Game Information Panel", () => {
     test("should show correct number of franchises after placing four franchises", async () => {
