@@ -16,6 +16,7 @@ import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
 import { getCountyCost } from "./utils/countyUtils";
+import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -242,7 +243,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }, 15000
   )
 
-  useInterval(()=> {
+  useInterval(() => {
     if (gameState.gameTime.isPaused == true) {
       return;
     }
@@ -255,18 +256,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         elapsedTime = 1000;
       }
 
-      const totalGameMs = prevState.gameTime.gameDurationHours * 60 * 60 * 1000;
 
-      // Calculate progress (0 to 1)
-      const progress = Math.min(elapsedTime / totalGameMs, 1);
-
-      // Total months from 1945 to 2025 (80 years * 12 months)
-      const totalMonths = 80 * 12;
-      const currentMonthIndex = Math.floor(progress * totalMonths);
-
-      // Convert back to year and month
-      const year = 1945 + Math.floor(currentMonthIndex / 12);
-      const month = (currentMonthIndex % 12) + 1;
+      const { month, year } = getMonthAndYear({ ...prevState.gameTime, elapsedTime: elapsedTime });
 
       // Don't update if we're already at the end
       if (year >= 2025 && month >= 12) {
@@ -281,13 +272,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
       // Check if a new year has started to award annual income
       let newMoney = prevState.money;
-      const previousElapsedTime = elapsedTime - GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN;
-      const previousProgress = Math.min(previousElapsedTime / totalGameMs, 1);
-      const previousMonthIndex = Math.floor(previousProgress * totalMonths);
-      const previousMonth = (previousMonthIndex % 12) + 1;
-      if(month === 1 && previousMonth === 12) {
+      const { month: previousMonth, year: _ }
+        = getMonthAndYear(
+          { ...gameState.gameTime, elapsedTime: elapsedTime - GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN });
+      if (month === 1 && previousMonth === 12) {
         newMoney = prevState.money + GAME_DEFAULTS.ANNUAL_INCOME;
-
         updateUserMoney(userId, newMoney).then(success => {
           if (!success) {
             console.warn('Failed to update money on server for annual income');
