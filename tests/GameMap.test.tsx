@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 import puppeteer, { Browser, Page, } from 'puppeteer';
 import { createNewGame, setupNewUser } from "./SetupUtils";
 import { DataTestIDs } from '../src/DataTestIDs';
-import { placeFranchise, wait, clickOnTerritory } from "./TestUtils";
+import { wait, clickOnTerritory } from "./TestUtils";
 
 let testPage: Page;
 let browser: Browser | undefined;
@@ -15,7 +15,7 @@ let browser: Browser | undefined;
 
 
 beforeAll(async () => {
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch({slowMo: 20});
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "my game");

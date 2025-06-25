@@ -3,8 +3,7 @@ import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { createNewGame, setupNewUser } from "./SetupUtils";
-import { DataTestIDs } from '../src/DataTestIDs';
-import { wait, clickOnTerritory, getFranchiseCount, placeFranchiseAt, waitForFranchiseUpdate } from './TestUtils';
+import {getFranchiseCount, placeFranchiseAt, waitForFranchiseUpdate } from './TestUtils';
 
 let playerAPage: Page;
 let playerBPage: Page;
@@ -29,8 +28,8 @@ async function joinSameGame(playerAPage: Page, playerBPage: Page, gameName: stri
 
 beforeAll(async () => {
     // Launch two separate browsers for two different users
-    browserA = await puppeteer.launch();
-    browserB = await puppeteer.launch();
+    browserA = await puppeteer.launch({slowMo: 20});
+    browserB = await puppeteer.launch({slowMo: 20});
 
     playerAPage = await browserA.newPage();
     playerBPage = await browserB.newPage();

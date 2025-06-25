@@ -16,7 +16,7 @@ async function wait(seconds: number) {
 }
 
 beforeAll(async () => {
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch({slowMo: 20});
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "New Game");
