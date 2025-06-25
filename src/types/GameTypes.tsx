@@ -18,6 +18,7 @@ export type Franchise = {
     name: string;
     placedAt: number; // timestamp
     userId: string; // Owner of the franchise
+    username: string; // Owner's username
 }
 
 export type GameState = {

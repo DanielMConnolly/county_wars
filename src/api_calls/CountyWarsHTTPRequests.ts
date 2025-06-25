@@ -395,7 +395,8 @@ export async function getGameFranchises(
       const retFranchises: Franchise[] = data.franchises.map((franchise: any) => {
           return {
             ...franchise,
-            userId: franchise.user_id
+            userId: franchise.user_id,
+            username: franchise.username
           }
       });
       return { success: true, franchises: retFranchises};

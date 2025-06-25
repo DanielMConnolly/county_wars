@@ -196,7 +196,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       const franchiseIcon = createFranchiseIcon(franchiseColor);
 
       const isOwnedByUser = franchise.userId === user.id;
-      const ownershipText = isOwnedByUser ? 'Your franchise' : `Owned by ${franchise.userId}`;
+      const ownershipText = isOwnedByUser ? 'Your franchise' : `Owned by ${franchise.username}`;
 
       const franchiseMarker = marker([franchise.lat, franchise.long], {
         icon: franchiseIcon

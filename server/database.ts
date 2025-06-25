@@ -157,7 +157,12 @@ const initDatabase = () => {
     placeFranchise:
      db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
     getUserFranchises: db.prepare('SELECT * FROM placed_franchises WHERE user_id = ? AND game_id = ?'),
-    getGameFranchises: db.prepare('SELECT * FROM placed_franchises WHERE game_id = ?'),
+    getGameFranchises: db.prepare(`
+      SELECT pf.*, u.username 
+      FROM placed_franchises pf 
+      JOIN users u ON pf.user_id = u.id 
+      WHERE pf.game_id = ?
+    `),
     removeFranchise: db.prepare('DELETE FROM placed_franchises WHERE id = ? AND user_id = ?'),
 
     // User operations
