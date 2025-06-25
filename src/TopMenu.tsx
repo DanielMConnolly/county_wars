@@ -1,26 +1,27 @@
 import React, { ReactNode, useContext, useState } from "react";
-import { Settings, RotateCcw, Map, UtensilsCrossed, Coins, Home } from "lucide-react";
+import { Settings, UtensilsCrossed, Coins, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SettingsModal from "./settings/SettingsModal";
+import GameInformation from "./GameInformation.react";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
 import { DataTestIDs } from "./DataTestIDs";
 
-const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
+const TopMenu = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isGameInfoOpen, setIsGameInfoOpen] = useState(false);
   const navigate = useNavigate();
 
-  const {gameState, resetGame, setCurrentGame} = useContext(GameStateContext);
+  const {gameState} = useContext(GameStateContext);
 
   const handleSettings = () => {
     setIsSettingsOpen(true);
   };
 
-  const handleChangeGame = () => {
-    if (window.confirm("Return to game selection? Your current progress will be saved.")) {
-      setCurrentGame(null); // Clear current game to show welcome screen
-    }
+  const handleGameInfo = () => {
+    setIsGameInfoOpen(true);
   };
+
 
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800 to-slate-700
@@ -54,22 +55,10 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
       {/* Menu Buttons */}
       <div className="flex gap-3 items-center">
         <MenuButton
-          onClick={handleChangeGame}
-          icon={<Home className="w-4 h-4" />}
-          text="Change Game"
-          className="from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600"
-        />
-        <MenuButton
-          onClick={onToggleMapStyle}
-          icon={<Map className="w-4 h-4" />}
-          text="Toggle Style"
-          className="from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600"
-        />
-        <MenuButton
-          onClick={resetGame}
-          icon={<RotateCcw className="w-4 h-4" />}
-          text="Reset"
-          className="from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600"
+          onClick={handleGameInfo}
+          icon={<Info className="w-4 h-4" />}
+          text="Game Info"
+          className="from-green-600 to-green-500 hover:from-green-500 hover:to-green-600"
         />
         <MenuButton
           dataTestID={DataTestIDs.SETTINGS_BUTTON}
@@ -85,6 +74,11 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           isOpen={isSettingsOpen}
+        />
+
+        <GameInformation
+          onClose={() => setIsGameInfoOpen(false)}
+          isOpen={isGameInfoOpen}
         />
       </div>
     </div>

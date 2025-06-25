@@ -1,16 +1,22 @@
 import { useGameState } from "../GameStateContext";
+import {GameTime } from "../types/GameTypes";
 
 
-const useGetMonthAndYear: () => {
+export const useGetMonthAndYear: () => {
     year: number,
     month: number,
 } = () => {
-
     const { gameState } = useGameState();
     const { gameTime } = gameState;
+    return getMonthAndYear(gameTime);
+}
 
-    const totalGameMs = gameTime.gameDurationHours * 60 * 60 * 1000;
-    const elapsedTime = gameTime.elapsedTime ?? 0;
+export const getMonthAndYear = (gameTimeState: GameTime): {
+    year: number,
+    month: number,
+} => {
+    const totalGameMs = gameTimeState.gameDurationHours * 60 * 60 * 1000;
+    const elapsedTime = gameTimeState.elapsedTime ?? 0;
     const progress = Math.min(elapsedTime / totalGameMs, 1);
     const totalMonths = 80 * 12;
     const currentMonthIndex = Math.floor(progress * totalMonths);
@@ -21,5 +27,3 @@ const useGetMonthAndYear: () => {
         month: month,
     }
 }
-
-export default useGetMonthAndYear;

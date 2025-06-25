@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect } from "react";
+import React, { useState, ReactNode, useEffect, useContext } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState, Franchise } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
@@ -7,14 +7,17 @@ import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
   fetchUserMoney,
+  updateUserMoney,
   updateGameElapsedTime,
   placeFranchise as placeFranchiseAPI,
 } from "./api_calls/CountyWarsHTTPRequests";
-import { GAME_DEFAULTS } from "./constants/gameDefaults";
+import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
 import { getCountyCost } from "./utils/countyUtils";
+import { getMonthAndYear } from "./utils/useGetMonthAndYear";
+import { useAuth } from "./auth/AuthContext";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -25,20 +28,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
   const [gameId, setGameId] = useState<string>(getCurrentGameId());
-  const [userId] = useState<string>(() => {
-    // Try to get existing userId from localStorage
-    const savedUserId = localStorage.getItem('county-wars-user-id');
-    if (savedUserId) {
-      console.log('Using existing userId:', savedUserId);
-      return savedUserId;
-    }
-    // Generate new userId and save it
-    const newUserId = `user_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('Generated new userId:', newUserId);
-    localStorage.setItem('county-wars-user-id', newUserId);
-    return newUserId;
-  });
-  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const {user} = useAuth();
+  const [_, setIsConnected] = useState<boolean>(false);
+
+  const userId = user?.id;
 
 
   // Helper function to select a county
@@ -64,6 +57,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   const setHighlightColor = async (color: string) => {
+    if (userId == null) return;
     setGameState((prevState) => ({
       ...prevState,
       highlightColor: color,
@@ -126,6 +120,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   const placeFranchise = async (name: string) => {
+    if (userId == null) return;
     if (!gameState.clickedLocation) {
       console.error('No clicked location available for franchise placement');
       return;
@@ -137,7 +132,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
 
     const franchiseCost = getCountyCost(gameState.selectedCounty.name);
-    
+
     if (gameState.money < franchiseCost) {
       console.error('Insufficient funds to place franchise');
       return;
@@ -149,13 +144,14 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       long: gameState.clickedLocation.lng,
       name: name,
       placedAt: Date.now(),
+      userId: userId,
     };
 
     const result = await placeFranchiseAPI(
-      userId, 
-      gameId, 
-      gameState.clickedLocation.lat, 
-      gameState.clickedLocation.lng, 
+      userId,
+      gameId,
+      gameState.clickedLocation.lat,
+      gameState.clickedLocation.lng,
       name,
       gameState.selectedCounty.name
     );
@@ -166,6 +162,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         franchises: [...prevState.franchises, newFranchise],
         money: result.remainingMoney ?? prevState.money - franchiseCost,
       }));
+
+      // Emit socket event to notify other players
+      socketService.placeFranchise(newFranchise);
 
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
     } else {
@@ -189,7 +188,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
-      console.log('Fetching initial data for userId:', userId, 'gameId:', gameId);
+      if (userId == null) return;
       const savedColor = await fetchUserHighlightColor(userId);
       const userMoney = await fetchUserMoney(userId);
 
@@ -204,6 +203,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
   // Socket connection and event handling
   useEffect(() => {
+    const userId = user?.id;
+    if (userId == null) return;
     console.log('Socket effect running, userId:', userId);
 
     // Skip if already connected to avoid reconnections
@@ -239,8 +240,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }, 15000
   )
 
-  useInterval(()=> {
-    if (gameState.gameTime.isPaused == true) {
+  useInterval(() => {
+    if (gameState.gameTime.isPaused == true || userId == null) {
       return;
     }
     setGameState((prevState) => {
@@ -252,18 +253,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         elapsedTime = 1000;
       }
 
-      const totalGameMs = prevState.gameTime.gameDurationHours * 60 * 60 * 1000;
 
-      // Calculate progress (0 to 1)
-      const progress = Math.min(elapsedTime / totalGameMs, 1);
-
-      // Total months from 1945 to 2025 (80 years * 12 months)
-      const totalMonths = 80 * 12;
-      const currentMonthIndex = Math.floor(progress * totalMonths);
-
-      // Convert back to year and month
-      const year = 1945 + Math.floor(currentMonthIndex / 12);
-      const month = (currentMonthIndex % 12) + 1;
+      const { month, year } = getMonthAndYear({ ...prevState.gameTime, elapsedTime: elapsedTime });
 
       // Don't update if we're already at the end
       if (year >= 2025 && month >= 12) {
@@ -276,8 +267,23 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         };
       }
 
+      // Check if a new year has started to award annual income
+      let newMoney = prevState.money;
+      const { month: previousMonth, year: _ }
+        = getMonthAndYear(
+          { ...gameState.gameTime, elapsedTime: elapsedTime - GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN });
+      if (month === 1 && previousMonth === 12) {
+        newMoney = prevState.money + GAME_DEFAULTS.ANNUAL_INCOME;
+        updateUserMoney(userId, newMoney).then(success => {
+          if (!success) {
+            console.warn('Failed to update money on server for annual income');
+          }
+        });
+      }
+
       return {
         ...prevState,
+        money: newMoney,
         gameTime: {
           ...prevState.gameTime,
           elapsedTime: elapsedTime,
@@ -286,20 +292,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         },
       };
     });
-    let currentGameId = gameState.currentGameId;
-    if (currentGameId == null) {
-      // Try to get game ID from URL if not in state
-      const urlGameId = getCurrentGameId();
-      if (urlGameId) {
-        currentGameId = urlGameId;
-        // Update state with the game ID from URL
-        setGameState(prev => ({ ...prev, currentGameId: urlGameId }));
-      } else {
-        console.log('No current game id, skipping autosave');
-        return;
-      }
-    }
-  }, 1000);
+  }, GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN);
 
   const contextValue: GameStateContextType = {
     gameState,

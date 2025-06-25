@@ -1,9 +1,9 @@
 import React from 'react';
 import { Play, Pause } from 'lucide-react';
 import { useGameState } from './GameStateContext';
-import { GAME_DEFAULTS } from './constants/gameDefaults';
+import { GAME_DEFAULTS } from './constants/GAMEDEFAULTS';
 import { DataTestIDs } from './DataTestIDs';
-import useGetMonthAndYear from './utils/useGetMonthAndYear';
+import {useGetMonthAndYear} from './utils/useGetMonthAndYear';
 
 interface TimelineProps {
   className?: string;

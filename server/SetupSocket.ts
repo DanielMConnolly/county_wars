@@ -35,6 +35,13 @@ export function setupSocket(io: Server) {
     // Join the game-specific room
     socket.join(`game-${socket.gameId}`);
 
+    // Handle franchise placement events
+    socket.on('franchise-placed', (franchiseData) => {
+      console.log(`Broadcasting franchise placement from user ${socket.userId} in game ${socket.gameId}`);
+      // Broadcast to all other users in the same game
+      socket.to(`game-${socket.gameId}`).emit('franchise-added', franchiseData);
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log(`User ${socket.userId} disconnected`);

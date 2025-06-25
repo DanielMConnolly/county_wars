@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { Franchise } from '../types/GameTypes';
 
 export class SocketService {
   private socket: Socket | null = null;
@@ -64,6 +65,10 @@ export class SocketService {
       this.emit('all-taken-counties', data);
     });
 
+    this.socket.on('franchise-added', (data) => {
+      this.emit('franchise-added', data);
+    });
+
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });
@@ -90,6 +95,12 @@ export class SocketService {
   getAllTakenCounties() {
     if (this.socket) {
       this.socket.emit('get-all-taken-counties');
+    }
+  }
+
+  placeFranchise(franchiseData: Franchise) {
+    if (this.socket) {
+      this.socket.emit('franchise-placed', franchiseData);
     }
   }
 

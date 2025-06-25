@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { X, Plus, Settings, Users } from 'lucide-react';
+import { X, Plus, Settings, Users, RotateCcw } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { GameSettingsPanel } from './GameSettingsPanel';
 import { createGame, fetchAllGames } from '../api_calls/CountyWarsHTTPRequests';
@@ -16,7 +16,7 @@ export default function SettingsModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { gameState, setGameDuration } = useContext(GameStateContext);
+  const { gameState, setGameDuration, resetGame } = useContext(GameStateContext);
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ModalView>('main');
   const [selectedDuration, setSelectedDuration] = React.useState(gameState.gameTime.gameDurationHours);
@@ -104,7 +104,7 @@ export default function SettingsModal({
                 <Settings size={20} className="text-blue-600" />
                 <div>
                   <h3 className="font-medium text-gray-800">Game Settings</h3>
-                  <p className="text-sm text-gray-600">Configure colors and game duration</p>
+                  <p className="text-sm text-gray-600">Configure colors, map style, and game duration</p>
                 </div>
               </button>
 
@@ -129,6 +129,21 @@ export default function SettingsModal({
                 <div>
                   <h3 className="font-medium text-gray-800">Join Game</h3>
                   <p className="text-sm text-gray-600">Browse and join existing games</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  resetGame();
+                  handleModalClose();
+                }}
+                className="w-full flex items-center gap-3 p-4 border border-gray-200
+                 rounded-lg hover:bg-gray-50 transition-colors text-left"
+              >
+                <RotateCcw size={20} className="text-orange-600" />
+                <div>
+                  <h3 className="font-medium text-gray-800">Reset Game</h3>
+                  <p className="text-sm text-gray-600">Reset the current game progress</p>
                 </div>
               </button>
             </div>
