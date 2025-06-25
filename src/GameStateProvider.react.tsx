@@ -39,8 +39,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     localStorage.setItem('county-wars-user-id', newUserId);
     return newUserId;
   });
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [previousYear, setPreviousYear] = useState<number>(GAME_DEFAULTS.START_YEAR);
+  const [_, setIsConnected] = useState<boolean>(false);
 
 
   // Helper function to select a county
@@ -141,7 +140,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
 
     const franchiseCost = getCountyCost(gameState.selectedCounty.name);
-    
+
     if (gameState.money < franchiseCost) {
       console.error('Insufficient funds to place franchise');
       return;
@@ -156,10 +155,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     };
 
     const result = await placeFranchiseAPI(
-      userId, 
-      gameId, 
-      gameState.clickedLocation.lat, 
-      gameState.clickedLocation.lng, 
+      userId,
+      gameId,
+      gameState.clickedLocation.lat,
+      gameState.clickedLocation.lng,
       name,
       gameState.selectedCounty.name
     );
@@ -282,11 +281,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
       // Check if a new year has started to award annual income
       let newMoney = prevState.money;
-      if (year > previousYear) {
-        newMoney = prevState.money + 1000;
-        console.log(`New year ${year}! Awarding $1000 annual income. New balance: $${newMoney}`);
-        
-        // Update server with new money amount
+      const previousElapsedTime = elapsedTime - GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN;
+      const previousProgress = Math.min(previousElapsedTime / totalGameMs, 1);
+      const previousMonthIndex = Math.floor(previousProgress * totalMonths);
+      const previousMonth = (previousMonthIndex % 12) + 1;
+      if(month === 1 && previousMonth === 12) {
+        newMoney = prevState.money + GAME_DEFAULTS.ANNUAL_INCOME;
+
         updateUserMoney(userId, newMoney).then(success => {
           if (!success) {
             console.warn('Failed to update money on server for annual income');
@@ -305,13 +306,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         },
       };
     });
-    
-    // Update previousYear tracking after state update
-    const currentYear = Math.floor((gameState.gameTime.elapsedTime ?? 0) / (gameState.gameTime.gameDurationHours * 60 * 60 * 1000) * 80 * 12 / 12) + 1945;
-    if (currentYear > previousYear) {
-      setPreviousYear(currentYear);
-    }
-    
+
     let currentGameId = gameState.currentGameId;
     if (currentGameId == null) {
       // Try to get game ID from URL if not in state

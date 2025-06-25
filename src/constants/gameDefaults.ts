@@ -7,6 +7,7 @@ export const GAME_DEFAULTS= {
   END_YEAR: 2025,
   START_MONTH: 1,
   NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN: 1000, // Game updates every 1000ms (1 second)
+  ANNUAL_INCOME: 1000, // $1000 per year
 } as const;
 
 // County conquest costs (based on difficulty)
