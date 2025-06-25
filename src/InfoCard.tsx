@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Zap } from 'lucide-react';
+import { Zap, X } from 'lucide-react';
 import {
   calculateCountyDifficulty,
   getCountyCost,
@@ -12,7 +12,7 @@ import { fetchPopulationData } from './api_calls/fetchPopulationData';
 import { DataTestIDs } from './DataTestIDs';
 
 const InfoCard = () => {
-  const { gameState, placeFranchise } = useContext(GameStateContext);
+  const { gameState, placeFranchise, selectCounty } = useContext(GameStateContext);
   const { selectedCounty } = gameState;
 
   if (!selectedCounty) {
@@ -26,6 +26,12 @@ const InfoCard = () => {
       const distance = calculateDistanceMiles(lat, lng, franchise.lat, franchise.long);
       return distance < 5;
     });
+  };
+
+  const canAffordFranchise = (): boolean => {
+    if (!selectedCounty) return false;
+    const cost = getCountyCost(selectedCounty.name);
+    return gameState.money >= cost;
   };
 
   useEffect(() => {
@@ -47,15 +53,47 @@ const InfoCard = () => {
   }, [selectedCounty]);
 
 
+  const isPlaceFranchiseButtonEnabled = (): boolean => {
+    if (!gameState.clickedLocation) return false;
+    if(isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)){
+      return false;
+    }
+    return canAffordFranchise();
+  }
+
+  const placeFranchiseButtonText = (): string => {
+    if (!gameState.clickedLocation) {
+      return 'Click Map to Place';
+    }
+    if (isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)) {
+      return 'Too Close to Existing Franchise';
+    }
+    if (!canAffordFranchise()) {
+      return 'Insufficient Funds';
+    }
+    return 'Place Franchise';
+  };
+
+
   return (
     <div
       data-testid={DataTestIDs.INFO_CARD}
       className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
-      <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-600">
-        <Zap className="w-5 h-5 text-blue-400" />
-        <h3 className="text-xl font-bold text-blue-400">Territory Info</h3>
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-600">
+        <div className="flex items-center gap-2">
+          <Zap className="w-5 h-5 text-blue-400" />
+          <h3 className="text-xl font-bold text-blue-400">Territory Info</h3>
+        </div>
+        <button
+          onClick={() => selectCounty(null)}
+          className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-slate-700"
+          aria-label="Close info card"
+          data-testid={DataTestIDs.CLOSE_INFO_CARD_BUTTON}
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
       <div className="space-y-3">
         <InfoRow
@@ -90,19 +128,15 @@ const InfoCard = () => {
             await placeFranchise(`${selectedCounty.name} Franchise`);
           }
         }}
-        disabled={!gameState.clickedLocation || (gameState.clickedLocation && isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng))}
+        disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold
-           transition-all duration-300 ${!gameState.clickedLocation || (gameState.clickedLocation && isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng))
+           transition-all duration-300 ${!isPlaceFranchiseButtonEnabled()
             ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
             : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 ' +
             'text-white hover:scale-105 hover:shadow-lg'
           }`}
       >
-        {!gameState.clickedLocation 
-          ? 'Click Map to Place' 
-          : (gameState.clickedLocation && isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng))
-            ? 'Too Close to Existing Franchise'
-            : 'Place Franchise'}
+        {placeFranchiseButtonText()}
       </button>
     </div>
   );

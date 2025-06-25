@@ -137,6 +137,7 @@ export async function updateUserMoney(userId: string, amount: number): Promise<b
   }
 }
 
+
 // Authentication functions
 export async function signup(
   username: string,
@@ -239,7 +240,7 @@ export async function getUserProfile(
 
 // Game management functions
 export async function createGame(name: string, createdBy: string):
- Promise<{ success: boolean; gameId?: string; error?: string }> {
+  Promise<{ success: boolean; gameId?: string; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`, {
       method: 'POST',
@@ -279,7 +280,7 @@ export async function fetchGame(gameId: string): Promise<{ success: boolean; gam
 }
 
 export async function fetchUserGames(userId: string)
-: Promise<{ success: boolean; games?: any[]; error?: string }> {
+  : Promise<{ success: boolean; games?: any[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games`);
     const data = await response.json();
@@ -336,21 +337,26 @@ export async function placeFranchise(
   gameId: string,
   lat: number,
   long: number,
-  name: string
-): Promise<{ success: boolean; error?: string }> {
+  name: string,
+  countyName?: string
+): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/franchises`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, gameId, lat, long, name }),
+      body: JSON.stringify({ userId, gameId, lat, long, name, countyName }),
     });
 
     const data = await response.json();
 
     if (response.ok) {
-      return { success: true };
+      return {
+        success: true,
+        cost: data.cost,
+        remainingMoney: data.remainingMoney
+      };
     } else {
       return { success: false, error: data.error || 'Failed to place franchise' };
     }

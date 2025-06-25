@@ -358,12 +358,43 @@ app.delete('/api/games/:gameId', (req: Request, res: Response): void => {
   }
 });
 
+// County cost calculation (duplicated from client-side utils)
+const COUNTY_COSTS = {
+  'EASY': 100,
+  'MEDIUM': 200,
+  'HARD': 300
+};
+
+function calculateCountyDifficulty(countyName: string): 'EASY' | 'MEDIUM' | 'HARD' {
+  let hash = 0;
+  for (let i = 0; i < countyName.length; i++) {
+    const char = countyName.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  const absHash = Math.abs(hash);
+  const remainder = absHash % 3;
+  
+  switch (remainder) {
+    case 0: return 'EASY';
+    case 1: return 'MEDIUM';
+    case 2: return 'HARD';
+    default: return 'MEDIUM';
+  }
+}
+
+function getCountyCost(countyName: string): number {
+  const difficulty = calculateCountyDifficulty(countyName);
+  return COUNTY_COSTS[difficulty];
+}
+
 // Franchise management endpoints
 app.post('/api/franchises', (req: Request, res: Response): void => {
-  const { userId, gameId, lat, long, name } = req.body;
+  const { userId, gameId, lat, long, name, countyName } = req.body;
 
-  if (!userId || !gameId || lat === undefined || long === undefined || !name) {
-    res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
+  if (!userId || !gameId || lat === undefined || long === undefined || !name || !countyName) {
+    res.status(400).json({ error: 'userId, gameId, lat, long, name, and countyName are required' });
     return;
   }
 
@@ -373,13 +404,37 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
   }
 
   try {
-    const success = dbOperations.placeFranchise(userId, gameId, lat, long, name);
-
-    if (success) {
-      res.json({ message: 'Franchise placed successfully' });
-    } else {
-      res.status(500).json({ error: 'Failed to place franchise' });
+    // Calculate franchise cost
+    const franchiseCost = getCountyCost(countyName);
+    
+    // Check if user has enough money
+    const userMoney = dbOperations.getUserMoney(userId);
+    if (userMoney < franchiseCost) {
+      res.status(400).json({ error: 'Insufficient funds to place franchise' });
+      return;
     }
+
+    // Deduct money and place franchise in a transaction-like manner
+    const moneyDeducted = dbOperations.deductUserMoney(userId, franchiseCost);
+    if (!moneyDeducted) {
+      res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
+      return;
+    }
+
+    const franchisePlaced = dbOperations.placeFranchise(userId, gameId, lat, long, name);
+    if (!franchisePlaced) {
+      // If franchise placement failed, refund the money
+      const currentMoney = dbOperations.getUserMoney(userId);
+      dbOperations.updateUserMoney(userId, currentMoney + franchiseCost);
+      res.status(500).json({ error: 'Failed to place franchise' });
+      return;
+    }
+
+    res.json({ 
+      message: 'Franchise placed successfully', 
+      cost: franchiseCost,
+      remainingMoney: dbOperations.getUserMoney(userId)
+    });
   } catch (error) {
     console.error('Error placing franchise:', error);
     res.status(500).json({ error: 'Internal server error' });
