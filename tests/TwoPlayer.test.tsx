@@ -3,7 +3,7 @@ import "expect-puppeteer";
 import '@testing-library/jest-dom';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { createNewGame, setupNewUser } from "./SetupUtils";
-import {getFranchiseCount, placeFranchiseAt, waitForFranchiseUpdate } from './TestUtils';
+import {getFranchiseCount, placeFranchiseAt, wait, waitForFranchiseUpdate, clickOnTerritory, checkInfoCardAppears } from './TestUtils';
 
 let playerAPage: Page;
 let playerBPage: Page;
@@ -71,44 +71,44 @@ describe("Two Player Territory Claiming", () => {
         expect(finalCountB).toBe(updatedCountA);
     });
 
-    // test("Player B should not be able to place franchise in same location as Player A", async () => {
-    //     // Player A places another franchise at a specific location
-    //     const franchisePlacedA = await placeFranchiseAt(playerAPage, 50, 50);
-    //     expect(franchisePlacedA).toBe(true);
+    test("Player B should not be able to place franchise in same location as Player A", async () => {
+        // Player A places another franchise at a specific location
+        const franchisePlacedA = await placeFranchiseAt(playerAPage, 50, 50);
+        expect(franchisePlacedA).toBe(true);
 
-    //     // Wait for the update to propagate
-    //     await wait(2);
+        // Wait for the update to propagate
+        await wait(2);
 
-    //     // Player B tries to place franchise at the same location
-    //     const franchisePlacedB = await placeFranchiseAt(playerBPage, 50, 50);
+        // Player B clicks on the same location where Player A placed their franchise
+        await clickOnTerritory(playerBPage, 50, 50);
 
-    //     // This should fail because the territory is already claimed
-    //     expect(franchisePlacedB).toBe(false);
-    // });
+        // The info card should NOT appear because the territory is already claimed
+        const infoCardAppears = await checkInfoCardAppears(playerBPage);
+        expect(infoCardAppears).toBe(false);
+    });
+    test("Both players can place franchises in different territories", async () => {
+        const countABefore = await getFranchiseCount(playerAPage);
+        const countBBefore = await getFranchiseCount(playerBPage);
 
-    // test("Both players can place franchises in different territories", async () => {
-    //     const countABefore = await getFranchiseCount(playerAPage);
-    //     const countBBefore = await getFranchiseCount(playerBPage);
+        // Player A places franchise at one location
+        const franchisePlacedA = await placeFranchiseAt(playerAPage, -100, -100);
+        expect(franchisePlacedA).toBe(true);
 
-    //     // Player A places franchise at one location
-    //     const franchisePlacedA = await placeFranchiseAt(playerAPage, -100, -100);
-    //     expect(franchisePlacedA).toBe(true);
+        // Player B places franchise at different location
+        const franchisePlacedB = await placeFranchiseAt(playerBPage, 100, 100);
+        expect(franchisePlacedB).toBe(true);
 
-    //     // Player B places franchise at different location
-    //     const franchisePlacedB = await placeFranchiseAt(playerBPage, 100, 100);
-    //     expect(franchisePlacedB).toBe(true);
+        // Wait for updates to propagate
+        await wait(3);
 
-    //     // Wait for updates to propagate
-    //     await wait(3);
+        // Both players should see both franchises
+        const finalCountA = await getFranchiseCount(playerAPage);
+        const finalCountB = await getFranchiseCount(playerBPage);
 
-    //     // Both players should see both franchises
-    //     const finalCountA = await getFranchiseCount(playerAPage);
-    //     const finalCountB = await getFranchiseCount(playerBPage);
-
-    //     expect(finalCountA).toBe(countABefore + 2);
-    //     expect(finalCountB).toBe(countBBefore + 2);
-    //     expect(finalCountA).toBe(finalCountB);
-    // });
+        expect(finalCountA).toBe(countABefore + 2);
+        expect(finalCountB).toBe(countBBefore + 2);
+        expect(finalCountA).toBe(finalCountB);
+    });
 });
 
 afterAll(async () => {
