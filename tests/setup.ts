@@ -30,14 +30,37 @@ const waitForServer = async (url: string, timeout = 50000) => {
 export async function setup(): Promise<void> {
   console.log('Starting test servers...');
 
+  // Initialize test database schema
+  console.log('Initializing test database...');
+  const { execSync } = require('child_process');
+  try {
+    execSync('npx prisma db push', {
+      env: {
+        ...process.env,
+        DATABASE_URL: 'file:./test_database.db'
+      },
+      stdio: 'inherit'
+    });
+    console.log('Test database initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize test database:', error);
+    throw error;
+  }
+
   // Start server with test database
   const serverProcess = spawn('npm', ['run', 'server'], {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
       NODE_ENV: 'test',
-      TEST_DATABASE_PATH: './test_database.db'
+      TEST_DATABASE_PATH: './test_database.db',
+      DATABASE_URL: 'file:./test_database.db'
     }
+  });
+
+  // Log server errors for debugging
+  serverProcess.stderr?.on('data', (data) => {
+    console.error('SERVER ERROR:', data.toString());
   });
 
   // Store server process globally for teardown

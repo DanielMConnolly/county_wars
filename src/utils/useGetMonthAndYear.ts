@@ -8,6 +8,7 @@ export const useGetMonthAndYear: () => {
 } = () => {
     const { gameState } = useGameState();
     const { gameTime } = gameState;
+    console.log("GAME TIME: ",gameTime);
     return getMonthAndYear(gameTime);
 }
 

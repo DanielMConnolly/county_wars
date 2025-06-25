@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id
+  username       String?   @unique
+  email          String?   @unique
+  passwordHash   String?   @map("password_hash")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastActive     DateTime  @default(now()) @map("last_active")
+  highlightColor String    @default("red") @map("highlight_color")
+  gameTime       String?   @map("game_time")
+  money          Int       @default(1000)
+
+  // Relationships
+  createdGames     Game[]               @relation("GameCreator")
+  userGameMoney    UserGameMoney[]
+  placedFranchises PlacedFranchise[]
+
+  @@map("users")
+}
+
+model Game {
+  id          String   @id
+  name        String
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  isActive    Boolean  @default(true) @map("is_active")
+  elapsedTime Int      @default(0) @map("elapsed_time")
+
+  // Relationships
+  creator          User                @relation("GameCreator", fields: [createdBy], references: [id])
+  userGameMoney    UserGameMoney[]
+  placedFranchises PlacedFranchise[]
+
+  @@map("games")
+}
+
+model UserGameMoney {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  gameId    String   @map("game_id")
+  money     Int      @default(1000)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([userId, gameId])
+  @@map("user_game_money")
+}
+
+model PlacedFranchise {
+  id         Int      @id @default(autoincrement())
+  userId     String   @map("user_id")
+  gameId     String   @map("game_id")
+  lat        Float
+  long       Float
+  name       String
+  timePlaced DateTime @default(now()) @map("time_placed")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@map("placed_franchises")
+}

@@ -145,6 +145,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       name: name,
       placedAt: Date.now(),
       userId: userId,
+      username: user?.username?? "UNKNOWN"
     };
 
     const result = await placeFranchiseAPI(
