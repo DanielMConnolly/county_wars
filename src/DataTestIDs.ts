@@ -5,6 +5,7 @@ export enum DataTestIDs {
   // InfoCard
   INFO_CARD = 'info-card',
   PLACE_FRANCHISE_BUTTON = 'place-franchise-button',
+  CLOSE_INFO_CARD_BUTTON = 'close-info-card-button',
 
   // GameMap
   GAME_MAP = 'game-map',

@@ -8,7 +8,7 @@ export interface GameStateContextType {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // Helper functions
-  selectCounty: (_countyName: County)=> void;
+  selectCounty: (_countyName: County | null)=> void;
   setMapStyle: (_style: string) => void;
   setHighlightColor: (_color: string) => void;
   resetGame: () => void;

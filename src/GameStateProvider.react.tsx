@@ -14,6 +14,7 @@ import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
+import { getCountyCost } from "./utils/countyUtils";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -41,7 +42,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
 
   // Helper function to select a county
-  const selectCounty = (countyInfo: County) => {
+  const selectCounty = (countyInfo: County | null) => {
     setGameState((prevState) => ({
       ...prevState,
       selectedCounty: countyInfo
@@ -130,6 +131,18 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       return;
     }
 
+    if (!gameState.selectedCounty) {
+      console.error('No selected county available for franchise placement');
+      return;
+    }
+
+    const franchiseCost = getCountyCost(gameState.selectedCounty.name);
+    
+    if (gameState.money < franchiseCost) {
+      console.error('Insufficient funds to place franchise');
+      return;
+    }
+
     const newFranchise: Franchise = {
       id: `franchise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       lat: gameState.clickedLocation.lat,
@@ -138,14 +151,27 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       placedAt: Date.now(),
     };
 
-    await placeFranchiseAPI(userId, gameId, gameState.clickedLocation.lat, gameState.clickedLocation.lng, name);
+    const result = await placeFranchiseAPI(
+      userId, 
+      gameId, 
+      gameState.clickedLocation.lat, 
+      gameState.clickedLocation.lng, 
+      name,
+      gameState.selectedCounty.name
+    );
 
-    setGameState((prevState) => ({
-      ...prevState,
-      franchises: [...prevState.franchises, newFranchise],
-    }));
+    if (result.success) {
+      setGameState((prevState) => ({
+        ...prevState,
+        franchises: [...prevState.franchises, newFranchise],
+        money: result.remainingMoney ?? prevState.money - franchiseCost,
+      }));
 
-    console.log('Franchise placed:', newFranchise);
+      console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
+    } else {
+      console.error('Failed to place franchise:', result.error);
+      alert(result.error || 'Failed to place franchise');
+    }
   };
 
   // Listen for URL changes
