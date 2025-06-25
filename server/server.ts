@@ -161,10 +161,10 @@ app.get('/api/users/:userId/highlight-color', (req, res) => {
 });
 
 // Get user game time
-app.get('/api/games/:gameID/game-time', (req, res) => {
+app.get('/api/games/:gameID/game-time', async (req, res) => {
   const { gameID } = req.params;
   try {
-    const gameTime = dbOperations.getGameElapsedTime(gameID);
+    const gameTime = await dbOperations.getGameElapsedTime(gameID);
     res.json({ gameTime });
   } catch (error) {
     console.error('Error fetching game time:', error);

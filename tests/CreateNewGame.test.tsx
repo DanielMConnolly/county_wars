@@ -6,7 +6,7 @@ let testPage: Page;
 let browser: Browser;
 
 beforeAll(async () => {
-  browser = await puppeteer.launch();
+  browser = await puppeteer.launch({headless: false});
   testPage = await browser.newPage();
   await setupNewUser(testPage);
   await testPage.goto('http://localhost:5173')

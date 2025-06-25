@@ -31,12 +31,23 @@ export default async function teardown() {
   await killProcessOnPort(3001);
   await killProcessOnPort(5173);
 
-  // Clean up test database
-  try {
-    await fs.unlink(path.join(process.cwd(), 'test_database.db'));
-    console.log('Test database cleaned up');
-  } catch (e) {
-    // File might not exist, ignore
+  // Clean up test database files
+  const testDbPaths = [
+    path.join(process.cwd(), 'test_database.db'),
+    path.join(process.cwd(), 'prisma', 'test_database.db'),
+    path.join(process.cwd(), 'test_database.db-shm'),
+    path.join(process.cwd(), 'prisma', 'test_database.db-shm'),
+    path.join(process.cwd(), 'test_database.db-wal'),
+    path.join(process.cwd(), 'prisma', 'test_database.db-wal')
+  ];
+
+  for (const dbPath of testDbPaths) {
+    try {
+      await fs.unlink(dbPath);
+      console.log(`Test database file cleaned up: ${dbPath}`);
+    } catch (e) {
+      // File might not exist, ignore
+    }
   }
 
   // Clean up test config file

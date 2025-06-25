@@ -6,7 +6,7 @@ const sql = (strings: TemplateStringsArray, ...values: any[]) =>
   strings.reduce((result, string, i) => result + string + (values[i] || ''), '');
 
 // Initialize SQLite database
-const dbPath = path.join(process.cwd(), 'county-wars.db');
+const dbPath = process.env.TEST_DATABASE_PATH || path.join(process.cwd(), 'county-wars.db');
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrent access
