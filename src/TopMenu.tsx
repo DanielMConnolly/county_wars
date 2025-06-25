@@ -55,6 +55,7 @@ const TopMenu = () => {
       {/* Menu Buttons */}
       <div className="flex gap-3 items-center">
         <MenuButton
+          dataTestID={DataTestIDs.GAME_INFO_BUTTON}
           onClick={handleGameInfo}
           icon={<Info className="w-4 h-4" />}
           text="Game Info"

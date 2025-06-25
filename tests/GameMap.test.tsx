@@ -15,7 +15,7 @@ let browser: Browser | undefined;
 
 
 beforeAll(async () => {
-    browser = await puppeteer.launch({slowMo: 20});
+    browser = await puppeteer.launch({slowMo: 30});
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "my game");

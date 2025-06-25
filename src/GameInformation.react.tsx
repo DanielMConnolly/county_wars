@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { X, Coins, UtensilsCrossed } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { useAuth } from './auth/AuthContext';
+import { DataTestIDs } from './DataTestIDs';
 
 type TabType = 'income' | 'franchises';
 
@@ -23,7 +24,7 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" data-testid={DataTestIDs.GAME_INFO_MODAL}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -31,6 +32,7 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 transition-colors"
+            data-testid={DataTestIDs.GAME_INFO_CLOSE_BUTTON}
           >
             <X size={24} />
           </button>
@@ -59,6 +61,7 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
+              data-testid={DataTestIDs.GAME_INFO_FRANCHISES_TAB}
             >
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={16} />
@@ -89,7 +92,7 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
                 
                 <div className="bg-green-50 rounded-lg p-4">
                   <h4 className="font-semibold text-green-800 mb-2">Your Franchises</h4>
-                  <p className="text-2xl font-bold text-green-600">{userFranchises.length}</p>
+                  <p className="text-2xl font-bold text-green-600" data-testid={DataTestIDs.GAME_INFO_FRANCHISES_COUNT}>{userFranchises.length}</p>
                   <p className="text-sm text-green-600 mt-1">Owned locations</p>
                 </div>
               </div>
