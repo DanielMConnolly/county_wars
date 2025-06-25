@@ -7,13 +7,14 @@ const SALT_ROUNDS = 12;
 
 export interface User {
   id: string;
-  username: string;
-  email: string;
-  password_hash?: string;
-  created_at?: string;
-  last_active?: string;
-  highlight_color?: string;
-  game_time?: string;
+  username: string | null;
+  email: string | null;
+  passwordHash?: string | null;
+  createdAt?: Date;
+  lastActive?: Date;
+  highlightColor?: string;
+  gameTime?: string | null;
+  money?: number;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -67,7 +68,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
     }
 
     const { dbOperations } = await import('./database');
-    const user = dbOperations.getUserById(decoded.id);
+    const user = await dbOperations.getUserById(decoded.id);
     
     if (!user) {
       res.status(401).json({ error: 'User not found' });
@@ -91,7 +92,7 @@ export const optionalAuthMiddleware = async (req: AuthenticatedRequest, res: Res
       
       if (decoded) {
         const { dbOperations } = await import('./database');
-        const user = dbOperations.getUserById(decoded.id);
+        const user = await dbOperations.getUserById(decoded.id);
         if (user) {
           req.user = user;
         }

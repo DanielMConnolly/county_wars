@@ -17,6 +17,7 @@
     "test:frontend": "jest --config jest.frontend.config.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.10.1",
     "@tailwindcss/postcss": "^4.1.10",
     "@tailwindcss/vite": "^4.1.10",
     "@types/bcrypt": "^5.0.2",
@@ -40,6 +41,7 @@
     "os": "^0.1.2",
     "pg": "^8.16.2",
     "postcss": "^8.5.5",
+    "prisma": "^6.10.1",
     "puppeteer-extra": "^3.3.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

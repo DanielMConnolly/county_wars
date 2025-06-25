@@ -44,3 +44,5 @@ coverage/
 
 # Heroku
 .heroku/
+
+/src/generated/prisma

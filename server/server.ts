@@ -105,7 +105,7 @@ app.get('/api/stats', (_, res) => {
 });
 
 // Update user highlight color
-app.put('/api/users/:userId/highlight-color', function(req: Request, res: Response): void {
+app.put('/api/users/:userId/highlight-color', async function(req: Request, res: Response): Promise<void> {
   const { userId } = req.params;
   const { color } = req.body;
 
@@ -128,10 +128,10 @@ app.put('/api/users/:userId/highlight-color', function(req: Request, res: Respon
 
   try {
     // Ensure user exists in database
-    dbOperations.createUser(userId);
+    await dbOperations.createUser(userId);
 
     // Update the highlight color
-    const success = dbOperations.updateUserHighlightColor(userId, color);
+    const success = await dbOperations.updateUserHighlightColor(userId, color);
 
     if (success) {
       res.json({ message: 'Highlight color updated successfully', color });
@@ -173,7 +173,7 @@ app.get('/api/games/:gameID/game-time', (req, res) => {
 });
 
 // Update user game time
-app.put('/api/games/:gameID/game-time', (req: Request, res: Response): void => {
+app.put('/api/games/:gameID/game-time',async (req: Request, res: Response): Promise<void> => {
   const {gameID } = req.params;
   const { elapsedTime } = req.body;
   console.log("GAME TIME: ", elapsedTime);
@@ -187,7 +187,7 @@ app.put('/api/games/:gameID/game-time', (req: Request, res: Response): void => {
   try {
 
     // Update the game time
-    const success = dbOperations.updateGameElapsedTime(gameID, elapsedTime);
+    const success = await dbOperations.updateGameElapsedTime(gameID, elapsedTime);
 
     if (success) {
       res.json({ message: 'Game time updated successfully', elapsedTime });
@@ -201,14 +201,14 @@ app.put('/api/games/:gameID/game-time', (req: Request, res: Response): void => {
 });
 
 // Get user money for a specific game
-app.get('/api/users/:userId/games/:gameId/money', (req: Request, res: Response): void => {
+app.get('/api/users/:userId/games/:gameId/money', async (req: Request, res: Response): Promise<void> => {
   const { userId, gameId } = req.params;
 
   try {
     // Ensure user exists in database
-    dbOperations.createUser(userId);
+    await dbOperations.createUser(userId);
 
-    const money = dbOperations.getUserGameMoney(userId, gameId);
+    const money = await dbOperations.getUserGameMoney(userId, gameId);
     res.json({ money });
   } catch (error) {
     console.error('Error fetching user game money:', error);
@@ -217,7 +217,7 @@ app.get('/api/users/:userId/games/:gameId/money', (req: Request, res: Response):
 });
 
 // Update user money for a specific game
-app.put('/api/users/:userId/games/:gameId/money', (req: Request, res: Response): void => {
+app.put('/api/users/:userId/games/:gameId/money', async (req: Request, res: Response): Promise<void> => {
   const { userId, gameId } = req.params;
   const { amount } = req.body;
 
@@ -228,10 +228,10 @@ app.put('/api/users/:userId/games/:gameId/money', (req: Request, res: Response):
 
   try {
     // Ensure user exists in database
-    dbOperations.createUser(userId);
+    await dbOperations.createUser(userId);
 
     // Update the money
-    const success = dbOperations.updateUserGameMoney(userId, gameId, amount);
+    const success = await dbOperations.updateUserGameMoney(userId, gameId, amount);
 
     if (success) {
       res.json({ message: 'Money updated successfully', money: amount });
@@ -245,7 +245,7 @@ app.put('/api/users/:userId/games/:gameId/money', (req: Request, res: Response):
 });
 
 // Game management endpoints
-app.post('/api/games', (req: Request, res: Response): void => {
+app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
   const { name, createdBy } = req.body;
 
   if (!name || !createdBy) {
@@ -255,7 +255,7 @@ app.post('/api/games', (req: Request, res: Response): void => {
 
   try {
     const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
-    const success = dbOperations.createGame(gameId, name, createdBy);
+    const success = await dbOperations.createGame(gameId, name, createdBy);
 
     if (success) {
       res.json({ gameId, name, createdBy, message: 'Game created successfully' });
@@ -268,9 +268,9 @@ app.post('/api/games', (req: Request, res: Response): void => {
   }
 });
 
-app.get('/api/games', (req: Request, res: Response): void => {
+app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
     try{
-        const games = dbOperations.getAllGames();
+        const games = await dbOperations.getAllGames();
         if(games){
             res.json({ games });
         }
@@ -285,11 +285,11 @@ app.get('/api/games', (req: Request, res: Response): void => {
 
 });
 
-app.get('/api/games/:gameId', (req: Request, res: Response): void => {
+app.get('/api/games/:gameId', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
 
   try {
-    const game = dbOperations.getGame(gameId);
+    const game = await dbOperations.getGame(gameId);
 
     if (game) {
       res.json(game);
@@ -302,11 +302,11 @@ app.get('/api/games/:gameId', (req: Request, res: Response): void => {
   }
 });
 
-app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
+app.get('/api/users/:userId/games', async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
 
   try {
-    const games = dbOperations.getUserGames(userId);
+    const games = await dbOperations.getUserGames(userId);
     res.json({ games });
   } catch (error) {
     console.error('Error fetching user games:', error);
@@ -314,11 +314,11 @@ app.get('/api/users/:userId/games', (req: Request, res: Response): void => {
   }
 });
 
-app.delete('/api/games/:gameId', (req: Request, res: Response): void => {
+app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
 
   try {
-    const success = dbOperations.deleteGame(gameId);
+    const success = await dbOperations.deleteGame(gameId);
 
     if (success) {
       res.json({ message: 'Game deleted successfully' });
@@ -363,7 +363,7 @@ function getCountyCost(countyName: string): number {
 }
 
 // Franchise management endpoints
-app.post('/api/franchises', (req: Request, res: Response): void => {
+app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
   const { userId, gameId, lat, long, name, countyName } = req.body;
 
   if (!userId || !gameId || lat === undefined || long === undefined || !name || !countyName) {
@@ -381,24 +381,24 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
     const franchiseCost = getCountyCost(countyName);
 
     // Check if user has enough money in this game
-    const userMoney = dbOperations.getUserGameMoney(userId, gameId);
+    const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
     if (userMoney < franchiseCost) {
       res.status(400).json({ error: 'Insufficient funds to place franchise' });
       return;
     }
 
     // Deduct money and place franchise in a transaction-like manner
-    const moneyDeducted = dbOperations.deductUserGameMoney(userId, gameId, franchiseCost);
+    const moneyDeducted = await dbOperations.deductUserGameMoney(userId, gameId, franchiseCost);
     if (!moneyDeducted) {
       res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
       return;
     }
 
-    const franchisePlaced = dbOperations.placeFranchise(userId, gameId, lat, long, name);
+    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name);
     if (!franchisePlaced) {
       // If franchise placement failed, refund the money
-      const currentMoney = dbOperations.getUserGameMoney(userId, gameId);
-      dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
+      const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
+      await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
       res.status(500).json({ error: 'Failed to place franchise' });
       return;
     }
@@ -406,7 +406,7 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
     res.json({
       message: 'Franchise placed successfully',
       cost: franchiseCost,
-      remainingMoney: dbOperations.getUserGameMoney(userId, gameId)
+      remainingMoney: await dbOperations.getUserGameMoney(userId, gameId)
     });
   } catch (error) {
     console.error('Error placing franchise:', error);
@@ -414,11 +414,11 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
   }
 });
 
-app.get('/api/users/:userId/games/:gameId/franchises', (req: Request, res: Response): void => {
+app.get('/api/users/:userId/games/:gameId/franchises', async (req: Request, res: Response): Promise<void> => {
   const { userId, gameId } = req.params;
 
   try {
-    const franchises = dbOperations.getUserFranchises(userId, gameId);
+    const franchises = await dbOperations.getUserFranchises(userId, gameId);
     res.json({ franchises });
   } catch (error) {
     console.error('Error fetching user franchises:', error);
@@ -426,11 +426,11 @@ app.get('/api/users/:userId/games/:gameId/franchises', (req: Request, res: Respo
   }
 });
 
-app.get('/api/games/:gameId/franchises', (req: Request, res: Response): void => {
+app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
 
   try {
-    const franchises = dbOperations.getGameFranchises(gameId);
+    const franchises = await dbOperations.getGameFranchises(gameId);
     res.json({ franchises });
   } catch (error) {
     console.error('Error fetching game franchises:', error);
@@ -438,7 +438,7 @@ app.get('/api/games/:gameId/franchises', (req: Request, res: Response): void => 
   }
 });
 
-app.delete('/api/franchises/:franchiseId', (req: Request, res: Response): void => {
+app.delete('/api/franchises/:franchiseId', async (req: Request, res: Response): Promise<void> => {
   const { franchiseId } = req.params;
   const { userId } = req.body;
 
@@ -454,7 +454,7 @@ app.delete('/api/franchises/:franchiseId', (req: Request, res: Response): void =
   }
 
   try {
-    const success = dbOperations.removeFranchise(franchiseIdNum, userId);
+    const success = await dbOperations.removeFranchise(franchiseIdNum, userId);
 
     if (success) {
       res.json({ message: 'Franchise removed successfully' });
