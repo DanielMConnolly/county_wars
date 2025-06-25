@@ -15,7 +15,7 @@ let browser: Browser | undefined;
 
 
 beforeAll(async () => {
-    browser = await puppeteer.launch({slowMo: 30});
+    browser = await puppeteer.launch({ slowMo: 30 });
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "my game");
@@ -79,7 +79,7 @@ describe("Assert the Game Map is working as expected", () => {
 
         // assert that the place franchise button is disabled
         const placeFranchiseButtonClassNames =
-             await testPage.$$eval(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`, el=> el[0].className);
+            await testPage.$$eval(`[data-testid="${DataTestIDs.PLACE_FRANCHISE_BUTTON}"]`, el => el[0].className);
         expect(placeFranchiseButtonClassNames).toContain("cursor-not-allowed");
 
         await wait(1);
@@ -87,6 +87,37 @@ describe("Assert the Game Map is working as expected", () => {
             await testPage.$eval(`[data-testid="${DataTestIDs.FRANCHISE_COUNT}"]`, el => el.textContent);
         expect(franchiseCountAfterSecond).toBe(franchiseCountAfterFirst);
     });
+
+    test("should show toast when clicking outside United States", async () => {
+        // Wait for the map to be ready
+        await testPage.waitForSelector('.leaflet-container');
+
+        // Wait for county layer to load (this is important for the boundary check)
+        await wait(5);
+
+        // Zoom out to make it easier to click outside the US
+        await testPage.mouse.wheel({ deltaY: 3000 });
+        await wait(1);
+
+        // Click in the far left of the map (should be in the Atlantic Ocean)
+        await testPage.mouse.click(10, 300);
+
+        // Wait a bit for processing
+        await wait(2);
+
+        // Try to find the toast with a longer timeout
+        await testPage.waitForSelector(`[data-testid="${DataTestIDs.TOAST_NOTIFICATION}"]`, { timeout: 8000 });
+
+        // Check that the toast message is correct
+        const toastText = await testPage.$eval(
+            `[data-testid="${DataTestIDs.TOAST_NOTIFICATION}"]`,
+            el => el.textContent
+        );
+
+        expect(toastText).toContain('Location must be in the United States');
+
+
+    }, 30000); // 30 second timeout for this test
 });
 
 

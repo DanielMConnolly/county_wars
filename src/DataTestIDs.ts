@@ -47,4 +47,7 @@ export enum DataTestIDs {
   GAME_INFO_FRANCHISES_TAB = 'game-info-franchises-tab',
   GAME_INFO_FRANCHISES_COUNT = 'game-info-franchises-count',
   GAME_INFO_CLOSE_BUTTON = 'game-info-close-button',
+
+  // Toast Notifications
+  TOAST_NOTIFICATION = 'toast-notification',
 }

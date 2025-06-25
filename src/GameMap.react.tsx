@@ -17,6 +17,7 @@ import { getCurrentGameId } from "./utils/gameUrl";
 import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";
 import { getFranchiseColor } from "./utils/colorUtils";
+import { useToast } from "./Toast/ToastContext";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -31,6 +32,7 @@ const defaultStyle = {
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
   const { gameState, selectCounty, setClickedLocation, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
+  const { showToast } = useToast();
   const gameID = getCurrentGameId();
 
   useEffect(() => {
@@ -70,6 +72,29 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const gameStateRef = useRef(gameState);
   const franchiseMarkersRef = useRef<leaflet.Marker[]>([]);
 
+  // Helper function to check if a location is within any county boundary
+  const checkIfLocationInCounty = (lat: number, lng: number): boolean => {
+    if (!countyLayerRef.current) {
+      return true; // If county layer not loaded, allow placement (fail open)
+    }
+
+    let isInCounty = false;
+    
+    // Check each county layer to see if the point is within its boundaries
+    countyLayerRef.current.eachLayer((layer: any) => {
+      if (!isInCounty && layer.feature && layer.feature.geometry) {
+        const point = leaflet.latLng(lat, lng);
+        
+        // Check if point is within the bounding box of any county
+        if (layer.getBounds && layer.getBounds().contains(point)) {
+          isInCounty = true;
+        }
+      }
+    });
+
+    return isInCounty;
+  };
+
   // Initialize map (only once)
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -82,6 +107,15 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       // Add click handler for the map itself (not just counties)
       mapInstance.current.on('click', (e) => {
         console.log('🗺️ Map clicked at:', e.latlng);
+        
+        // Check if the click is within any county boundary
+        const isInCounty = checkIfLocationInCounty(e.latlng.lat, e.latlng.lng);
+        
+        if (!isInCounty) {
+          showToast('Location must be in the United States', 'warning');
+          return;
+        }
+        
         setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
       });
     }
