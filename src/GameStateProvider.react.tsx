@@ -170,6 +170,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         money: result.remainingMoney ?? prevState.money - franchiseCost,
       }));
 
+      // Emit socket event to notify other players
+      socketService.placeFranchise(newFranchise);
+
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
     } else {
       console.error('Failed to place franchise:', result.error);
