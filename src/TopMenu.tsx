@@ -72,6 +72,7 @@ const TopMenu = ({onToggleMapStyle}: {onToggleMapStyle: ()=> void}) => {
           className="from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-600"
         />
         <MenuButton
+          dataTestID={DataTestIDs.SETTINGS_BUTTON}
           onClick={handleSettings}
           icon={<Settings className="w-4 h-4" />}
           text="Settings"
@@ -111,17 +112,20 @@ const StatItem = ({
 );
 
 const MenuButton = ({
+  dataTestID,
   onClick,
   icon,
   text,
   className,
 }: {
+  dataTestID?: DataTestIDs;
   onClick: () => void;
   icon: ReactNode;
   text: string | number;
   className: string;
 }) => (
   <button
+    data-testid={dataTestID}
     onClick={onClick}
     className={`px-4 py-2 bg-gradient-to-r ${className} rounded-lg transition-all
      duration-300 hover:scale-105 hover:shadow-lg flex items-center gap-2`}

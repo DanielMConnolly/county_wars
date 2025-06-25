@@ -4,10 +4,9 @@ import { GameStateContext } from '../GameStateContext';
 import { COLOR_OPTIONS } from '../constants/gameDefaults';
 import { GameDurationSettings } from './GameDurationSettings';
 import { Dropdown, DropdownOption } from '../components/Dropdown';
+import { DataTestIDs } from '../DataTestIDs';
 
 interface GameSettingsPanelProps {
-  selectedColor: string;
-  setSelectedColor: (color: string) => void;
   selectedDuration: number;
   setSelectedDuration: (duration: number) => void;
   onBack: () => void;
@@ -39,6 +38,7 @@ export function GameSettingsPanel({
 
         <div>
           <Dropdown
+            dataTestID={DataTestIDs.SETTINGS_COLOR_SELECTOR}
             value={selectedColor}
             onChange={(value) => setSelectedColor(value as string)}
             options={colorOptions}
@@ -46,6 +46,7 @@ export function GameSettingsPanel({
             icon={<Palette size={16} />}
             renderPreview={(value) => (
               <div
+                data-testID={DataTestIDs.SETTINGS_COLOR_SELECTOR_OPTION}
                 className="w-4 h-4 rounded-full border border-gray-300"
                 style={{ backgroundColor: value as string }}
               />
@@ -80,6 +81,7 @@ export function GameSettingsPanel({
           Back
         </button>
         <button
+          data-testid={DataTestIDs.GAME_SETTINGS_BUTTON_SAVE}
           onClick={
             () => {
               onSave();

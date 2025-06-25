@@ -204,7 +204,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
       const franchiseIcon = divIcon({
         className: 'franchise-marker',
-        html: `<div style="
+        html: `<div
+          data-testid="${DataTestIDs.FRANCHISE_MARKER}"
+          style="
           background: ${gameState.highlightColor};
           border: 2px solid white;
           border-radius: 50%;
