@@ -306,20 +306,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         },
       };
     });
-
-    let currentGameId = gameState.currentGameId;
-    if (currentGameId == null) {
-      // Try to get game ID from URL if not in state
-      const urlGameId = getCurrentGameId();
-      if (urlGameId) {
-        currentGameId = urlGameId;
-        // Update state with the game ID from URL
-        setGameState(prev => ({ ...prev, currentGameId: urlGameId }));
-      } else {
-        console.log('No current game id, skipping autosave');
-        return;
-      }
-    }
   }, GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN);
 
   const contextValue: GameStateContextType = {
