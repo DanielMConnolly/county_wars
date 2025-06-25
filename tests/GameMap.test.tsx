@@ -15,7 +15,7 @@ let browser: Browser | undefined;
 
 
 beforeAll(async () => {
-    browser = await puppeteer.launch({ slowMo: 30 });
+    browser = await puppeteer.launch({ slowMo: 30, headless: false });
     testPage = await browser.newPage();
     await setupNewUser(testPage);
     await createNewGame(testPage, "my game");
@@ -96,11 +96,11 @@ describe("Assert the Game Map is working as expected", () => {
         await wait(5);
 
         // Zoom out to make it easier to click outside the US
-        await testPage.mouse.wheel({ deltaY: 3000 });
-        await wait(1);
+        // await testPage.mouse.wheel({ deltaY: 3000 });
+        // await wait(1);
 
         // Click in the far left of the map (should be in the Atlantic Ocean)
-        await testPage.mouse.click(10, 300);
+        await testPage.mouse.click(300, 300);
 
         // Wait a bit for processing
         await wait(2);
