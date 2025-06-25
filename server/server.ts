@@ -94,31 +94,6 @@ setupSocket(io);
 app.use('/api/auth', authRoutes);
 
 // HTTP API endpoints
-app.get('/api/counties/:userId/:gameId', (req, res) => {
-  const { userId, gameId } = req.params;
-  try {
-    // Ensure user exists in database
-    dbOperations.createUser(userId);
-
-    const ownedCounties = dbOperations.getUserCounties(userId, gameId);
-    res.json({ ownedCounties });
-  } catch (error) {
-    console.error('Error fetching user counties:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.get('/api/counties/all/taken/:gameId', (req, res) => {
-  const { gameId } = req.params;
-  try {
-    const allTakenCounties = dbOperations.getAllTakenCounties(gameId);
-    res.json(allTakenCounties);
-  } catch (error) {
-    console.error('Error fetching all taken counties:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 app.get('/api/stats', (_, res) => {
   try {
     const stats = dbOperations.getStats();
@@ -269,8 +244,6 @@ app.put('/api/users/:userId/money', (req: Request, res: Response): void => {
   }
 });
 
-
-
 // Game management endpoints
 app.post('/api/games', (req: Request, res: Response): void => {
   const { name, createdBy } = req.body;
@@ -372,10 +345,10 @@ function calculateCountyDifficulty(countyName: string): 'EASY' | 'MEDIUM' | 'HAR
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash;
   }
-  
+
   const absHash = Math.abs(hash);
   const remainder = absHash % 3;
-  
+
   switch (remainder) {
     case 0: return 'EASY';
     case 1: return 'MEDIUM';
@@ -406,7 +379,7 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
   try {
     // Calculate franchise cost
     const franchiseCost = getCountyCost(countyName);
-    
+
     // Check if user has enough money
     const userMoney = dbOperations.getUserMoney(userId);
     if (userMoney < franchiseCost) {
@@ -430,8 +403,8 @@ app.post('/api/franchises', (req: Request, res: Response): void => {
       return;
     }
 
-    res.json({ 
-      message: 'Franchise placed successfully', 
+    res.json({
+      message: 'Franchise placed successfully',
       cost: franchiseCost,
       remainingMoney: dbOperations.getUserMoney(userId)
     });

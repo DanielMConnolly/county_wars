@@ -38,20 +38,6 @@ const initDatabase = () => {
     )
   `);
 
-  // Create user_counties table (now game-specific)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS user_counties (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL,
-      game_id TEXT NOT NULL,
-      county_name TEXT NOT NULL,
-      claimed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users (id),
-      FOREIGN KEY (game_id) REFERENCES games (id),
-      UNIQUE(user_id, game_id, county_name)
-    )
-  `);
-
   // Create placed_franchises table
   db.exec(`
     CREATE TABLE IF NOT EXISTS placed_franchises (
@@ -133,9 +119,6 @@ const initDatabase = () => {
   // Create indexes for better performance (after migrations)
   try {
     db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_user_counties_user_id ON user_counties(user_id);
-      CREATE INDEX IF NOT EXISTS idx_user_counties_game_id ON user_counties(game_id);
-      CREATE INDEX IF NOT EXISTS idx_user_counties_county_name ON user_counties(county_name);
       CREATE INDEX IF NOT EXISTS idx_games_created_by ON games(created_by);
       CREATE INDEX IF NOT EXISTS idx_placed_franchises_user_id ON placed_franchises(user_id);
       CREATE INDEX IF NOT EXISTS idx_placed_franchises_game_id ON placed_franchises(game_id);
@@ -171,20 +154,11 @@ const initDatabase = () => {
     deleteGame: db.prepare('DELETE FROM games WHERE id = ?'),
 
     // Franchise operations
-    placeFranchise: db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
+    placeFranchise:
+     db.prepare('INSERT INTO placed_franchises (user_id, game_id, lat, long, name) VALUES (?, ?, ?, ?, ?)'),
     getUserFranchises: db.prepare('SELECT * FROM placed_franchises WHERE user_id = ? AND game_id = ?'),
     getGameFranchises: db.prepare('SELECT * FROM placed_franchises WHERE game_id = ?'),
     removeFranchise: db.prepare('DELETE FROM placed_franchises WHERE id = ? AND user_id = ?'),
-
-    // County operations (now game-specific)
-    getUserCounties: db.prepare('SELECT county_name FROM user_counties WHERE user_id = ? AND game_id = ?'),
-    claimCounty:
-     db.prepare('INSERT OR IGNORE INTO user_counties (user_id, game_id, county_name) VALUES (?, ?, ?)'),
-    releaseCounty:
-     db.prepare('DELETE FROM user_counties WHERE user_id = ? AND game_id = ? AND county_name = ?'),
-    isCountyOwned: db.prepare('SELECT user_id FROM user_counties WHERE game_id = ? AND county_name = ?'),
-    getAllTakenCounties: db.prepare('SELECT county_name, user_id FROM user_counties WHERE game_id = ?'),
-    getCountyOwner: db.prepare('SELECT user_id FROM user_counties WHERE game_id = ? AND county_name = ?'),
 
     // User operations
     updateUserHighlightColor:
@@ -256,70 +230,6 @@ export const dbOperations = {
     }
   },
 
-  // County operations (now game-specific)
-  getUserCounties: (userId: string, gameId: string): string[] => {
-    const rows = statements.getUserCounties.all(userId, gameId) as { county_name: string }[];
-    return rows.map(row => row.county_name);
-  },
-
-
-  claimCounty: (userId: string, gameId: string, countyName: string): boolean => {
-    try {
-      // Check if county is already owned by someone else in this game
-      const existingOwner =
-       statements.isCountyOwned.get(gameId, countyName) as { user_id: string } | undefined;
-      if (existingOwner && existingOwner.user_id !== userId) {
-        return false; // County already owned by another user
-      }
-
-      // Claim the county
-      const result = statements.claimCounty.run(userId, gameId, countyName);
-      statements.updateUserActivity.run(userId);
-
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error claiming county:', error);
-      return false;
-    }
-  },
-
-  releaseCounty: (userId: string, gameId: string, countyName: string): boolean => {
-    try {
-      const result = statements.releaseCounty.run(userId, gameId, countyName);
-      statements.updateUserActivity.run(userId);
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error releasing county:', error);
-      return false;
-    }
-  },
-
-  isCountyOwned: (gameId: string, countyName: string): { owned: boolean, owner?: string } => {
-    try {
-      const owner = statements.getCountyOwner.get(gameId, countyName) as { user_id: string } | undefined;
-      return owner ? { owned: true, owner: owner.user_id } : { owned: false };
-    } catch (error) {
-      console.error('Error checking county ownership:', error);
-      return { owned: false };
-    }
-  },
-
-  getAllTakenCounties: (gameId: string): Record<string, string> => {
-    try {
-      const rows = statements.getAllTakenCounties.all(gameId) as { county_name: string, user_id: string }[];
-      const result: Record<string, string> = {};
-
-      for (const row of rows) {
-        result[row.county_name] = row.user_id;
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Error getting all taken counties:', error);
-      return {};
-    }
-  },
-
   // Database maintenance
   close: () => {
     db.close();
@@ -329,12 +239,9 @@ export const dbOperations = {
   getStats: () => {
     try {
       const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-      const countyCount =
-        db.prepare('SELECT COUNT(*) as count FROM user_counties').get() as { count: number };
 
       return {
         users: userCount.count,
-        claimedCounties: countyCount.count
       };
     } catch (error) {
       console.error('Error getting database stats:', error);
@@ -517,7 +424,7 @@ export const dbOperations = {
       // Delete related data first (due to foreign key constraints)
       db.prepare('DELETE FROM user_counties WHERE game_id = ?').run(gameId);
       db.prepare('DELETE FROM placed_franchises WHERE game_id = ?').run(gameId);
-      
+
       // Then delete the game
       const result = statements.deleteGame.run(gameId);
       return result.changes > 0;
