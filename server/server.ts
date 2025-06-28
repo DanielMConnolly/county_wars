@@ -246,19 +246,19 @@ app.put('/api/users/:userId/games/:gameId/money', async (req: Request, res: Resp
 
 // Game management endpoints
 app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
-  const { name, createdBy } = req.body;
+  const { createdBy } = req.body;
 
-  if (!name || !createdBy) {
-    res.status(400).json({ error: 'Name and createdBy are required' });
+  if (!createdBy) {
+    res.status(400).json({ error: 'createdBy is required' });
     return;
   }
 
   try {
     const gameId = `game_${Math.random().toString(36).substr(2, 9)}`;
-    const success = await dbOperations.createGame(gameId, name, createdBy);
+    const success = await dbOperations.createGame(gameId, createdBy);
 
     if (success) {
-      res.json({ gameId, name, createdBy, message: 'Game created successfully' });
+      res.json({ gameId, createdBy, message: 'Game created successfully' });
     } else {
       res.status(500).json({ error: 'Failed to create game' });
     }

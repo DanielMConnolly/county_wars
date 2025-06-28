@@ -68,12 +68,12 @@ export const dbOperations = {
   },
 
   // Game operations
-  createGame: async (gameId: string, name: string, createdBy: string): Promise<boolean> => {
+  createGame: async (gameId: string, createdBy: string): Promise<boolean> => {
     try {
       await prisma.game.create({
         data: {
           id: gameId,
-          name,
+
           createdBy,
           isActive: true,
           elapsedTime: 0,

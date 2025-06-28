@@ -248,7 +248,7 @@ export async function getUserProfile(
 }
 
 // Game management functions
-export async function createGame(name: string, createdBy: string):
+export async function createGame(createdBy: string):
   Promise<{ success: boolean; gameId?: string; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`, {
@@ -256,7 +256,7 @@ export async function createGame(name: string, createdBy: string):
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, createdBy }),
+      body: JSON.stringify({ createdBy }),
     });
 
     const data = await response.json();

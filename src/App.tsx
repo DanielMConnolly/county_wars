@@ -33,7 +33,7 @@ const App = () => {
       element: <SignupPage />,
     },
     {
-      path: "/lobby",
+      path: "/lobby/:gameId",
       element: <GameLobby />,
     },
     {

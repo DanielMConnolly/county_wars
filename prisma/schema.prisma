@@ -31,7 +31,6 @@ model User {
 
 model Game {
   id          String   @id
-  name        String
   createdBy   String   @map("created_by")
   createdAt   DateTime @default(now()) @map("created_at")
   isActive    Boolean  @default(true) @map("is_active")

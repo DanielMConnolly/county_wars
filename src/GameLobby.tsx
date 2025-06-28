@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Users, Play, Crown } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import TopMenu from './TopMenu';
 import { useAuth } from './auth/AuthContext';
 import { User } from './types/GameTypes';
@@ -9,18 +10,19 @@ interface LobbyPlayer extends User {
 }
 
 const GameLobby = () => {
+  const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
   const [players, setPlayers] = useState<LobbyPlayer[]>([
-    { 
-      id: user?.id || '1', 
+    {
+      id: user?.id || '1',
       username: user?.username || 'You',
       email: user?.email || '',
-      isHost: true 
+      isHost: true
     }
   ]);
 
   const handleStartGame = () => {
-    console.log('Starting game with players:', players);
+    console.log('Starting game with players:', players, 'Game ID:', gameId);
   };
 
   const maxPlayers = 4;
@@ -29,7 +31,7 @@ const GameLobby = () => {
   return (
     <div className="h-screen bg-gray-900 text-white overflow-hidden relative">
       <TopMenu />
-      
+
       <div className="pt-16 flex flex-col items-center justify-center min-h-screen px-6">
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8 w-full max-w-2xl">
           <div className="text-center mb-8">
@@ -83,7 +85,9 @@ const GameLobby = () => {
             <button
               onClick={handleStartGame}
               disabled={players.length < 1}
-              className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+              className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700
+               hover:from-green-700 hover:to-green-800 text-white rounded-lg transition-all
+                disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
             >
               <Play className="w-5 h-5" />
               Start Game
