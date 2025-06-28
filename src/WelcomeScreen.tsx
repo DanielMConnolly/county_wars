@@ -103,7 +103,7 @@ export default function WelcomeScreen() {
                 <h3 className="text-2xl font-bold text-white">Available Games</h3>
                 <button
                   data-testid={DataTestIDs.CREATE_GAME_BUTTON}
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => navigate('/lobby')}
                   className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700
                  hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg
                   transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
@@ -117,7 +117,6 @@ export default function WelcomeScreen() {
                 games={games}
                 isLoadingGames={isLoadingGames}
                 onJoinGame={handleJoinGame}
-                onCreateGame={() => setIsModalOpen(true)}
                 onGameDeleted={loadGames}
               />
             </div>

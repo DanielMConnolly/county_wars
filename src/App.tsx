@@ -15,6 +15,7 @@ import WelcomeScreen from './WelcomeScreen';
 import AuthModal from './auth/AuthModal';
 import { ToastProvider } from './Toast/ToastContext';
 import ToastContainer from './Toast/ToastContainer';
+import GameLobby from './GameLobby';
 
 
 const App = () => {
@@ -30,6 +31,10 @@ const App = () => {
     {
       path: "/signup",
       element: <SignupPage />,
+    },
+    {
+      path: "/lobby",
+      element: <GameLobby />,
     },
     {
       path: '/game/:gameId', // Parameterized path for gameId
