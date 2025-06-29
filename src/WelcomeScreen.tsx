@@ -1,7 +1,7 @@
 import React, { useState, useEffect} from 'react';
 import { Plus, Crown } from 'lucide-react';
 import { useAuth } from './auth/AuthContext';
-import { fetchDraftGames, createGame } from './api_calls/CountyWarsHTTPRequests';
+import { fetchDraftGames, createGame } from './api_calls/HTTPRequests';
 import { useNavigate } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
@@ -46,7 +46,10 @@ export default function WelcomeScreen() {
   };
 
   const handleCreateGame = async () => {
-    if (!user) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
 
     try {
       const result = await createGame(user.id);

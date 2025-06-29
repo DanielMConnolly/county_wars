@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { X, Settings, Users, RotateCcw } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { GameSettingsPanel } from './GameSettingsPanel';
-import { fetchAllGames } from '../api_calls/CountyWarsHTTPRequests';
+import { fetchAllGames } from '../api_calls/HTTPRequests';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DataTestIDs } from '../DataTestIDs';

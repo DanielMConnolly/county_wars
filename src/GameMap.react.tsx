@@ -12,7 +12,7 @@ import { GameStateContext } from "./GameStateContext";
 import { MapControls } from "./types/GameTypes";
 import React from 'react';
 import { DataTestIDs } from "./DataTestIDs";
-import { fetchGameTime, getGameFranchises } from "./api_calls/CountyWarsHTTPRequests";
+import { fetchGameTime, getGameFranchises } from "./api_calls/HTTPRequests";
 import { getCurrentGameId } from "./utils/gameUrl";
 import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";

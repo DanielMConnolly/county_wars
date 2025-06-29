@@ -402,7 +402,8 @@ export async function placeFranchise(
   lat: number,
   long: number,
   name: string,
-  countyName?: string
+  countyName?: string,
+  elapsedTime?: number
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/franchises`, {
@@ -410,7 +411,7 @@ export async function placeFranchise(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, gameId, lat, long, name, countyName }),
+      body: JSON.stringify({ userId, gameId, lat, long, name, countyName, elapsedTime }),
     });
 
     const data = await response.json();

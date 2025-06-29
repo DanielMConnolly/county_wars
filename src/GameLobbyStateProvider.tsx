@@ -1,7 +1,7 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { GameLobbyContext, GameLobbyContextType } from './GameLobbyContext';
 import { LobbyPlayer } from './types/GameTypes';
-import { fetchLobbyState } from './api_calls/CountyWarsHTTPRequests';
+import { fetchLobbyState } from './api_calls/HTTPRequests';
 import { socketService } from './services/socketService';
 import { useAuth } from './auth/AuthContext';
 import { useNavigate } from 'react-router-dom';

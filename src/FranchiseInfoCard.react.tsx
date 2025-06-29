@@ -3,8 +3,9 @@ import { Building, X, Trash2, Crown } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { Franchise } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
-import { removeFranchise } from './api_calls/CountyWarsHTTPRequests';
+import { removeFranchise } from './api_calls/HTTPRequests';
 import { DataTestIDs } from './DataTestIDs';
+import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
 
 interface FranchiseInfoCardProps {
   franchise: Franchise;
@@ -83,12 +84,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         />
         <InfoRow
           label="Placed:"
-          value={new Date(franchise.placedAt).toLocaleDateString()}
-          className="text-gray-300"
-        />
-        <InfoRow
-          label="Time:"
-          value={new Date(franchise.placedAt).toLocaleTimeString()}
+          value={elapsedTimeToGameDate(franchise.placedAt, gameState.gameTime.gameDurationHours)}
           className="text-gray-300"
         />
         <InfoRow
