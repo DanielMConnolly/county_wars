@@ -31,8 +31,35 @@ export const connectToSocket = async ({
       });
     });
 
-    socketService.on('time-update', (elapsedTime: number) => {
-      console.log('⏰ CLIENT: Received time-update event - Elapsed time:', elapsedTime + 'ms', 'Seconds:', elapsedTime / 1000);
+    socketService.on('time-update', (serverElapsedTime: number) => {
+      console.log('⏰ CLIENT: Received time-update event - Server elapsed time:', serverElapsedTime + 'ms', 'Seconds:', serverElapsedTime / 1000);
+      
+      // Check if client time is out of sync with server time
+      setGameState((prevState) => {
+        const clientElapsedTime = prevState.gameTime.elapsedTime || 0;
+        const timeDrift = Math.abs(clientElapsedTime - serverElapsedTime);
+        
+        if (timeDrift > 1000) {
+          console.log('🔄 CLIENT: Time drift detected!', {
+            clientTime: clientElapsedTime + 'ms',
+            serverTime: serverElapsedTime + 'ms',
+            drift: timeDrift + 'ms'
+          });
+          console.log('🔄 CLIENT: Syncing to server time');
+          
+          // Sync client time to server time
+          return {
+            ...prevState,
+            gameTime: {
+              ...prevState.gameTime,
+              elapsedTime: serverElapsedTime
+            }
+          };
+        } else {
+          console.log('✅ CLIENT: Time in sync - Client:', clientElapsedTime + 'ms', 'Server:', serverElapsedTime + 'ms', 'Drift:', timeDrift + 'ms');
+          return prevState;
+        }
+      });
     });
 
     socketService.on('error', (data: { message: string }) => {
