@@ -10,6 +10,7 @@ import {
   updateUserMoney,
   updateGameElapsedTime,
   placeFranchise as placeFranchiseAPI,
+  fetchGameState,
 } from "./api_calls/CountyWarsHTTPRequests";
 import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
@@ -204,6 +205,25 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         highlightColor: savedColor,
         money: userMoney,
       }));
+
+      // Fetch initial game state for current game
+      if (gameId && gameId !== 'default-game') {
+        console.log('Fetching initial game state for:', gameId);
+        const gameStateResult = await fetchGameState(gameId);
+        if (gameStateResult.success && gameStateResult.gameState) {
+          console.log('Initial game state fetched:', gameStateResult.gameState);
+          setGameState(prevState => ({
+            ...prevState,
+            gameTime: {
+              ...prevState.gameTime,
+              elapsedTime: gameStateResult.gameState!.elapsedTime,
+              isPaused: gameStateResult.gameState!.isPaused
+            }
+          }));
+        } else {
+          console.warn('Failed to fetch initial game state:', gameStateResult.error);
+        }
+      }
     };
     fetchInitialData();
   }, [userId, gameId]);

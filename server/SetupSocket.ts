@@ -10,26 +10,26 @@ declare module 'socket.io' {
   }
 }
 
+// Store game state for each game (gameId -> ServerGameState) - exported for server access
+export const gameStates = new Map<string, ServerGameState>();
+
 export function setupSocket(io: Server) {
   // Store active user sessions
   const userSessions = new Map(); // socketId -> userId
-  
-  // Store game state for each game (gameId -> ServerGameState)
-  const gameStates = new Map<string, ServerGameState>();
 
   // Set up interval timer to emit elapsed time every 10 seconds
   setInterval(() => {
     // Get all active game rooms
     const rooms = io.sockets.adapter.rooms;
-    
+
     for (const [roomName, sockets] of rooms) {
       // Only process game rooms (that start with 'game-')
       if (roomName.startsWith('game-') && sockets.size > 0) {
         const gameId = roomName.replace('game-', '');
-        
+
         // Get current game state, or initialize with defaults
         let gameState = gameStates.get(gameId) || { elapsedTime: 0, isGamePaused: false };
-        
+
         // Only increment time if game is not paused
         if (!gameState.isGamePaused) {
           gameState.elapsedTime += 10000; // Increment by 10 seconds (10000ms)
@@ -37,10 +37,10 @@ export function setupSocket(io: Server) {
         } else {
           console.log(`Game ${gameId} is paused - not incrementing time. Current: ${gameState.elapsedTime}ms`);
         }
-        
+
         // Update the stored game state
         gameStates.set(gameId, gameState);
-        
+
         // Emit elapsed time since game started (whether paused or not)
         io.to(roomName).emit('time-update', gameState.elapsedTime);
       }
@@ -69,16 +69,18 @@ export function setupSocket(io: Server) {
     // Join the game-specific room
     socket.join(`game-${socket.gameId}`);
 
+    // Note: Initial game state sync is now handled via HTTP GET request instead of socket events
+
     // Handle franchise placement events
     socket.on('franchise-placed', (franchiseData) => {
       console.log(`Broadcasting franchise placement from user ${socket.userId} in game ${socket.gameId}`);
       console.log(`Broadcasting to room: game-${socket.gameId}`);
       console.log('Franchise data:', franchiseData);
-      
+
       // Get list of sockets in the room for debugging
       const socketsInRoom = io.sockets.adapter.rooms.get(`game-${socket.gameId}`);
       console.log(`Sockets in room game-${socket.gameId}:`, socketsInRoom ? socketsInRoom.size : 0);
-      
+
       // Broadcast to all other users in the same game
       socket.to(`game-${socket.gameId}`).emit('franchise-added', franchiseData);
       console.log('Franchise-added event broadcasted');
@@ -87,14 +89,14 @@ export function setupSocket(io: Server) {
     // Handle game pause events
     socket.on('game-paused', (data) => {
       console.log(`User ${socket.userId} paused game ${socket.gameId}`);
-      
+
       // Update server game state to paused
       let gameState = gameStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false };
       gameState.isGamePaused = true;
       gameStates.set(socket.gameId, gameState);
-      
+
       console.log(`Game ${socket.gameId} server state set to paused`);
-      
+
       // Broadcast to all other users in the same game
       socket.to(`game-${socket.gameId}`).emit('game-paused', {
         pausedBy: socket.userId,
@@ -105,14 +107,14 @@ export function setupSocket(io: Server) {
     // Handle game resume events
     socket.on('game-resumed', (data) => {
       console.log(`User ${socket.userId} resumed game ${socket.gameId}`);
-      
+
       // Update server game state to resumed
       let gameState = gameStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false };
       gameState.isGamePaused = false;
       gameStates.set(socket.gameId, gameState);
-      
+
       console.log(`Game ${socket.gameId} server state set to running`);
-      
+
       // Broadcast to all other users in the same game
       socket.to(`game-${socket.gameId}`).emit('game-resumed', {
         resumedBy: socket.userId,

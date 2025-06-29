@@ -5,7 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dbOperations } from './database.js';
-import { setupSocket } from './SetupSocket.js';
+import { setupSocket, gameStates } from './SetupSocket.js';
 import authRoutes from './authRoutes.js';
 
 // Get __dirname equivalent for ES modules
@@ -285,6 +285,33 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
   }
 });
 
+app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+
+  try {
+    // Get current game state from socket server
+    const gameState = gameStates.get(gameId);
+    
+    if (gameState) {
+      res.json({
+        gameId,
+        elapsedTime: gameState.elapsedTime,
+        isPaused: gameState.isGamePaused
+      });
+    } else {
+      // No game state exists yet, return defaults
+      res.json({
+        gameId,
+        elapsedTime: 0,
+        isPaused: false
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching game state:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
     try{
         const games = await dbOperations.getAllGames();
@@ -394,6 +421,13 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
   }
 
   try {
+    // Check if game is paused
+    const gameState = gameStates.get(gameId);
+    if (gameState && gameState.isGamePaused) {
+      res.status(400).json({ error: 'Cannot place franchise while game is paused' });
+      return;
+    }
+
     // Calculate franchise cost
     const franchiseCost = getCountyCost(countyName);
 

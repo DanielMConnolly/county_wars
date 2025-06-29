@@ -362,6 +362,32 @@ export async function startGame(gameId: string): Promise<{ success: boolean; err
   }
 }
 
+export async function fetchGameState(gameId: string): Promise<{ 
+  success: boolean; 
+  gameState?: { elapsedTime: number; isPaused: boolean }; 
+  error?: string 
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/state`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { 
+        success: true, 
+        gameState: {
+          elapsedTime: data.elapsedTime,
+          isPaused: data.isPaused
+        }
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch game state' };
+    }
+  } catch (error) {
+    console.error('Fetch game state request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 // Franchise management functions
 export async function placeFranchise(
   userId: string,
