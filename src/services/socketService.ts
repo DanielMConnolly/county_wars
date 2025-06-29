@@ -69,6 +69,10 @@ export class SocketService {
       this.emit('franchise-added', data);
     });
 
+    this.socket.on('time-update', (data) => {
+      this.emit('time-update', data);
+    });
+
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });

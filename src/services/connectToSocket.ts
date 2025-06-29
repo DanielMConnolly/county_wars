@@ -31,6 +31,10 @@ export const connectToSocket = async ({
       });
     });
 
+    socketService.on('time-update', (timestamp: number) => {
+      console.log('⏰ CLIENT: Received time-update event:', timestamp, 'Date:', new Date(timestamp).toISOString());
+    });
+
     socketService.on('error', (data: { message: string }) => {
       console.error('Socket error:', data.message);
     });

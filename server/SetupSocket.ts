@@ -13,6 +13,25 @@ export function setupSocket(io: Server) {
   // Store active user sessions
   const userSessions = new Map(); // socketId -> userId
 
+  // Set up interval timer to emit timestamp every 10 seconds
+  setInterval(() => {
+    // Get all active game rooms
+    const rooms = io.sockets.adapter.rooms;
+    
+    for (const [roomName, sockets] of rooms) {
+      // Only process game rooms (that start with 'game-')
+      if (roomName.startsWith('game-') && sockets.size > 0) {
+        const gameId = roomName.replace('game-', '');
+        const timestamp = Date.now();
+        
+        console.log(`Emitting timestamp to ${sockets.size} players in game ${gameId}: ${timestamp}`);
+        
+        // Emit simple timestamp event
+        io.to(roomName).emit('time-update', timestamp);
+      }
+    }
+  }, 10000); // 10 seconds
+
   // Authentication middleware for socket connections
   io.use((socket, next) => {
     const userId = socket.handshake.auth.userId;
