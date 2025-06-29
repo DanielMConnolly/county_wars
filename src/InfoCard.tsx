@@ -55,6 +55,7 @@ const InfoCard = () => {
 
   const isPlaceFranchiseButtonEnabled = (): boolean => {
     if (!gameState.clickedLocation) return false;
+    if (gameState.gameTime?.isPaused) return false;
     if(isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)){
       return false;
     }

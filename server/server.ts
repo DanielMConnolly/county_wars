@@ -5,7 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dbOperations } from './database.js';
-import { setupSocket } from './SetupSocket.js';
+import { setupSocket, gameStates } from './SetupSocket.js';
 import authRoutes from './authRoutes.js';
 
 // Get __dirname equivalent for ES modules
@@ -172,34 +172,6 @@ app.get('/api/games/:gameID/game-time', async (req, res) => {
   }
 });
 
-// Update user game time
-app.put('/api/games/:gameID/game-time',async (req: Request, res: Response): Promise<void> => {
-  const {gameID } = req.params;
-  const { elapsedTime } = req.body;
-  console.log("GAME TIME: ", elapsedTime);
-  console.log("GAME ID: ", gameID);
-
-  if (!elapsedTime) {
-    res.status(400).json({ error: 'Game time is required' });
-    return;
-  }
-
-  try {
-
-    // Update the game time
-    const success = await dbOperations.updateGameElapsedTime(gameID, elapsedTime);
-
-    if (success) {
-      res.json({ message: 'Game time updated successfully', elapsedTime });
-    } else {
-      res.status(500).json({ error: 'Failed to update game time' });
-    }
-  } catch (error) {
-    console.error('Error updating game time:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Get user money for a specific game
 app.get('/api/users/:userId/games/:gameId/money', async (req: Request, res: Response): Promise<void> => {
   const { userId, gameId } = req.params;
@@ -275,6 +247,9 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
     const success = await dbOperations.updateGameStatus(gameId, 'LIVE');
 
     if (success) {
+      // Emit game-started event to all players in the lobby
+      io.to(`game-${gameId}`).emit('game-started', { gameId });
+      
       res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
     } else {
       res.status(500).json({ error: 'Failed to start game' });
@@ -285,9 +260,116 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
   }
 });
 
+app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+
+  try {
+    // Get current game state from socket server
+    const gameState = gameStates.get(gameId);
+
+    if (gameState) {
+      res.json({
+        gameId,
+        elapsedTime: gameState.elapsedTime,
+        isPaused: gameState.isGamePaused
+      });
+    } else {
+      // No game state exists yet, return defaults
+      res.json({
+        gameId,
+        elapsedTime: 0,
+        isPaused: false
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching game state:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+  const { userId } = req.query;
+
+  if (!userId || typeof userId !== 'string') {
+    res.status(400).json({ error: 'userId query parameter is required' });
+    return;
+  }
+
+  try {
+    // Get current game state from socket server
+    let gameState = gameStates.get(gameId);
+
+    if (!gameState) {
+      // No game state exists yet, create one and add the requesting user
+      console.log(`Creating new game state for game ${gameId} with initial player ${userId}`);
+      
+      // Get user info from database
+      const user = await dbOperations.createUser(userId);
+      
+      gameState = {
+        elapsedTime: 0,
+        isGamePaused: false,
+        lobbyPlayers: [{
+          userId: userId,
+          username: user.username || userId,
+          isHost: true // First player becomes host
+        }]
+      };
+      
+      gameStates.set(gameId, gameState);
+      console.log(`Initialized game state for ${gameId} with host ${user.username} (${userId})`);
+      
+      // Broadcast lobby update to all players in the game room
+      io.to(`game-${gameId}`).emit('lobby-updated', {
+        players: gameState.lobbyPlayers
+      });
+      console.log(`Broadcasted initial lobby state for game ${gameId}`);
+    } else {
+      // Game state exists, check if user is already in lobby
+      const existingPlayer = gameState.lobbyPlayers.find(player => player.userId === userId);
+      if (!existingPlayer) {
+        // Add user to existing lobby if not already present
+        const user = await dbOperations.createUser(userId);
+        
+        gameState.lobbyPlayers.push({
+          userId: userId,
+          username: user.username || userId,
+          isHost: false // Additional players are not hosts
+        });
+        
+        gameStates.set(gameId, gameState);
+        console.log(`Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`);
+        
+        // Broadcast lobby update to all players in the game room
+        io.to(`game-${gameId}`).emit('lobby-updated', {
+          players: gameState.lobbyPlayers
+        });
+        console.log(`Broadcasted lobby update for new player in game ${gameId}`);
+      }
+    }
+
+    res.json({
+      gameId,
+      players: gameState.lobbyPlayers
+    });
+  } catch (error) {
+    console.error('Error fetching/initializing lobby state:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
+    const { status } = req.query;
+    
     try{
-        const games = await dbOperations.getAllGames();
+        let games;
+        if (status === 'DRAFT') {
+            games = await dbOperations.getDraftGames();
+        } else {
+            games = await dbOperations.getAllGames();
+        }
+        
         if(games){
             res.json({ games });
         }
@@ -394,6 +476,13 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
   }
 
   try {
+    // Check if game is paused
+    const gameState = gameStates.get(gameId);
+    if (gameState && gameState.isGamePaused) {
+      res.status(400).json({ error: 'Cannot place franchise while game is paused' });
+      return;
+    }
+
     // Calculate franchise cost
     const franchiseCost = getCountyCost(countyName);
 
@@ -420,10 +509,23 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Get the updated money amount after franchise placement
+    const remainingMoney = await dbOperations.getUserGameMoney(userId, gameId);
+
+    // Emit money update to the specific user via socket
+    const userSockets = Array.from(io.sockets.sockets.values()).filter(socket => 
+      socket.userId === userId && socket.gameId === gameId
+    );
+    
+    userSockets.forEach(socket => {
+      socket.emit('money-update', { userId, newMoney: remainingMoney });
+      console.log(`Emitted money update to user ${userId}: $${remainingMoney}`);
+    });
+
     res.json({
       message: 'Franchise placed successfully',
       cost: franchiseCost,
-      remainingMoney: await dbOperations.getUserGameMoney(userId, gameId)
+      remainingMoney
     });
   } catch (error) {
     console.error('Error placing franchise:', error);

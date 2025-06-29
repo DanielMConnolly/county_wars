@@ -35,11 +35,19 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const { showToast } = useToast();
   const gameID = getCurrentGameId();
 
+  // Assert that gameID is non-null
+  if (!gameID) {
+    throw new Error('GameMap: gameID cannot be null. Ensure the component is used within a valid game context.');
+  }
+
+  // TypeScript assertion: gameID is guaranteed to be non-null after the check above
+  const gameId: string = gameID;
+
   useEffect(() => {
 
-    async function loadFranchiseData() {
-      const franchises = (await getGameFranchises(gameID)).franchises;
-      const elapsedTime = await fetchGameTime(gameID);
+    async function loadGameData() {
+      const franchises = (await getGameFranchises(gameId)).franchises;
+      const elapsedTime = await fetchGameTime(gameId);
       if (franchises == null) return;
       setGameState(gameState => ({
         ...gameState,
@@ -51,8 +59,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       }));
     }
 
-    loadFranchiseData();
-
+    loadGameData();
   }, []);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -79,12 +86,12 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     }
 
     let isInCounty = false;
-    
+
     // Check each county layer to see if the point is within its boundaries
     countyLayerRef.current.eachLayer((layer: any) => {
       if (!isInCounty && layer.feature && layer.feature.geometry) {
         const point = leaflet.latLng(lat, lng);
-        
+
         // Check if point is within the bounding box of any county
         if (layer.getBounds && layer.getBounds().contains(point)) {
           isInCounty = true;
@@ -102,29 +109,34 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     console.log('Initializing map...');
 
     if (mapRef.current != null) {
-      mapInstance.current = map(mapRef.current).setView([39.8283, -98.5795], 4);
+      mapInstance.current = map(mapRef.current, {
+        minZoom: 4,
+        maxZoom: 18,
+        maxBounds: [
+          [20, -130], // Southwest corner (south of US, west of US)
+          [50, -60]   // Northeast corner (north of US, east of US)
+        ],
+        maxBoundsViscosity: 1.0
+      }).setView([39.8283, -98.5795], 4);
 
       // Add click handler for the map itself (not just counties)
       mapInstance.current.on('click', (e) => {
         console.log('🗺️ Map clicked at:', e.latlng);
-        
+
         // Check if the click is within any county boundary
         const isInCounty = checkIfLocationInCounty(e.latlng.lat, e.latlng.lng);
-        
+
         if (!isInCounty) {
           showToast('Location must be in the United States', 'warning');
           return;
         }
-        
+
         setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
       });
     }
 
     const loadCounties = async () => {
       try {
-        console.log('🗺️ Starting county layer initialization...');
-        console.log('📡 Fetching counties.geojson...');
-
         const response = await fetch("/counties.geojson");
 
         if (!response.ok) {
@@ -132,8 +144,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         }
 
         const data = await response.json();
-        console.log('✅ Counties data loaded successfully');
-        console.log(`📊 Counties data contains ${data.features ? data.features.length : 0} features`);
 
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,
@@ -160,15 +170,11 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         if (mapInstance.current) {
           layer.addTo(mapInstance.current);
-          console.log('🎯 County layer successfully added to map!');
-          console.log('📍 Map bounds:', mapInstance.current.getBounds());
           setIsCountyLayerLoaded(true);
         } else {
-          console.error('❌ Map instance not available when trying to add county layer');
           setIsCountyLayerLoaded(false);
         }
-      } catch (error) {
-        console.error("❌ Error loading counties:", error);
+      } catch (_error) {
         setIsCountyLayerLoaded(false);
       }
     };
@@ -176,7 +182,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     loadCounties();
 
     return () => {
-      console.log('Cleaning up map...');
       if (countyLayerRef.current && mapInstance.current) {
         mapInstance.current.removeLayer(countyLayerRef.current);
       }

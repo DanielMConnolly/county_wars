@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +12,7 @@ const LoginPage: React.FC = () => {
 
   const { login, loading, error } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +20,14 @@ const LoginPage: React.FC = () => {
     const success = await login(formData.username, formData.password);
 
     if (success) {
-      navigate('/');
+      // Check for redirect parameter
+      const redirectTo = searchParams.get('redirect');
+      if (redirectTo) {
+        console.log('🔐 AUTH: Login successful, redirecting to:', decodeURIComponent(redirectTo));
+        navigate(decodeURIComponent(redirectTo));
+      } else {
+        navigate('/');
+      }
       setFormData({ username: '', password: '' });
     }
   };

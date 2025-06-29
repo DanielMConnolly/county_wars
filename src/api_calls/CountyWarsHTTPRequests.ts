@@ -1,4 +1,5 @@
-import { Franchise, GameTime, User } from '../types/GameTypes';
+import { Franchise, User } from '../types/GameTypes';
+import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
 
@@ -70,29 +71,6 @@ export async function fetchGameTime(gameID: string): Promise<number | null> {
   }
 }
 
-export async function updateGameElapsedTime(gameID: string, elapsedTime: number): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/games/${gameID}/game-time`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ elapsedTime }),
-    });
-
-    if (!response.ok) {
-      console.error('Failed to save game time:', response.status);
-      return false;
-    } else {
-      console.log('Game time saved successfully:', elapsedTime);
-      return true;
-    }
-  } catch (error) {
-    console.error('Failed to update game time:', error);
-    return false;
-  }
-}
-
 // Money management functions - now with game context
 export async function fetchUserGameMoney(userId: string, gameId: string): Promise<number> {
   try {
@@ -136,16 +114,6 @@ export async function updateUserGameMoney(userId: string, gameId: string, amount
     return false;
   }
 }
-
-// Legacy functions for backward compatibility (use default game)
-export async function fetchUserMoney(userId: string): Promise<number> {
-  return fetchUserGameMoney(userId, 'default-game');
-}
-
-export async function updateUserMoney(userId: string, amount: number): Promise<boolean> {
-  return updateUserGameMoney(userId, 'default-game', amount);
-}
-
 
 // Authentication functions
 export async function signup(
@@ -272,7 +240,7 @@ export async function createGame(createdBy: string):
   }
 }
 
-export async function fetchGame(gameId: string): Promise<{ success: boolean; game?: any; error?: string }> {
+export async function fetchGame(gameId: string): Promise<{ success: boolean; game?: Game; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`);
     const data = await response.json();
@@ -289,7 +257,7 @@ export async function fetchGame(gameId: string): Promise<{ success: boolean; gam
 }
 
 export async function fetchUserGames(userId: string)
-  : Promise<{ success: boolean; games?: any[]; error?: string }> {
+  : Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games`);
     const data = await response.json();
@@ -305,7 +273,7 @@ export async function fetchUserGames(userId: string)
   }
 }
 
-export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]; error?: string }> {
+export async function fetchAllGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`);
     const data = await response.json();
@@ -317,6 +285,22 @@ export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]
     }
   } catch (error) {
     console.error('Fetch all games request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchDraftGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games?status=DRAFT`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, games: data.games };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch draft games' };
+    }
+  } catch (error) {
+    console.error('Fetch draft games request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -358,6 +342,55 @@ export async function startGame(gameId: string): Promise<{ success: boolean; err
     }
   } catch (error) {
     console.error('Start game request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchGameState(gameId: string): Promise<{
+  success: boolean;
+  gameState?: { elapsedTime: number; isPaused: boolean };
+  error?: string
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/state`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        gameState: {
+          elapsedTime: data.elapsedTime,
+          isPaused: data.isPaused
+        }
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch game state' };
+    }
+  } catch (error) {
+    console.error('Fetch game state request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchLobbyState(gameId: string, userId: string): Promise<{
+  success: boolean;
+  players?: { userId: string; username: string; isHost: boolean }[];
+  error?: string
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/lobby?userId=${encodeURIComponent(userId)}`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        players: data.players
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch lobby state' };
+    }
+  } catch (error) {
+    console.error('Fetch lobby state request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

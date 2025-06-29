@@ -111,6 +111,19 @@ export const dbOperations = {
     }
   },
 
+  getDraftGames: async (): Promise<Game[]> => {
+    try {
+      const games = await prisma.game.findMany({
+        where: { status: 'DRAFT' },
+        orderBy: { createdAt: 'desc' },
+      });
+      return games;
+    } catch (error) {
+      console.error('Error getting draft games:', error);
+      return [];
+    }
+  },
+
   getGame: async (gameId: string): Promise<Game | null> => {
     try {
       const game = await prisma.game.findUnique({

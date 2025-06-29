@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect, useContext } from "react";
+import React, { useState, ReactNode, useEffect} from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState, Franchise } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
@@ -6,10 +6,9 @@ import { connectToSocket } from "./services/connectToSocket";
 import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
-  fetchUserMoney,
-  updateUserMoney,
-  updateGameElapsedTime,
+  fetchUserGameMoney,
   placeFranchise as placeFranchiseAPI,
+  fetchGameState,
 } from "./api_calls/CountyWarsHTTPRequests";
 import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
@@ -18,6 +17,7 @@ import useInterval from "./utils/useInterval";
 import { getCountyCost } from "./utils/countyUtils";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
+import { useToast } from "./Toast/ToastContext";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -27,9 +27,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   children,
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
-  const [gameId, setGameId] = useState<string>(getCurrentGameId());
+  const [gameId, setGameId] = useState<string | null>(getCurrentGameId());
   const {user} = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
+  const { showToast } = useToast();
 
   const userId = user?.id;
 
@@ -77,6 +78,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         isPaused: true,
       },
     }));
+
+    // Emit socket event to notify other players
+    socketService.pauseGame();
   };
 
   const resumeTime = () => {
@@ -87,6 +91,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         isPaused: false,
       },
     }));
+
+    // Emit socket event to notify other players
+    socketService.resumeGame();
   };
 
   const setGameDuration = (hours: number) => {
@@ -120,7 +127,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   const placeFranchise = async (name: string) => {
-    if (userId == null) return;
+    if (userId == null || gameId == null) return;
     if (!gameState.clickedLocation) {
       console.error('No clicked location available for franchise placement');
       return;
@@ -168,36 +175,46 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       socketService.placeFranchise(newFranchise);
 
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
+      // Note: Server will also emit money-update event to keep all clients synchronized
     } else {
       console.error('Failed to place franchise:', result.error);
       alert(result.error || 'Failed to place franchise');
     }
   };
 
-  // Listen for URL changes
-  useEffect(() => {
-    const handleGameNavigate = (event: any) => {
-      const newGameId = event.detail.gameId || 'default-game';
-      console.log('Game navigation detected, switching to gameId:', newGameId);
-      setGameId(newGameId);
-    };
-
-    window.addEventListener('gameNavigate', handleGameNavigate);
-    return () => window.removeEventListener('gameNavigate', handleGameNavigate);
-  }, []);
-
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (userId == null) return;
+      if (userId == null || gameId == null) return;
       const savedColor = await fetchUserHighlightColor(userId);
-      const userMoney = await fetchUserMoney(userId);
+
+      // Fetch money for the specific game if we have a gameId, otherwise use default
+      const money = await fetchUserGameMoney(userId, gameId);
 
       setGameState(prevState => ({
         ...prevState,
         highlightColor: savedColor,
-        money: userMoney,
+        money: money,
       }));
+
+      // Fetch initial game state for current game
+      if (gameId && gameId !== 'default-game') {
+        console.log('Fetching initial game state for:', gameId);
+        const gameStateResult = await fetchGameState(gameId);
+        if (gameStateResult.success && gameStateResult.gameState) {
+          console.log('Initial game state fetched:', gameStateResult.gameState);
+          setGameState(prevState => ({
+            ...prevState,
+            gameTime: {
+              ...prevState.gameTime,
+              elapsedTime: gameStateResult.gameState!.elapsedTime,
+              isPaused: gameStateResult.gameState!.isPaused
+            }
+          }));
+        } else {
+          console.warn('Failed to fetch initial game state:', gameStateResult.error);
+        }
+      }
     };
     fetchInitialData();
   }, [userId, gameId]);
@@ -205,39 +222,14 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // Socket connection and event handling
   useEffect(() => {
     const userId = user?.id;
-    if (userId == null) return;
-    console.log('Socket effect running, userId:', userId, 'gameId:', gameId);
+    if (userId == null || gameId == null) return;
 
     // Always disconnect before reconnecting to ensure clean state
     socketService.disconnect();
-    console.log('Disconnected previous socket connection');
 
-    connectToSocket({ userId, gameId, setGameState, setIsConnected });
-  }, [userId, gameId]);
+    connectToSocket({ userId, gameId, setGameState, setIsConnected, showToast });
+  }, [userId, gameId, showToast]);
 
-  // Time progression logic
-  useInterval(
-    async () => {
-      console.log('Autosaving game time:', gameState.gameTime);
-      let currentGameId = gameState.currentGameId;
-      if (currentGameId == null) {
-        // Try to get game ID from URL if not in state
-        const urlGameId = getCurrentGameId();
-        if (urlGameId) {
-          currentGameId = urlGameId;
-          // Update state with the game ID from URL
-          setGameState(prev => ({ ...prev, currentGameId: urlGameId }));
-        } else {
-          console.log('No current game id, skipping autosave');
-          return;
-        }
-      }
-      const success = await updateGameElapsedTime(currentGameId, gameState.gameTime.elapsedTime ?? 12222);
-      if (!success) {
-        console.warn('Failed to autosave game time');
-      }
-    }, 15000
-  )
 
   useInterval(() => {
     if (gameState.gameTime.isPaused == true || userId == null) {
@@ -266,23 +258,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         };
       }
 
-      // Check if a new year has started to award annual income
-      let newMoney = prevState.money;
-      const { month: previousMonth, year: _ }
-        = getMonthAndYear(
-          { ...gameState.gameTime, elapsedTime: elapsedTime - GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN });
-      if (month === 1 && previousMonth === 12) {
-        newMoney = prevState.money + GAME_DEFAULTS.ANNUAL_INCOME;
-        updateUserMoney(userId, newMoney).then(success => {
-          if (!success) {
-            console.warn('Failed to update money on server for annual income');
-          }
-        });
-      }
-
       return {
         ...prevState,
-        money: newMoney,
         gameTime: {
           ...prevState.gameTime,
           elapsedTime: elapsedTime,
