@@ -248,7 +248,7 @@ export async function getUserProfile(
 }
 
 // Game management functions
-export async function createGame(name: string, createdBy: string):
+export async function createGame(createdBy: string):
   Promise<{ success: boolean; gameId?: string; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`, {
@@ -256,7 +256,7 @@ export async function createGame(name: string, createdBy: string):
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, createdBy }),
+      body: JSON.stringify({ createdBy }),
     });
 
     const data = await response.json();
@@ -336,6 +336,28 @@ export async function deleteGame(gameId: string): Promise<{ success: boolean; er
     }
   } catch (error) {
     console.error('Delete game request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function startGame(gameId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: data.error || 'Failed to start game' };
+    }
+  } catch (error) {
+    console.error('Start game request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

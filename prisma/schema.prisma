@@ -29,13 +29,18 @@ model User {
   @@map("users")
 }
 
+enum GameStatus {
+  DRAFT
+  LIVE
+}
+
 model Game {
-  id          String   @id
-  name        String
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-  isActive    Boolean  @default(true) @map("is_active")
-  elapsedTime Int      @default(0) @map("elapsed_time")
+  id          String     @id
+  createdBy   String     @map("created_by")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  isActive    Boolean    @default(true) @map("is_active")
+  elapsedTime Int        @default(0) @map("elapsed_time")
+  status      GameStatus @default(DRAFT)
 
   // Relationships
   creator          User                @relation("GameCreator", fields: [createdBy], references: [id])

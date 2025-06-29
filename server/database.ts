@@ -68,12 +68,12 @@ export const dbOperations = {
   },
 
   // Game operations
-  createGame: async (gameId: string, name: string, createdBy: string): Promise<boolean> => {
+  createGame: async (gameId: string, createdBy: string): Promise<boolean> => {
     try {
       await prisma.game.create({
         data: {
           id: gameId,
-          name,
+
           createdBy,
           isActive: true,
           elapsedTime: 0,
@@ -82,6 +82,19 @@ export const dbOperations = {
       return true;
     } catch (error) {
       console.error('Error creating game:', error);
+      return false;
+    }
+  },
+
+  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE'): Promise<boolean> => {
+    try {
+      await prisma.game.update({
+        where: { id: gameId },
+        data: { status }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating game status:', error);
       return false;
     }
   },

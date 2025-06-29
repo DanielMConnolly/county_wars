@@ -1,13 +1,13 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { X, Plus, Settings, Users, RotateCcw } from 'lucide-react';
+import { X, Settings, Users, RotateCcw } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { GameSettingsPanel } from './GameSettingsPanel';
-import { createGame, fetchAllGames } from '../api_calls/CountyWarsHTTPRequests';
+import { fetchAllGames } from '../api_calls/CountyWarsHTTPRequests';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DataTestIDs } from '../DataTestIDs';
 
-type ModalView = 'main' | 'gameSettings' | 'newGame' | 'joinGame';
+type ModalView = 'main' | 'gameSettings' | 'joinGame';
 
 export default function SettingsModal({
   isOpen,
@@ -20,8 +20,6 @@ export default function SettingsModal({
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ModalView>('main');
   const [selectedDuration, setSelectedDuration] = React.useState(gameState.gameTime.gameDurationHours);
-  const [isCreatingGame, setIsCreatingGame] = useState(false);
-  const [gameName, setGameName] = useState('');
   const [allGames, setAllGames] = useState<any[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const navigate = useNavigate();
@@ -52,14 +50,12 @@ export default function SettingsModal({
 
   const handleModalClose = () => {
     setCurrentView('main');
-    setGameName('');
     onClose();
   };
 
   const getModalTitle = () => {
     switch (currentView) {
       case 'gameSettings': return 'Game Settings';
-      case 'newGame': return 'New Game';
       case 'joinGame': return 'Join Game';
       default: return 'Menu';
     }
@@ -109,18 +105,6 @@ export default function SettingsModal({
               </button>
 
               <button
-                onClick={() => setCurrentView('newGame')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200
-                 rounded-lg hover:bg-gray-50 transition-colors text-left"
-              >
-                <Plus size={20} className="text-green-600" />
-                <div>
-                  <h3 className="font-medium text-gray-800">New Game</h3>
-                  <p className="text-sm text-gray-600">Create a new game</p>
-                </div>
-              </button>
-
-              <button
                 onClick={() => setCurrentView('joinGame')}
                 className="w-full flex items-center gap-3 p-4 border border-gray-200
                  rounded-lg hover:bg-gray-50 transition-colors text-left"
@@ -161,73 +145,6 @@ export default function SettingsModal({
                 handleModalClose();
               }}
             />
-          )}
-
-          {currentView === 'newGame' && (
-            <div>
-              <p className="text-sm text-gray-600 mb-4">
-                Create a new game where counties are claimed within a specific game context.
-              </p>
-
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  value={gameName}
-                  onChange={(e) => setGameName(e.target.value)}
-                  placeholder="Enter game name..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg
-                   focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
-                  disabled={isCreatingGame}
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentView('main')}
-                    disabled={isCreatingGame}
-                    className="flex-1 px-3 py-2 border border-gray-300 text-gray-700
-                     rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!gameName.trim()) {
-                        alert('Please enter a game name');
-                        return;
-                      }
-
-                      if (!user) {
-                        alert('You must be logged in to create a game');
-                        return;
-                      }
-
-                      setIsCreatingGame(true);
-                      try {
-                        const result = await createGame(gameName.trim(), user.id);
-                        if (result.success && result.gameId) {
-                          console.log('Game created successfully:', result.gameId);
-                          navigate(`/game/${result.gameId}`);
-                          handleModalClose();
-                        } else {
-                          alert(result.error || 'Failed to create game');
-                        }
-                      } catch (error) {
-                        console.error('Error creating game:', error);
-                        alert('Failed to create game. Please try again.');
-                      } finally {
-                        setIsCreatingGame(false);
-                        setGameName('');
-                      }
-                    }}
-                    disabled={isCreatingGame || !gameName.trim()}
-                    className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg
-                     hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {isCreatingGame ? 'Creating...' : 'Create Game'}
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
 
           {currentView === 'joinGame' && (
@@ -276,13 +193,6 @@ export default function SettingsModal({
                    rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Back
-                </button>
-                <button
-                  onClick={() => setCurrentView('newGame')}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg
-                   hover:bg-green-700 transition-colors font-medium"
-                >
-                  Create New Game
                 </button>
               </div>
             </div>

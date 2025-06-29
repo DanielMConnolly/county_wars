@@ -14,7 +14,6 @@ interface ExistingGamesListProps {
   games: Game[];
   isLoadingGames: boolean;
   onJoinGame: (gameId: string) => void;
-  onCreateGame: () => void;
   onGameDeleted: () => void; // Callback to refresh the games list
 }
 
@@ -22,7 +21,6 @@ export default function ExistingGamesList({
   games,
   isLoadingGames,
   onJoinGame,
-  onCreateGame,
   onGameDeleted,
 }: ExistingGamesListProps) {
   const handleDeleteGame = async (gameId: string, gameName: string, event: React.MouseEvent) => {
@@ -95,13 +93,6 @@ export default function ExistingGamesList({
       <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
       <p className="text-xl text-gray-300 mb-2">No games available</p>
       <p className="text-gray-500">Be the first to create a game!</p>
-      <button
-        onClick={onCreateGame}
-        className="mt-4 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg
-         font-medium transition-colors"
-      >
-        Create New Game
-      </button>
     </div>
   );
 }
