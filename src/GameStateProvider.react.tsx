@@ -179,6 +179,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         ...prevState,
         franchises: [...prevState.franchises, newFranchise],
         money: result.remainingMoney ?? prevState.money - franchiseCost,
+        selectedFranchise: newFranchise, // Automatically select the newly placed franchise
+        selectedCounty: null, // Clear county selection to hide InfoCard
+        clickedLocation: null, // Clear clicked location
       }));
 
       // Emit socket event to notify other players

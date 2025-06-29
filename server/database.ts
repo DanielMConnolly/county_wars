@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { User, Game, UserGameMoney, PlacedFranchise } from '@prisma/client';
+import { User, Game, PlacedFranchise } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -8,8 +8,13 @@ export const initDatabase = async () => {
   try {
     await prisma.$connect();
     console.log('Connected to database using Prisma');
+    
+    // Test database connection with a simple query
+    const userCount = await prisma.user.count();
+    console.log(`Database connection verified. User count: ${userCount}`);
   } catch (error) {
     console.error('Failed to connect to database:', error);
+    console.error('Database URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
     throw error;
   }
 };
@@ -345,6 +350,7 @@ export const dbOperations = {
 
     createUserWithAuth: async (userId: string, username: string, email: string, passwordHash: string): Promise<User | null> => {
       try {
+        console.log(`Creating user with auth: userId=${userId}, username=${username}, email=${email}`);
         const user = await prisma.user.create({
           data: {
             id: userId,
@@ -353,11 +359,20 @@ export const dbOperations = {
             passwordHash,
             highlightColor: 'red',
             money: 1000,
+            createdAt: new Date(),
+            lastActive: new Date(),
           },
         });
+        console.log(`Successfully created user: ${user.id}`);
         return user;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating user with auth:', error);
+        console.error('Error details:', {
+          name: error?.name,
+          message: error?.message,
+          code: error?.code,
+          meta: error?.meta
+        });
         return null;
       }
     },

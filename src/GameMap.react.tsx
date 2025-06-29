@@ -18,7 +18,6 @@ import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";
 import { getFranchiseColor } from "./utils/colorUtils";
 import { useToast } from "./Toast/ToastContext";
-import { createFranchisePopupHTML, createClickLocationPopupHTML } from "./components/FranchisePopup";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -230,8 +229,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       const franchiseColor = getFranchiseColor(franchise, user.id, gameState.highlightColor, gameState.franchises);
       const franchiseIcon = createFranchiseIcon(franchiseColor);
 
-      const isOwnedByUser = franchise.userId === user.id;
-
       const franchiseMarker = marker([franchise.lat, franchise.long], {
         icon: franchiseIcon
       }).on('click', () => {
@@ -257,10 +254,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     const franchiseMarker = marker([clickedLocation.lat, clickedLocation.lng], {
       icon: franchiseIcon
-    }).bindPopup(createClickLocationPopupHTML({
-      locationName: 'Selected Location',
-      dateTime: new Date().toLocaleString()
-    }));
+    });
 
 
     if (mapInstance.current) {
