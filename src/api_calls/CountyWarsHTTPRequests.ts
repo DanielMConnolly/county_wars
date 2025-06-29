@@ -340,6 +340,28 @@ export async function deleteGame(gameId: string): Promise<{ success: boolean; er
   }
 }
 
+export async function startGame(gameId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: data.error || 'Failed to start game' };
+    }
+  } catch (error) {
+    console.error('Start game request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 // Franchise management functions
 export async function placeFranchise(
   userId: string,

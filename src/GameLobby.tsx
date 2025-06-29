@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Users, Play, Crown } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import TopMenu from './TopMenu';
 import { useAuth } from './auth/AuthContext';
 import { User } from './types/GameTypes';
+import { startGame } from './api_calls/CountyWarsHTTPRequests';
 
 interface LobbyPlayer extends User {
   isHost: boolean;
@@ -12,6 +13,7 @@ interface LobbyPlayer extends User {
 const GameLobby = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [players, setPlayers] = useState<LobbyPlayer[]>([
     {
       id: user?.id || '1',
@@ -21,8 +23,20 @@ const GameLobby = () => {
     }
   ]);
 
-  const handleStartGame = () => {
-    console.log('Starting game with players:', players, 'Game ID:', gameId);
+  const handleStartGame = async () => {
+    if (!gameId) return;
+    
+    try {
+      const result = await startGame(gameId);
+      if (result.success) {
+        navigate(`/game/${gameId}`);
+      } else {
+        alert(result.error || 'Failed to start game');
+      }
+    } catch (error) {
+      console.error('Error starting game:', error);
+      alert('Failed to start game. Please try again.');
+    }
   };
 
   const maxPlayers = 4;

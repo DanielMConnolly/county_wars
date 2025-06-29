@@ -268,6 +268,23 @@ app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+
+  try {
+    const success = await dbOperations.updateGameStatus(gameId, 'LIVE');
+
+    if (success) {
+      res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to start game' });
+    }
+  } catch (error) {
+    console.error('Error starting game:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
     try{
         const games = await dbOperations.getAllGames();

@@ -86,6 +86,19 @@ export const dbOperations = {
     }
   },
 
+  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE'): Promise<boolean> => {
+    try {
+      await prisma.game.update({
+        where: { id: gameId },
+        data: { status }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating game status:', error);
+      return false;
+    }
+  },
+
   getAllGames: async (): Promise<Game[]> => {
     try {
       const games = await prisma.game.findMany({
