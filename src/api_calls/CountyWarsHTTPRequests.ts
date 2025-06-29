@@ -70,29 +70,6 @@ export async function fetchGameTime(gameID: string): Promise<number | null> {
   }
 }
 
-export async function updateGameElapsedTime(gameID: string, elapsedTime: number): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/games/${gameID}/game-time`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ elapsedTime }),
-    });
-
-    if (!response.ok) {
-      console.error('Failed to save game time:', response.status);
-      return false;
-    } else {
-      console.log('Game time saved successfully:', elapsedTime);
-      return true;
-    }
-  } catch (error) {
-    console.error('Failed to update game time:', error);
-    return false;
-  }
-}
-
 // Money management functions - now with game context
 export async function fetchUserGameMoney(userId: string, gameId: string): Promise<number> {
   try {
@@ -362,18 +339,18 @@ export async function startGame(gameId: string): Promise<{ success: boolean; err
   }
 }
 
-export async function fetchGameState(gameId: string): Promise<{ 
-  success: boolean; 
-  gameState?: { elapsedTime: number; isPaused: boolean }; 
-  error?: string 
+export async function fetchGameState(gameId: string): Promise<{
+  success: boolean;
+  gameState?: { elapsedTime: number; isPaused: boolean };
+  error?: string
 }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/state`);
     const data = await response.json();
 
     if (response.ok) {
-      return { 
-        success: true, 
+      return {
+        success: true,
         gameState: {
           elapsedTime: data.elapsedTime,
           isPaused: data.isPaused

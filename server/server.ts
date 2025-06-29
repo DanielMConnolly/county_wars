@@ -172,34 +172,6 @@ app.get('/api/games/:gameID/game-time', async (req, res) => {
   }
 });
 
-// Update user game time
-app.put('/api/games/:gameID/game-time',async (req: Request, res: Response): Promise<void> => {
-  const {gameID } = req.params;
-  const { elapsedTime } = req.body;
-  console.log("GAME TIME: ", elapsedTime);
-  console.log("GAME ID: ", gameID);
-
-  if (!elapsedTime) {
-    res.status(400).json({ error: 'Game time is required' });
-    return;
-  }
-
-  try {
-
-    // Update the game time
-    const success = await dbOperations.updateGameElapsedTime(gameID, elapsedTime);
-
-    if (success) {
-      res.json({ message: 'Game time updated successfully', elapsedTime });
-    } else {
-      res.status(500).json({ error: 'Failed to update game time' });
-    }
-  } catch (error) {
-    console.error('Error updating game time:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Get user money for a specific game
 app.get('/api/users/:userId/games/:gameId/money', async (req: Request, res: Response): Promise<void> => {
   const { userId, gameId } = req.params;
@@ -291,7 +263,7 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
   try {
     // Get current game state from socket server
     const gameState = gameStates.get(gameId);
-    
+
     if (gameState) {
       res.json({
         gameId,
