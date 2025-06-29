@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect, useContext } from "react";
+import React, { useState, ReactNode, useEffect} from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState, Franchise } from "./types/GameTypes";
 import { socketService } from "./services/socketService";
@@ -8,7 +8,6 @@ import {
   updateUserHighlightColor,
   fetchUserMoney,
   updateUserMoney,
-  updateGameElapsedTime,
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
 } from "./api_calls/CountyWarsHTTPRequests";
@@ -78,7 +77,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         isPaused: true,
       },
     }));
-    
+
     // Emit socket event to notify other players
     socketService.pauseGame();
   };
@@ -91,7 +90,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         isPaused: false,
       },
     }));
-    
+
     // Emit socket event to notify other players
     socketService.resumeGame();
   };
@@ -241,29 +240,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     connectToSocket({ userId, gameId, setGameState, setIsConnected });
   }, [userId, gameId]);
 
-  // Time progression logic
-  useInterval(
-    async () => {
-      console.log('Autosaving game time:', gameState.gameTime);
-      let currentGameId = gameState.currentGameId;
-      if (currentGameId == null) {
-        // Try to get game ID from URL if not in state
-        const urlGameId = getCurrentGameId();
-        if (urlGameId) {
-          currentGameId = urlGameId;
-          // Update state with the game ID from URL
-          setGameState(prev => ({ ...prev, currentGameId: urlGameId }));
-        } else {
-          console.log('No current game id, skipping autosave');
-          return;
-        }
-      }
-      const success = await updateGameElapsedTime(currentGameId, gameState.gameTime.elapsedTime ?? 12222);
-      if (!success) {
-        console.warn('Failed to autosave game time');
-      }
-    }, 15000
-  )
 
   useInterval(() => {
     if (gameState.gameTime.isPaused == true || userId == null) {
