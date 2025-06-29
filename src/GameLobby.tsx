@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Users, Play, Crown } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import TopMenu from './TopMenu';
+import UserMenu from './auth/UserMenu';
 import { useAuth } from './auth/AuthContext';
 import { User } from './types/GameTypes';
 import { startGame } from './api_calls/CountyWarsHTTPRequests';
@@ -55,6 +55,7 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
   navigate: ReturnType<typeof useNavigate>;
 }) => {
   const { players, isHost, getCurrentUser } = useGameLobby();
+  const localNavigate = useNavigate();
 
   const handleStartGame = async () => {
     if (!gameId) return;
@@ -77,7 +78,18 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
 
   return (
     <div className="h-screen bg-gray-900 text-white overflow-hidden relative">
-      <TopMenu />
+      {/* Top Menu Bar */}
+      <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800
+        to-slate-700 flex items-center justify-between px-6 z-[1000] shadow-lg
+        border-b border-slate-600">
+        <button
+          onClick={() => localNavigate('/')}
+          className="text-2xl font-bold text-blue-400 hover:text-blue-300 transition-colors duration-200"
+        >
+          Franchise Wars
+        </button>
+        <UserMenu />
+      </div>
 
       <div className="pt-16 flex flex-col items-center justify-center min-h-screen px-6">
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border

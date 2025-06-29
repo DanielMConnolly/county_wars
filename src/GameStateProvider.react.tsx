@@ -233,11 +233,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   useEffect(() => {
     const userId = user?.id;
     if (userId == null || gameId == null) return;
-    console.log('Socket effect running, userId:', userId, 'gameId:', gameId);
 
     // Always disconnect before reconnecting to ensure clean state
     socketService.disconnect();
-    console.log('Disconnected previous socket connection');
 
     connectToSocket({ userId, gameId, setGameState, setIsConnected });
   }, [userId, gameId]);

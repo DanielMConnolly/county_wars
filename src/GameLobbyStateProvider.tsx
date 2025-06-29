@@ -4,6 +4,8 @@ import { LobbyPlayer } from './types/GameTypes';
 import { fetchLobbyState } from './api_calls/CountyWarsHTTPRequests';
 import { socketService } from './services/socketService';
 import { useAuth } from './auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { connectToSocket } from './services/connectToSocket';
 
 interface GameLobbyStateProviderProps {
   children: ReactNode;
@@ -16,6 +18,8 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
 }) => {
   const [players, setPlayers] = useState<LobbyPlayer[]>([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Fetch initial lobby state when component mounts
   useEffect(() => {
@@ -27,7 +31,20 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
 
       if (result.success && result.players) {
         console.log('🏟️ LOBBY: Initial lobby state fetched:', result.players);
-        setPlayers(result.players);
+        
+        // Add safety check to remove any potential duplicates from initial fetch
+        const uniquePlayers = result.players.filter((player, index, array) => 
+          array.findIndex(p => p.userId === player.userId) === index
+        );
+        
+        if (uniquePlayers.length !== result.players.length) {
+          console.warn('🚨 LOBBY: Removed duplicate players from initial fetch', {
+            original: result.players.length,
+            filtered: uniquePlayers.length
+          });
+        }
+        
+        setPlayers(uniquePlayers);
       } else {
         console.warn('🏟️ LOBBY: Failed to fetch initial lobby state:', result.error);
       }
@@ -35,6 +52,31 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
 
     fetchInitialLobby();
   }, [gameId, user?.id]);
+
+  // Socket connection setup
+  useEffect(() => {
+    const userId = user?.id;
+    
+    if (!userId || !gameId) return;
+    
+    // Disconnect any existing connection
+    socketService.disconnect();
+    
+    // We need a dummy setGameState function since connectToSocket expects it
+    // but we don't use it in the lobby context
+    const dummySetGameState = () => {};
+    
+    connectToSocket({ 
+      userId, 
+      gameId, 
+      setGameState: dummySetGameState, 
+      setIsConnected 
+    });
+    
+    return () => {
+      socketService.disconnect();
+    };
+  }, [user?.id, gameId]);
 
   // Listen for lobby updates via socket events
   useEffect(() => {
@@ -60,8 +102,19 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
         }
 
         // Server sends authoritative player list, so we can safely replace it
-        // No need to check for duplicates since server already handles that
-        return data.players;
+        // Add extra safety check to remove any potential duplicates
+        const uniquePlayers = data.players.filter((player, index, array) => 
+          array.findIndex(p => p.userId === player.userId) === index
+        );
+        
+        if (uniquePlayers.length !== data.players.length) {
+          console.warn('🚨 LOBBY: Removed duplicate players from server data', {
+            original: data.players.length,
+            filtered: uniquePlayers.length
+          });
+        }
+        
+        return uniquePlayers;
       });
     };
 
@@ -73,6 +126,21 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
       socketService.off('lobby-updated', handleLobbyUpdate);
     };
   }, []);
+
+  // Listen for game-started events
+  useEffect(() => {
+    const handleGameStarted = (data: { gameId: string }) => {
+      navigate(`/game/${data.gameId}`);
+    };
+
+    // Add event listener
+    socketService.on('game-started', handleGameStarted);
+    
+    // Cleanup
+    return () => {
+      socketService.off('game-started', handleGameStarted);
+    };
+  }, [navigate]);
 
   // Helper function to check if a user is the host
   const isHost = (userId: string): boolean => {

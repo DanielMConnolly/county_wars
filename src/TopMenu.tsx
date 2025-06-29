@@ -33,13 +33,13 @@ const TopMenu = () => {
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800 to-slate-700
      flex items-center justify-between px-6 z-[1000] shadow-lg border-b border-slate-600">
-      <div
-        className="text-2xl font-bold text-blue-400 cursor-pointer
+      <button
+        className="text-2xl font-bold text-blue-400
           hover:text-blue-300 transition-colors duration-200"
         onClick={() => navigate('/')}
       >
         Franchise Wars
-      </div>
+      </button>
 
       {/* Stats */}
       <div className="flex gap-8">

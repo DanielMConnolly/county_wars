@@ -60,6 +60,10 @@ export class SocketService {
       this.emit('lobby-updated', data);
     });
 
+    this.socket.on('game-started', (data) => {
+      this.emit('game-started', data);
+    });
+
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });

@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect} from 'react';
 import { Plus, Crown } from 'lucide-react';
 import { useAuth } from './auth/AuthContext';
 import { fetchDraftGames, createGame } from './api_calls/CountyWarsHTTPRequests';
-import { GameStateContext } from './GameStateContext';
 import { useNavigate } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
@@ -17,8 +16,6 @@ export default function WelcomeScreen() {
   const [games, setGames] = useState<Game[]>([]);
   const [isLoadingGames, setIsLoadingGames] = useState(false);
   const navigate = useNavigate();
-
-  const { setCurrentGame } = useContext(GameStateContext);
 
   useEffect(() => {
     loadGames();
@@ -45,7 +42,6 @@ export default function WelcomeScreen() {
 
 
   const handleJoinGame = (gameId: string) => {
-    setCurrentGame(gameId);
     navigate(`/lobby/${gameId}`);
   };
 
@@ -74,9 +70,12 @@ export default function WelcomeScreen() {
       <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-slate-800
         to-slate-700 flex items-center justify-between px-6 z-[1000] shadow-lg
         border-b border-slate-600">
-        <div className="text-2xl font-bold text-blue-400">
+        <button
+          onClick={() => navigate('/')}
+          className="text-2xl font-bold text-blue-400 hover:text-blue-300 transition-colors duration-200"
+        >
           Franchise Wars
-        </div>
+        </button>
         <UserMenu />
       </div>
 

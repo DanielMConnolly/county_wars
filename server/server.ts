@@ -247,6 +247,9 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
     const success = await dbOperations.updateGameStatus(gameId, 'LIVE');
 
     if (success) {
+      // Emit game-started event to all players in the lobby
+      io.to(`game-${gameId}`).emit('game-started', { gameId });
+      
       res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
     } else {
       res.status(500).json({ error: 'Failed to start game' });

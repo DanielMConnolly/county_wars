@@ -8,7 +8,7 @@ import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import { useLocation, createBrowserRouter, RouterProvider, useNavigate } from "react-router-dom";
+import { createBrowserRouter, RouterProvider} from "react-router-dom";
 import LoginPage from './auth/LoginPage';
 import SignupPage from './auth/SignupPage';
 import WelcomeScreen from './WelcomeScreen';
@@ -38,17 +38,17 @@ const App = () => {
     },
     {
       path: '/game/:gameId', // Parameterized path for gameId
-      element: <AppContent />, // Component to render for this route
-    },
+      element:(<GameStateProvider>
+      <AppContent />
+      </GameStateProvider>)
+    }
   ]);
   return (
     <div className="h-screen bg-gray-900 text-white overflow-hidden relative">
 
       <AuthProvider>
         <ToastProvider>
-          <GameStateProvider>
             <RouterProvider router={router} />
-          </GameStateProvider>
         </ToastProvider>
       </AuthProvider>
     </div>
