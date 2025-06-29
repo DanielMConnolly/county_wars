@@ -240,7 +240,7 @@ export async function createGame(createdBy: string):
   }
 }
 
-export async function fetchGame(gameId: string): Promise<{ success: boolean; game?: any; error?: string }> {
+export async function fetchGame(gameId: string): Promise<{ success: boolean; game?: Game; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`);
     const data = await response.json();
@@ -257,7 +257,7 @@ export async function fetchGame(gameId: string): Promise<{ success: boolean; gam
 }
 
 export async function fetchUserGames(userId: string)
-  : Promise<{ success: boolean; games?: any[]; error?: string }> {
+  : Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games`);
     const data = await response.json();
@@ -273,7 +273,7 @@ export async function fetchUserGames(userId: string)
   }
 }
 
-export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]; error?: string }> {
+export async function fetchAllGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`);
     const data = await response.json();

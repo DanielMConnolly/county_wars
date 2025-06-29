@@ -31,7 +31,8 @@ const GameLobby = () => {
     return (
       <div className="h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent
+           rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-300">Loading...</p>
         </div>
       </div>
@@ -54,7 +55,7 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
   user: User;
   navigate: ReturnType<typeof useNavigate>;
 }) => {
-  const { players, isHost, getCurrentUser } = useGameLobby();
+  const { players, isHost } = useGameLobby();
   const localNavigate = useNavigate();
 
   const handleStartGame = async () => {
@@ -129,7 +130,8 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
               {Array.from({ length: emptySlots }).map((_, index) => (
                 <div
                   key={`empty-${index}`}
-                  className="bg-white/5 border border-white/10 border-dashed rounded-lg p-4 flex items-center justify-center text-gray-400"
+                  className="bg-white/5 border border-white/10 border-dashed rounded-lg p-4
+                   flex items-center justify-center text-gray-400"
                 >
                   <div className="text-center">
                     <div className="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-2">

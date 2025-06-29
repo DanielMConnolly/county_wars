@@ -34,18 +34,18 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const { user } = useAuth();
   const { showToast } = useToast();
   const gameID = getCurrentGameId();
-  
+
   // Assert that gameID is non-null
   if (!gameID) {
     throw new Error('GameMap: gameID cannot be null. Ensure the component is used within a valid game context.');
   }
-  
+
   // TypeScript assertion: gameID is guaranteed to be non-null after the check above
   const gameId: string = gameID;
 
   useEffect(() => {
 
-    async function loadFranchiseData() {
+    async function loadGameData() {
       const franchises = (await getGameFranchises(gameId)).franchises;
       const elapsedTime = await fetchGameTime(gameId);
       if (franchises == null) return;
@@ -59,8 +59,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       }));
     }
 
-    loadFranchiseData();
-
+    loadGameData();
   }, []);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -168,15 +167,11 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         if (mapInstance.current) {
           layer.addTo(mapInstance.current);
-          console.log('🎯 County layer successfully added to map!');
-          console.log('📍 Map bounds:', mapInstance.current.getBounds());
           setIsCountyLayerLoaded(true);
         } else {
-          console.error('❌ Map instance not available when trying to add county layer');
           setIsCountyLayerLoaded(false);
         }
-      } catch (error) {
-        console.error("❌ Error loading counties:", error);
+      } catch (_error) {
         setIsCountyLayerLoaded(false);
       }
     };
@@ -184,7 +179,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     loadCounties();
 
     return () => {
-      console.log('Cleaning up map...');
       if (countyLayerRef.current && mapInstance.current) {
         mapInstance.current.removeLayer(countyLayerRef.current);
       }

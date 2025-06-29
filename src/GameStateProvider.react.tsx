@@ -17,6 +17,7 @@ import useInterval from "./utils/useInterval";
 import { getCountyCost } from "./utils/countyUtils";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
+import { useToast } from "./Toast/ToastContext";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const [gameId, setGameId] = useState<string | null>(getCurrentGameId());
   const {user} = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
+  const { showToast } = useToast();
 
   const userId = user?.id;
 
@@ -180,18 +182,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
   };
 
-  // Listen for URL changes
-  useEffect(() => {
-    const handleGameNavigate = (event: any) => {
-      const newGameId = event.detail.gameId || 'default-game';
-      console.log('Game navigation detected, switching to gameId:', newGameId);
-      setGameId(newGameId);
-    };
-
-    window.addEventListener('gameNavigate', handleGameNavigate);
-    return () => window.removeEventListener('gameNavigate', handleGameNavigate);
-  }, []);
-
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -237,8 +227,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     // Always disconnect before reconnecting to ensure clean state
     socketService.disconnect();
 
-    connectToSocket({ userId, gameId, setGameState, setIsConnected });
-  }, [userId, gameId]);
+    connectToSocket({ userId, gameId, setGameState, setIsConnected, showToast });
+  }, [userId, gameId, showToast]);
 
 
   useInterval(() => {
