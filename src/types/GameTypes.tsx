@@ -24,6 +24,7 @@ export type Franchise = {
 export type GameState = {
     money: number, // Changed from resources to money (USD)
     selectedCounty: County | null,
+    selectedFranchise: Franchise | null,
     mapStyle: string
     highlightColor: string,
     gameTime: GameTime,

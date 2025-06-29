@@ -1,6 +1,6 @@
 
 import { createContext, useContext } from 'react';
-import { County, GameState } from './types/GameTypes';
+import { County, GameState, Franchise } from './types/GameTypes';
 import React from 'react';
 
 // Define the context type
@@ -9,6 +9,7 @@ export interface GameStateContextType {
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // Helper functions
   selectCounty: (_countyName: County | null)=> void;
+  selectFranchise: (_franchise: Franchise | null)=> void;
   setMapStyle: (_style: string) => void;
   setHighlightColor: (_color: string) => void;
   resetGame: () => void;

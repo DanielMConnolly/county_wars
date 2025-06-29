@@ -39,7 +39,17 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const selectCounty = (countyInfo: County | null) => {
     setGameState((prevState) => ({
       ...prevState,
-      selectedCounty: countyInfo
+      selectedCounty: countyInfo,
+      selectedFranchise: null // Clear franchise selection when selecting county
+    }));
+  };
+
+  // Helper function to select a franchise
+  const selectFranchise = (franchise: Franchise | null) => {
+    setGameState((prevState) => ({
+      ...prevState,
+      selectedFranchise: franchise,
+      selectedCounty: null // Clear county selection when selecting franchise
     }));
   };
 
@@ -274,6 +284,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     gameState,
     setGameState,
     selectCounty,
+    selectFranchise,
     setMapStyle,
     setHighlightColor,
     resetGame,
