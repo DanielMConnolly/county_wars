@@ -36,35 +36,6 @@ export class SocketService {
 
   private setupEventListeners() {
     if (!this.socket) return;
-
-    this.socket.on('counties-update', (data) => {
-      this.emit('counties-update', data);
-    });
-
-    this.socket.on('county-claimed', (data) => {
-      this.emit('county-claimed', data);
-    });
-
-    this.socket.on('county-released', (data) => {
-      this.emit('county-released', data);
-    });
-
-    this.socket.on('county-taken', (data) => {
-      this.emit('county-taken', data);
-    });
-
-    this.socket.on('county-available', (data) => {
-      this.emit('county-available', data);
-    });
-
-    this.socket.on('owned-counties', (data) => {
-      this.emit('owned-counties', data);
-    });
-
-    this.socket.on('all-taken-counties', (data) => {
-      this.emit('all-taken-counties', data);
-    });
-
     this.socket.on('franchise-added', (data) => {
       this.emit('franchise-added', data);
     });
@@ -76,30 +47,6 @@ export class SocketService {
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });
-  }
-
-  claimCounty(countyName: string) {
-    if (this.socket) {
-      this.socket.emit('claim-county', { countyName });
-    }
-  }
-
-  releaseCounty(countyName: string) {
-    if (this.socket) {
-      this.socket.emit('release-county', { countyName });
-    }
-  }
-
-  getOwnedCounties() {
-    if (this.socket) {
-      this.socket.emit('get-owned-counties');
-    }
-  }
-
-  getAllTakenCounties() {
-    if (this.socket) {
-      this.socket.emit('get-all-taken-counties');
-    }
   }
 
   placeFranchise(franchiseData: Franchise) {
