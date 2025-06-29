@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Users, Play, Crown } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import TopMenu from './TopMenu';
 import { useAuth } from './auth/AuthContext';
-import { LobbyPlayer, User } from './types/GameTypes';
-import { startGame, fetchLobbyState } from './api_calls/CountyWarsHTTPRequests';
-import { socketService } from './services/socketService';
+import { User } from './types/GameTypes';
+import { startGame } from './api_calls/CountyWarsHTTPRequests';
+import { GameLobbyStateProvider } from './GameLobbyStateProvider';
+import { useGameLobby } from './GameLobbyContext';
 
 
 const GameLobby = () => {
@@ -41,7 +42,11 @@ const GameLobby = () => {
     return null;
   }
 
-  return <AuthenticatedGameLobby gameId={gameId} user={user} navigate={navigate} />;
+  return (
+    <GameLobbyStateProvider gameId={gameId!}>
+      <AuthenticatedGameLobby gameId={gameId} user={user} navigate={navigate} />
+    </GameLobbyStateProvider>
+  );
 };
 
 const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
@@ -49,63 +54,7 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
   user: User;
   navigate: ReturnType<typeof useNavigate>;
 }) => {
-  const [players, setPlayers] = useState<LobbyPlayer[]>([]);
-
-  // Fetch initial lobby state when component mounts
-  useEffect(() => {
-    const fetchInitialLobby = async () => {
-      if (!gameId || !user.id) return;
-
-      console.log('🏟️ LOBBY: Fetching initial lobby state for game:', gameId, 'user:', user.id);
-      const result = await fetchLobbyState(gameId, user.id);
-
-      if (result.success && result.players) {
-        console.log('🏟️ LOBBY: Initial lobby state fetched:', result.players);
-        setPlayers(result.players);
-      } else {
-        console.warn('🏟️ LOBBY: Failed to fetch initial lobby state:', result.error);
-      }
-    };
-
-    fetchInitialLobby();
-  }, [gameId, user.id]);
-
-  // Listen for lobby updates via socket events
-  useEffect(() => {
-    const handleLobbyUpdate = (data: { players: LobbyPlayer[] }) => {
-      console.log('🏟️ LOBBY: Received lobby update:', data);
-
-      // Log player changes for debugging
-      setPlayers(prevPlayers => {
-        const prevCount = prevPlayers.length;
-        const newCount = data.players.length;
-
-        if (newCount < prevCount) {
-          console.log(`🏃 LOBBY: Player left. Players: ${prevCount} → ${newCount}`);
-        } else if (newCount > prevCount) {
-          console.log(`👋 LOBBY: Player joined. Players: ${prevCount} → ${newCount}`);
-        }
-
-        // Check for host changes
-        const prevHost = prevPlayers.find(p => p.isHost);
-        const newHost = data.players.find(p => p.isHost);
-        if (prevHost?.userId !== newHost?.userId && newHost) {
-          console.log(`👑 LOBBY: New host: ${newHost.username} (${newHost.userId})`);
-        }
-
-        // Server sends authoritative player list, so we can safely replace it
-        // No need to check for duplicates since server already handles that
-        return data.players;
-      });
-    };
-
-    // Add event listener
-    socketService.on('lobby-updated', handleLobbyUpdate);
-    // Cleanup
-    return () => {
-      socketService.off('lobby-updated', handleLobbyUpdate);
-    };
-  }, []);
+  const { players, isHost, getCurrentUser } = useGameLobby();
 
   const handleStartGame = async () => {
     if (!gameId) return;
@@ -183,10 +132,9 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
 
           <div className="text-center">
             {(() => {
-              const currentPlayer = players.find(player => player.userId === user.id);
-              const isHost = currentPlayer?.isHost || false;
+              const currentUserIsHost = isHost(user.id);
 
-              if (isHost) {
+              if (currentUserIsHost) {
                 return (
                   <>
                     <button
