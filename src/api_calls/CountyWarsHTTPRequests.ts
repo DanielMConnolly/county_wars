@@ -1,4 +1,5 @@
-import { Franchise, GameTime, User } from '../types/GameTypes';
+import { Franchise, User } from '../types/GameTypes';
+import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
 
@@ -113,16 +114,6 @@ export async function updateUserGameMoney(userId: string, gameId: string, amount
     return false;
   }
 }
-
-// Legacy functions for backward compatibility (use default game)
-export async function fetchUserMoney(userId: string): Promise<number> {
-  return fetchUserGameMoney(userId, 'default-game');
-}
-
-export async function updateUserMoney(userId: string, amount: number): Promise<boolean> {
-  return updateUserGameMoney(userId, 'default-game', amount);
-}
-
 
 // Authentication functions
 export async function signup(
@@ -298,6 +289,22 @@ export async function fetchAllGames(): Promise<{ success: boolean; games?: any[]
   }
 }
 
+export async function fetchDraftGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games?status=DRAFT`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, games: data.games };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch draft games' };
+    }
+  } catch (error) {
+    console.error('Fetch draft games request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function deleteGame(gameId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
@@ -361,6 +368,29 @@ export async function fetchGameState(gameId: string): Promise<{
     }
   } catch (error) {
     console.error('Fetch game state request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchLobbyState(gameId: string, userId: string): Promise<{
+  success: boolean;
+  players?: { userId: string; username: string; isHost: boolean }[];
+  error?: string
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/lobby?userId=${encodeURIComponent(userId)}`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        players: data.players
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch lobby state' };
+    }
+  } catch (error) {
+    console.error('Fetch lobby state request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

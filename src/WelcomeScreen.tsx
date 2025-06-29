@@ -1,19 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Plus, Crown } from 'lucide-react';
 import { useAuth } from './auth/AuthContext';
-import { fetchAllGames, createGame } from './api_calls/CountyWarsHTTPRequests';
+import { fetchDraftGames, createGame } from './api_calls/CountyWarsHTTPRequests';
 import { GameStateContext } from './GameStateContext';
 import { useNavigate } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
 import { DataTestIDs } from './DataTestIDs';
+import {Game} from '@prisma/client';
 
-interface Game {
-  id: string;
-  name: string;
-  created_at: string;
-  created_by_username?: string;
-}
+
 
 
 export default function WelcomeScreen() {
@@ -31,7 +27,7 @@ export default function WelcomeScreen() {
   const loadGames = async () => {
     setIsLoadingGames(true);
     try {
-      const result = await fetchAllGames();
+      const result = await fetchDraftGames();
       if (result.success && result.games) {
         setGames(result.games);
       } else {
@@ -50,12 +46,12 @@ export default function WelcomeScreen() {
 
   const handleJoinGame = (gameId: string) => {
     setCurrentGame(gameId);
-    navigate(`/game/${gameId}`);
+    navigate(`/lobby/${gameId}`);
   };
 
   const handleCreateGame = async () => {
     if (!user) return;
-    
+
     try {
       const result = await createGame(user.id);
       if (result.success && result.gameId) {

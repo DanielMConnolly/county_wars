@@ -84,6 +84,14 @@ export const connectToSocket = async ({
       }));
     });
 
+    socketService.on('money-update', (data: { userId: string; newMoney: number }) => {
+      console.log('💰 CLIENT: Received money update:', data);
+      setGameState((prevState) => ({
+        ...prevState,
+        money: data.newMoney
+      }));
+    });
+
     socketService.on('error', (data: { message: string }) => {
       console.error('Socket error:', data.message);
     });

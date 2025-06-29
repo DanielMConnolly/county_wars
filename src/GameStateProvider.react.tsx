@@ -6,8 +6,7 @@ import { connectToSocket } from "./services/connectToSocket";
 import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
-  fetchUserMoney,
-  updateUserMoney,
+  fetchUserGameMoney,
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
 } from "./api_calls/CountyWarsHTTPRequests";
@@ -27,7 +26,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   children,
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
-  const [gameId, setGameId] = useState<string>(getCurrentGameId());
+  const [gameId, setGameId] = useState<string | null>(getCurrentGameId());
   const {user} = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
 
@@ -126,7 +125,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   };
 
   const placeFranchise = async (name: string) => {
-    if (userId == null) return;
+    if (userId == null || gameId == null) return;
     if (!gameState.clickedLocation) {
       console.error('No clicked location available for franchise placement');
       return;
@@ -174,6 +173,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       socketService.placeFranchise(newFranchise);
 
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
+      // Note: Server will also emit money-update event to keep all clients synchronized
     } else {
       console.error('Failed to place franchise:', result.error);
       alert(result.error || 'Failed to place franchise');
@@ -195,14 +195,16 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // Initial data fetching via HTTP
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (userId == null) return;
+      if (userId == null || gameId == null) return;
       const savedColor = await fetchUserHighlightColor(userId);
-      const userMoney = await fetchUserMoney(userId);
+
+      // Fetch money for the specific game if we have a gameId, otherwise use default
+      const money = await fetchUserGameMoney(userId, gameId);
 
       setGameState(prevState => ({
         ...prevState,
         highlightColor: savedColor,
-        money: userMoney,
+        money: money,
       }));
 
       // Fetch initial game state for current game
@@ -230,7 +232,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   // Socket connection and event handling
   useEffect(() => {
     const userId = user?.id;
-    if (userId == null) return;
+    if (userId == null || gameId == null) return;
     console.log('Socket effect running, userId:', userId, 'gameId:', gameId);
 
     // Always disconnect before reconnecting to ensure clean state
@@ -268,23 +270,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         };
       }
 
-      // Check if a new year has started to award annual income
-      let newMoney = prevState.money;
-      const { month: previousMonth, year: _ }
-        = getMonthAndYear(
-          { ...gameState.gameTime, elapsedTime: elapsedTime - GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN });
-      if (month === 1 && previousMonth === 12) {
-        newMoney = prevState.money + GAME_DEFAULTS.ANNUAL_INCOME;
-        updateUserMoney(userId, newMoney).then(success => {
-          if (!success) {
-            console.warn('Failed to update money on server for annual income');
-          }
-        });
-      }
-
       return {
         ...prevState,
-        money: newMoney,
         gameTime: {
           ...prevState.gameTime,
           elapsedTime: elapsedTime,

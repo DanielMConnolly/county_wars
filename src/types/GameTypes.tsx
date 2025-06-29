@@ -49,7 +49,14 @@ export interface User {
     game_time?: string;
   }
 
+export interface LobbyPlayer {
+    userId: string;
+    username: string;
+    isHost: boolean;
+}
+
 export interface ServerGameState {
     elapsedTime: number;
     isGamePaused: boolean;
+    lobbyPlayers: LobbyPlayer[];
 }

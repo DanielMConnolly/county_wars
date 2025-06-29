@@ -52,6 +52,14 @@ export class SocketService {
       this.emit('game-resumed', data);
     });
 
+    this.socket.on('money-update', (data) => {
+      this.emit('money-update', data);
+    });
+
+    this.socket.on('lobby-updated', (data) => {
+      this.emit('lobby-updated', data);
+    });
+
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });

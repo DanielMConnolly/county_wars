@@ -34,12 +34,20 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const { user } = useAuth();
   const { showToast } = useToast();
   const gameID = getCurrentGameId();
+  
+  // Assert that gameID is non-null
+  if (!gameID) {
+    throw new Error('GameMap: gameID cannot be null. Ensure the component is used within a valid game context.');
+  }
+  
+  // TypeScript assertion: gameID is guaranteed to be non-null after the check above
+  const gameId: string = gameID;
 
   useEffect(() => {
 
     async function loadFranchiseData() {
-      const franchises = (await getGameFranchises(gameID)).franchises;
-      const elapsedTime = await fetchGameTime(gameID);
+      const franchises = (await getGameFranchises(gameId)).franchises;
+      const elapsedTime = await fetchGameTime(gameId);
       if (franchises == null) return;
       setGameState(gameState => ({
         ...gameState,
@@ -79,12 +87,12 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     }
 
     let isInCounty = false;
-    
+
     // Check each county layer to see if the point is within its boundaries
     countyLayerRef.current.eachLayer((layer: any) => {
       if (!isInCounty && layer.feature && layer.feature.geometry) {
         const point = leaflet.latLng(lat, lng);
-        
+
         // Check if point is within the bounding box of any county
         if (layer.getBounds && layer.getBounds().contains(point)) {
           isInCounty = true;
@@ -107,15 +115,15 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       // Add click handler for the map itself (not just counties)
       mapInstance.current.on('click', (e) => {
         console.log('🗺️ Map clicked at:', e.latlng);
-        
+
         // Check if the click is within any county boundary
         const isInCounty = checkIfLocationInCounty(e.latlng.lat, e.latlng.lng);
-        
+
         if (!isInCounty) {
           showToast('Location must be in the United States', 'warning');
           return;
         }
-        
+
         setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
       });
     }
