@@ -4,7 +4,7 @@ import {
   login as apiLogin, 
   verifyToken as apiVerifyToken, 
   User 
-} from '../api_calls/CountyWarsHTTPRequests';
+} from '../api_calls/HTTPRequests';
 
 interface AuthContextType {
   user: User | null;

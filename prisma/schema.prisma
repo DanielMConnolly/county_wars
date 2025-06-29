@@ -25,6 +25,7 @@ model User {
   createdGames     Game[]               @relation("GameCreator")
   userGameMoney    UserGameMoney[]
   placedFranchises PlacedFranchise[]
+  gameUsers        GameUser[]
 
   @@map("users")
 }
@@ -46,6 +47,7 @@ model Game {
   creator          User                @relation("GameCreator", fields: [createdBy], references: [id])
   userGameMoney    UserGameMoney[]
   placedFranchises PlacedFranchise[]
+  gameUsers        GameUser[]
 
   @@map("games")
 }
@@ -80,4 +82,18 @@ model PlacedFranchise {
   game Game @relation(fields: [gameId], references: [id])
 
   @@map("placed_franchises")
+}
+
+model GameUser {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id")
+  gameId    String   @map("game_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@unique([userId, gameId])
+  @@map("game_users")
 }
