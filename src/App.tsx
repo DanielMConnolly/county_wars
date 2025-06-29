@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import useMapControls from './useMapControls';
 import GameMap from './GameMap.react';
 import InfoCard from './InfoCard';
+import FranchiseInfoCard from './FranchiseInfoCard.react';
 import TopMenu from './TopMenu';
 import MapControls from './MapControls';
 import { Timeline } from './Timeline';
@@ -56,8 +57,8 @@ const App = () => {
 };
 
 const AppContent = () => {
-  const { gameState} = useContext(GameStateContext);
-  const { selectedCounty} = gameState;
+  const { gameState, selectFranchise} = useContext(GameStateContext);
+  const { selectedCounty, selectedFranchise} = gameState;
   const { user, loading } = useAuth();
 
   const {
@@ -108,6 +109,12 @@ const AppContent = () => {
         mapControls={mapControls} />
 
       {selectedCounty && <InfoCard />}
+      {selectedFranchise && (
+        <FranchiseInfoCard 
+          franchise={selectedFranchise} 
+          onClose={() => selectFranchise(null)}
+        />
+      )}
       {/* Timeline at bottom of screen */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-50">
         <Timeline />

@@ -18,6 +18,7 @@ import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";
 import { getFranchiseColor } from "./utils/colorUtils";
 import { useToast } from "./Toast/ToastContext";
+import { createFranchisePopupHTML, createClickLocationPopupHTML } from "./components/FranchisePopup";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -30,7 +31,7 @@ const defaultStyle = {
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-  const { gameState, selectCounty, setClickedLocation, setGameState } = useContext(GameStateContext);
+  const { gameState, selectCounty, selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
   const { showToast } = useToast();
   const gameID = getCurrentGameId();
@@ -121,7 +122,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
       // Add click handler for the map itself (not just counties)
       mapInstance.current.on('click', (e) => {
-        console.log('🗺️ Map clicked at:', e.latlng);
 
         // Check if the click is within any county boundary
         const isInCounty = checkIfLocationInCounty(e.latlng.lat, e.latlng.lng);
@@ -231,17 +231,12 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       const franchiseIcon = createFranchiseIcon(franchiseColor);
 
       const isOwnedByUser = franchise.userId === user.id;
-      const ownershipText = isOwnedByUser ? 'Your franchise' : `Owned by ${franchise.username}`;
 
       const franchiseMarker = marker([franchise.lat, franchise.long], {
         icon: franchiseIcon
-      }).bindPopup(`
-        <div style="font-size: 14px;">
-          <strong>${franchise.name}</strong><br>
-          <small>Placed: ${new Date(franchise.placedAt).toLocaleString()}</small><br>
-          <small style="color: ${isOwnedByUser ? '#10b981' : '#6b7280'};">${ownershipText}</small>
-        </div>
-      `);
+      }).on('click', () => {
+        selectFranchise(franchise);
+      });
 
       if (mapInstance.current) {
         franchiseMarker.addTo(mapInstance.current);
@@ -262,12 +257,10 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     const franchiseMarker = marker([clickedLocation.lat, clickedLocation.lng], {
       icon: franchiseIcon
-    }).bindPopup(`
-      <div style="font-size: 14px;">
-        <strong>${'adsdas'}</strong><br>
-        <small>Placed: ${'adsads'}</small>
-      </div>
-    `);
+    }).bindPopup(createClickLocationPopupHTML({
+      locationName: 'Selected Location',
+      dateTime: new Date().toLocaleString()
+    }));
 
 
     if (mapInstance.current) {
