@@ -12,8 +12,11 @@ declare module 'socket.io' {
 export function setupSocket(io: Server) {
   // Store active user sessions
   const userSessions = new Map(); // socketId -> userId
+  
+  // Store elapsed time for each game (gameId -> elapsedTime)
+  const gameElapsedTimes = new Map<string, number>();
 
-  // Set up interval timer to emit timestamp every 10 seconds
+  // Set up interval timer to emit elapsed time every 10 seconds
   setInterval(() => {
     // Get all active game rooms
     const rooms = io.sockets.adapter.rooms;
@@ -22,12 +25,20 @@ export function setupSocket(io: Server) {
       // Only process game rooms (that start with 'game-')
       if (roomName.startsWith('game-') && sockets.size > 0) {
         const gameId = roomName.replace('game-', '');
-        const timestamp = Date.now();
         
-        console.log(`Emitting timestamp to ${sockets.size} players in game ${gameId}: ${timestamp}`);
+        // Get current elapsed time for this game, or initialize to 0
+        let elapsedTime = gameElapsedTimes.get(gameId) || 0;
         
-        // Emit simple timestamp event
-        io.to(roomName).emit('time-update', timestamp);
+        // Increment by 10 seconds (10000ms)
+        elapsedTime += 10000;
+        
+        // Update the stored elapsed time
+        gameElapsedTimes.set(gameId, elapsedTime);
+        
+        console.log(`Emitting elapsed time to ${sockets.size} players in game ${gameId}: ${elapsedTime}ms`);
+        
+        // Emit elapsed time since game started
+        io.to(roomName).emit('time-update', elapsedTime);
       }
     }
   }, 10000); // 10 seconds
