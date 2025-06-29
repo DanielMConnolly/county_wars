@@ -48,3 +48,8 @@ export interface User {
     highlight_color?: string;
     game_time?: string;
   }
+
+export interface ServerGameState {
+    elapsedTime: number;
+    isGamePaused: boolean;
+}

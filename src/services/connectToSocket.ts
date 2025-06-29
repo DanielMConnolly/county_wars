@@ -62,6 +62,28 @@ export const connectToSocket = async ({
       });
     });
 
+    socketService.on('game-paused', (data: { pausedBy: string }) => {
+      console.log('⏸️ CLIENT: Game paused by another player:', data.pausedBy);
+      setGameState((prevState) => ({
+        ...prevState,
+        gameTime: {
+          ...prevState.gameTime,
+          isPaused: true
+        }
+      }));
+    });
+
+    socketService.on('game-resumed', (data: { resumedBy: string }) => {
+      console.log('▶️ CLIENT: Game resumed by another player:', data.resumedBy);
+      setGameState((prevState) => ({
+        ...prevState,
+        gameTime: {
+          ...prevState.gameTime,
+          isPaused: false
+        }
+      }));
+    });
+
     socketService.on('error', (data: { message: string }) => {
       console.error('Socket error:', data.message);
     });

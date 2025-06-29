@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import { dbOperations } from './database.js';
+import type { ServerGameState } from '../src/types/GameTypes.js';
 
 // Extend Socket.IO socket to include custom userId property
 declare module 'socket.io' {
@@ -13,8 +14,8 @@ export function setupSocket(io: Server) {
   // Store active user sessions
   const userSessions = new Map(); // socketId -> userId
   
-  // Store elapsed time for each game (gameId -> elapsedTime)
-  const gameElapsedTimes = new Map<string, number>();
+  // Store game state for each game (gameId -> ServerGameState)
+  const gameStates = new Map<string, ServerGameState>();
 
   // Set up interval timer to emit elapsed time every 10 seconds
   setInterval(() => {
@@ -26,19 +27,22 @@ export function setupSocket(io: Server) {
       if (roomName.startsWith('game-') && sockets.size > 0) {
         const gameId = roomName.replace('game-', '');
         
-        // Get current elapsed time for this game, or initialize to 0
-        let elapsedTime = gameElapsedTimes.get(gameId) || 0;
+        // Get current game state, or initialize with defaults
+        let gameState = gameStates.get(gameId) || { elapsedTime: 0, isGamePaused: false };
         
-        // Increment by 10 seconds (10000ms)
-        elapsedTime += 10000;
+        // Only increment time if game is not paused
+        if (!gameState.isGamePaused) {
+          gameState.elapsedTime += 10000; // Increment by 10 seconds (10000ms)
+          console.log(`Emitting elapsed time to ${sockets.size} players in game ${gameId}: ${gameState.elapsedTime}ms (running)`);
+        } else {
+          console.log(`Game ${gameId} is paused - not incrementing time. Current: ${gameState.elapsedTime}ms`);
+        }
         
-        // Update the stored elapsed time
-        gameElapsedTimes.set(gameId, elapsedTime);
+        // Update the stored game state
+        gameStates.set(gameId, gameState);
         
-        console.log(`Emitting elapsed time to ${sockets.size} players in game ${gameId}: ${elapsedTime}ms`);
-        
-        // Emit elapsed time since game started
-        io.to(roomName).emit('time-update', elapsedTime);
+        // Emit elapsed time since game started (whether paused or not)
+        io.to(roomName).emit('time-update', gameState.elapsedTime);
       }
     }
   }, 10000); // 10 seconds
@@ -78,6 +82,42 @@ export function setupSocket(io: Server) {
       // Broadcast to all other users in the same game
       socket.to(`game-${socket.gameId}`).emit('franchise-added', franchiseData);
       console.log('Franchise-added event broadcasted');
+    });
+
+    // Handle game pause events
+    socket.on('game-paused', (data) => {
+      console.log(`User ${socket.userId} paused game ${socket.gameId}`);
+      
+      // Update server game state to paused
+      let gameState = gameStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false };
+      gameState.isGamePaused = true;
+      gameStates.set(socket.gameId, gameState);
+      
+      console.log(`Game ${socket.gameId} server state set to paused`);
+      
+      // Broadcast to all other users in the same game
+      socket.to(`game-${socket.gameId}`).emit('game-paused', {
+        pausedBy: socket.userId,
+        ...data
+      });
+    });
+
+    // Handle game resume events
+    socket.on('game-resumed', (data) => {
+      console.log(`User ${socket.userId} resumed game ${socket.gameId}`);
+      
+      // Update server game state to resumed
+      let gameState = gameStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false };
+      gameState.isGamePaused = false;
+      gameStates.set(socket.gameId, gameState);
+      
+      console.log(`Game ${socket.gameId} server state set to running`);
+      
+      // Broadcast to all other users in the same game
+      socket.to(`game-${socket.gameId}`).emit('game-resumed', {
+        resumedBy: socket.userId,
+        ...data
+      });
     });
 
     // Handle disconnection

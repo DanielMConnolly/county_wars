@@ -77,6 +77,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         isPaused: true,
       },
     }));
+    
+    // Emit socket event to notify other players
+    socketService.pauseGame();
   };
 
   const resumeTime = () => {
@@ -87,6 +90,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         isPaused: false,
       },
     }));
+    
+    // Emit socket event to notify other players
+    socketService.resumeGame();
   };
 
   const setGameDuration = (hours: number) => {

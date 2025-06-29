@@ -44,6 +44,14 @@ export class SocketService {
       this.emit('time-update', data);
     });
 
+    this.socket.on('game-paused', (data) => {
+      this.emit('game-paused', data);
+    });
+
+    this.socket.on('game-resumed', (data) => {
+      this.emit('game-resumed', data);
+    });
+
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });
@@ -52,6 +60,18 @@ export class SocketService {
   placeFranchise(franchiseData: Franchise) {
     if (this.socket) {
       this.socket.emit('franchise-placed', franchiseData);
+    }
+  }
+
+  pauseGame() {
+    if (this.socket) {
+      this.socket.emit('game-paused', {});
+    }
+  }
+
+  resumeGame() {
+    if (this.socket) {
+      this.socket.emit('game-resumed', {});
     }
   }
 
