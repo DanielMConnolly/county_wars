@@ -109,7 +109,15 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     console.log('Initializing map...');
 
     if (mapRef.current != null) {
-      mapInstance.current = map(mapRef.current).setView([39.8283, -98.5795], 4);
+      mapInstance.current = map(mapRef.current, {
+        minZoom: 4,
+        maxZoom: 18,
+        maxBounds: [
+          [20, -130], // Southwest corner (south of US, west of US)
+          [50, -60]   // Northeast corner (north of US, east of US)
+        ],
+        maxBoundsViscosity: 1.0
+      }).setView([39.8283, -98.5795], 4);
 
       // Add click handler for the map itself (not just counties)
       mapInstance.current.on('click', (e) => {
@@ -129,9 +137,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     const loadCounties = async () => {
       try {
-        console.log('🗺️ Starting county layer initialization...');
-        console.log('📡 Fetching counties.geojson...');
-
         const response = await fetch("/counties.geojson");
 
         if (!response.ok) {
@@ -139,8 +144,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         }
 
         const data = await response.json();
-        console.log('✅ Counties data loaded successfully');
-        console.log(`📊 Counties data contains ${data.features ? data.features.length : 0} features`);
 
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,

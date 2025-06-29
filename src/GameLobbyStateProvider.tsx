@@ -84,19 +84,9 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
   // Listen for lobby updates via socket events
   useEffect(() => {
     const handleLobbyUpdate = (data: { players: LobbyPlayer[] }) => {
-      console.log('🏟️ LOBBY: Received lobby update:', data);
 
       // Log player changes for debugging
       setPlayers(prevPlayers => {
-        const prevCount = prevPlayers.length;
-        const newCount = data.players.length;
-
-        if (newCount < prevCount) {
-          console.log(`🏃 LOBBY: Player left. Players: ${prevCount} → ${newCount}`);
-        } else if (newCount > prevCount) {
-          console.log(`👋 LOBBY: Player joined. Players: ${prevCount} → ${newCount}`);
-        }
-
         // Check for host changes
         const prevHost = prevPlayers.find(p => p.isHost);
         const newHost = data.players.find(p => p.isHost);
