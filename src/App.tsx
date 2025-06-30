@@ -9,7 +9,7 @@ import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import { createBrowserRouter, RouterProvider} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from './auth/LoginPage';
 import SignupPage from './auth/SignupPage';
 import WelcomeScreen from './WelcomeScreen';
@@ -39,8 +39,8 @@ const App = () => {
     },
     {
       path: '/game/:gameId', // Parameterized path for gameId
-      element:(<GameStateProvider>
-      <AppContent />
+      element: (<GameStateProvider>
+        <AppContent />
       </GameStateProvider>)
     }
   ]);
@@ -49,7 +49,7 @@ const App = () => {
 
       <AuthProvider>
         <ToastProvider>
-            <RouterProvider router={router} />
+          <RouterProvider router={router} />
         </ToastProvider>
       </AuthProvider>
     </div>
@@ -57,8 +57,8 @@ const App = () => {
 };
 
 const AppContent = () => {
-  const { gameState, selectFranchise} = useContext(GameStateContext);
-  const { selectedCounty, selectedFranchise} = gameState;
+  const { gameState, selectFranchise } = useContext(GameStateContext);
+  const { selectedCounty, selectedFranchise } = gameState;
   const { user, loading } = useAuth();
 
   const {
@@ -88,7 +88,7 @@ const AppContent = () => {
           <h1 className="text-4xl font-bold text-white mb-4">Franchise Wars</h1>
           <p className="text-gray-300 text-lg">Please log in to start playing</p>
         </div>
-        <AuthModal isOpen={true} onClose={() => {}} />
+        <AuthModal isOpen={true} onClose={() => { }} />
       </div>
     );
   }
@@ -110,8 +110,8 @@ const AppContent = () => {
 
       {selectedCounty && <InfoCard />}
       {selectedFranchise && (
-        <FranchiseInfoCard 
-          franchise={selectedFranchise} 
+        <FranchiseInfoCard
+          franchise={selectedFranchise}
           onClose={() => selectFranchise(null)}
         />
       )}

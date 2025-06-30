@@ -5,7 +5,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dbOperations } from './database.js';
-import { setupSocket, gameStates } from './SetupSocket.js';
+import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
+import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
 
 // Get __dirname equivalent for ES modules
@@ -88,7 +89,9 @@ function parseResponseBody(obj: any): any {
 console.log('Using SQLite database for data persistence');
 
 // Setup socket connections and handlers
-setupSocket(io);
+// Setup both lobby and game socket namespaces
+setupSocketForLobby(io, '/lobby');
+setupSocketForGame(io, '/game');
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
@@ -297,8 +300,12 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
   }
 
   try {
-    // Get current game state from socket server
-    let gameState = gameStates.get(gameId);
+    // Get game from database to check who created it
+    const game = await dbOperations.getGame(gameId);
+    const isUserHost = game?.createdBy === userId;
+
+    // Get current lobby state from lobby socket server
+    let gameState = lobbyStates.get(gameId);
 
     if (!gameState) {
       // No game state exists yet, create one and add the requesting user
@@ -313,15 +320,15 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
         lobbyPlayers: [{
           userId: userId,
           username: user.username || userId,
-          isHost: true // First player becomes host
+          isHost: isUserHost // Check if user is the game creator
         }]
       };
       
-      gameStates.set(gameId, gameState);
+      lobbyStates.set(gameId, gameState);
       console.log(`Initialized game state for ${gameId} with host ${user.username} (${userId})`);
       
-      // Broadcast lobby update to all players in the game room
-      io.to(`game-${gameId}`).emit('lobby-updated', {
+      // Broadcast lobby update to all players in the lobby room
+      io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
         players: gameState.lobbyPlayers
       });
       console.log(`Broadcasted initial lobby state for game ${gameId}`);
@@ -335,14 +342,14 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
         gameState.lobbyPlayers.push({
           userId: userId,
           username: user.username || userId,
-          isHost: false // Additional players are not hosts
+          isHost: isUserHost // Check if user is the game creator
         });
         
-        gameStates.set(gameId, gameState);
+        lobbyStates.set(gameId, gameState);
         console.log(`Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`);
         
-        // Broadcast lobby update to all players in the game room
-        io.to(`game-${gameId}`).emit('lobby-updated', {
+        // Broadcast lobby update to all players in the lobby room
+        io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
           players: gameState.lobbyPlayers
         });
         console.log(`Broadcasted lobby update for new player in game ${gameId}`);

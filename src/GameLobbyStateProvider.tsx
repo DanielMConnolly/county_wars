@@ -2,10 +2,10 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import { GameLobbyContext, GameLobbyContextType } from './GameLobbyContext';
 import { LobbyPlayer } from './types/GameTypes';
 import { fetchLobbyState } from './api_calls/CountyWarsHTTPRequests';
-import { socketService } from './services/socketService';
+import { lobbySocketService } from './services/lobbySocketService';
 import { useAuth } from './auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { connectToSocket } from './services/connectToSocket';
+import { connectToLobbySocket, disconnectFromLobbySocket } from './services/connectToLobbySocket';
 import { useToast } from './Toast/ToastContext';
 
 interface GameLobbyStateProviderProps {
@@ -35,8 +35,8 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
         console.log('🏟️ LOBBY: Initial lobby state fetched:', result.players);
 
         // Add safety check to remove any potential duplicates from initial fetch
-        const uniquePlayers = result.players.filter((player, index, array) =>
-          array.findIndex(p => p.userId === player.userId) === index
+        const uniquePlayers = result.players.filter((player: LobbyPlayer, index: number, array: LobbyPlayer[]) =>
+          array.findIndex((p: LobbyPlayer) => p.userId === player.userId) === index
         );
 
         if (uniquePlayers.length !== result.players.length) {
@@ -62,78 +62,28 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
     if (!userId || !gameId) return;
 
     // Disconnect any existing connection
-    socketService.disconnect();
+    disconnectFromLobbySocket();
 
-    // We need a dummy setGameState function since connectToSocket expects it
-    // but we don't use it in the lobby context
-    const dummySetGameState = () => {};
+    const handleGameStarting = (data: { gameId: string; startedBy: string; players: LobbyPlayer[] }) => {
+      console.log('🚀 LOBBY: Game starting, navigating to game...');
+      navigate(`/game/${gameId}`);
+    };
 
-    connectToSocket({
+    connectToLobbySocket({
       userId,
       gameId,
-      setGameState: dummySetGameState,
+      setLobbyPlayers: setPlayers,
       setIsConnected,
+      onGameStarting: handleGameStarting,
       showToast
     });
 
     return () => {
-      socketService.disconnect();
+      disconnectFromLobbySocket();
     };
-  }, [user?.id, gameId, showToast]);
+  }, [user?.id, gameId, showToast, navigate]);
 
-  // Listen for lobby updates via socket events
-  useEffect(() => {
-    const handleLobbyUpdate = (data: { players: LobbyPlayer[] }) => {
-
-      // Log player changes for debugging
-      setPlayers(prevPlayers => {
-        // Check for host changes
-        const prevHost = prevPlayers.find(p => p.isHost);
-        const newHost = data.players.find(p => p.isHost);
-        if (prevHost?.userId !== newHost?.userId && newHost) {
-          console.log(`👑 LOBBY: New host: ${newHost.username} (${newHost.userId})`);
-        }
-
-        // Server sends authoritative player list, so we can safely replace it
-        // Add extra safety check to remove any potential duplicates
-        const uniquePlayers = data.players.filter((player, index, array) =>
-          array.findIndex(p => p.userId === player.userId) === index
-        );
-
-        if (uniquePlayers.length !== data.players.length) {
-          console.warn('🚨 LOBBY: Removed duplicate players from server data', {
-            original: data.players.length,
-            filtered: uniquePlayers.length
-          });
-        }
-
-        return uniquePlayers;
-      });
-    };
-
-    // Add event listener
-    socketService.on('lobby-updated', handleLobbyUpdate);
-
-    // Cleanup
-    return () => {
-      socketService.off('lobby-updated', handleLobbyUpdate);
-    };
-  }, []);
-
-  // Listen for game-started events
-  useEffect(() => {
-    const handleGameStarted = (data: { gameId: string }) => {
-      navigate(`/game/${data.gameId}`);
-    };
-
-    // Add event listener
-    socketService.on('game-started', handleGameStarted);
-
-    // Cleanup
-    return () => {
-      socketService.off('game-started', handleGameStarted);
-    };
-  }, [navigate]);
+  // Socket event handling is now managed in connectToLobbySocket
 
   // Helper function to check if a user is the host
   const isHost = (userId: string): boolean => {

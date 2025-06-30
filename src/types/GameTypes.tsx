@@ -54,6 +54,7 @@ export interface LobbyPlayer {
     userId: string;
     username: string;
     isHost: boolean;
+    isReady?: boolean;
 }
 
 export interface ServerGameState {

@@ -1,8 +1,8 @@
 import React, { useState, ReactNode, useEffect} from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
 import { County, GameState, Franchise } from "./types/GameTypes";
-import { socketService } from "./services/socketService";
-import { connectToSocket } from "./services/connectToSocket";
+import { gameSocketService } from "./services/gameSocketService";
+import { connectToGameSocket, disconnectFromGameSocket } from "./services/connectToGameSocket";
 import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
@@ -90,7 +90,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }));
 
     // Emit socket event to notify other players
-    socketService.pauseGame();
+    gameSocketService.pauseGame();
   };
 
   const resumeTime = () => {
@@ -103,7 +103,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }));
 
     // Emit socket event to notify other players
-    socketService.resumeGame();
+    gameSocketService.resumeGame();
   };
 
   const setGameDuration = (hours: number) => {
@@ -182,7 +182,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       }));
 
       // Emit socket event to notify other players
-      socketService.placeFranchise(newFranchise);
+      gameSocketService.placeFranchise(newFranchise);
 
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
       // Note: Server will also emit money-update event to keep all clients synchronized
@@ -235,9 +235,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     if (userId == null || gameId == null) return;
 
     // Always disconnect before reconnecting to ensure clean state
-    socketService.disconnect();
+    disconnectFromGameSocket();
 
-    connectToSocket({ userId, gameId, setGameState, setIsConnected, showToast });
+    connectToGameSocket({ userId, gameId, setGameState, setIsConnected, showToast });
   }, [userId, gameId, showToast]);
 
 

@@ -4,7 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import { useAuth } from './auth/AuthContext';
 import { User } from './types/GameTypes';
-import { startGame } from './api_calls/CountyWarsHTTPRequests';
+import { lobbySocketService } from './services/lobbySocketService';
 import { GameLobbyStateProvider } from './GameLobbyStateProvider';
 import { useGameLobby } from './GameLobbyContext';
 
@@ -58,16 +58,13 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
   const { players, isHost } = useGameLobby();
   const localNavigate = useNavigate();
 
-  const handleStartGame = async () => {
+  const handleStartGame = () => {
     if (!gameId) return;
 
     try {
-      const result = await startGame(gameId);
-      if (result.success) {
-        navigate(`/game/${gameId}`);
-      } else {
-        alert(result.error || 'Failed to start game');
-      }
+      // Use lobby socket service to start the game
+      lobbySocketService.startGame();
+      console.log('Start game request sent via socket');
     } catch (error) {
       console.error('Error starting game:', error);
       alert('Failed to start game. Please try again.');
