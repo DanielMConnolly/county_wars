@@ -282,6 +282,22 @@ export async function fetchDraftGames(): Promise<{ success: boolean; games?: Gam
   }
 }
 
+export async function fetchUserLiveGames(userId: string): Promise<{ success: boolean; games?: Game[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/live-games`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, games: data.games };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch user live games' };
+    }
+  } catch (error) {
+    console.error('Fetch user live games request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function deleteGame(gameId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {

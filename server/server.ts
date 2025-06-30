@@ -420,6 +420,18 @@ app.get('/api/users/:userId/games', async (req: Request, res: Response): Promise
   }
 });
 
+app.get('/api/users/:userId/live-games', async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+
+  try {
+    const games = await dbOperations.getUserLiveGames(userId);
+    res.json({ games });
+  } catch (error) {
+    console.error('Error fetching user live games:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
 

@@ -1,4 +1,4 @@
-import { COUNTY_COSTS } from '../constants/gameDefaults';
+import { COUNTY_COSTS } from '../constants/GAMEDEFAULTS';
 
 export type CountyDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
 

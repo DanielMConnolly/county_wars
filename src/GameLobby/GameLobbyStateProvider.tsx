@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { connectToSocket } from '../services/connectToSocket';
 import { useToast } from '../Toast/ToastContext';
+import { connectToLobbySocket, disconnectFromLobbySocket } from '../services/connectToLobbySocket';
 
 interface GameLobbyStateProviderProps {
   children: ReactNode;
@@ -80,7 +81,7 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
     return () => {
       disconnectFromLobbySocket();
     };
-  }, [user?.id, gameId, showToast, navigate]);
+  }, [user?.id, gameId]); // Removed showToast and navigate from dependencies to prevent re-runs
 
   // Socket event handling is now managed in connectToLobbySocket
 

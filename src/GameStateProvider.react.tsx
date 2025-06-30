@@ -10,7 +10,7 @@ import {
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
 } from "./api_calls/HTTPRequests";
-import { GAME_DEFAULTS } from "./constants/gameDefaults";
+import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";

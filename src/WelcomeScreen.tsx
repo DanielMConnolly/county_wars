@@ -1,48 +1,82 @@
 import React, { useState, useEffect} from 'react';
-import { Plus, Crown } from 'lucide-react';
+import { Plus, Crown, Play, Search } from 'lucide-react';
 import { useAuth } from './auth/AuthContext';
-import { fetchDraftGames, createGame } from './api_calls/HTTPRequests';
+import { fetchDraftGames, fetchUserLiveGames, createGame } from './api_calls/HTTPRequests';
 import { useNavigate } from 'react-router-dom';
 import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
+import GamesToJoin from './GamesToJoin';
 import { DataTestIDs } from './DataTestIDs';
 import {Game} from '@prisma/client';
 
-
-
+type TabType = 'myGames' | 'joinGames';
 
 export default function WelcomeScreen() {
   const { user } = useAuth();
-  const [games, setGames] = useState<Game[]>([]);
-  const [isLoadingGames, setIsLoadingGames] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('myGames');
+  const [myGames, setMyGames] = useState<Game[]>([]);
+  const [availableGames, setAvailableGames] = useState<Game[]>([]);
+  const [isLoadingMyGames, setIsLoadingMyGames] = useState(false);
+  const [isLoadingAvailableGames, setIsLoadingAvailableGames] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadGames();
-  }, []);
+    if (user?.id) {
+      loadMyGames();
+    }
+    loadAvailableGames();
+  }, [user?.id]);
 
-  const loadGames = async () => {
-    setIsLoadingGames(true);
+  const loadMyGames = async () => {
+    if (!user?.id) return;
+    
+    setIsLoadingMyGames(true);
     try {
-      const result = await fetchDraftGames();
+      const result = await fetchUserLiveGames(user.id);
       if (result.success && result.games) {
-        setGames(result.games);
+        setMyGames(result.games);
       } else {
-        console.error('Failed to fetch games:', result.error);
-        setGames([]);
+        console.error('Failed to fetch user games:', result.error);
+        setMyGames([]);
       }
     } catch (error) {
-      console.error('Error fetching games:', error);
-      setGames([]);
+      console.error('Error fetching user games:', error);
+      setMyGames([]);
     } finally {
-      setIsLoadingGames(false);
+      setIsLoadingMyGames(false);
     }
   };
 
-
+  const loadAvailableGames = async () => {
+    setIsLoadingAvailableGames(true);
+    try {
+      const result = await fetchDraftGames();
+      if (result.success && result.games) {
+        setAvailableGames(result.games);
+      } else {
+        console.error('Failed to fetch games:', result.error);
+        setAvailableGames([]);
+      }
+    } catch (error) {
+      console.error('Error fetching games:', error);
+      setAvailableGames([]);
+    } finally {
+      setIsLoadingAvailableGames(false);
+    }
+  };
 
   const handleJoinGame = (gameId: string) => {
-    navigate(`/lobby/${gameId}`);
+    const targetGame = activeTab === 'myGames' 
+      ? myGames.find(g => g.id === gameId)
+      : availableGames.find(g => g.id === gameId);
+    
+    if (targetGame?.status === 'LIVE') {
+      // Navigate directly to the game for live games
+      navigate(`/game/${gameId}`);
+    } else {
+      // Navigate to lobby for draft games
+      navigate(`/lobby/${gameId}`);
+    }
   };
 
   const handleCreateGame = async () => {
@@ -63,6 +97,21 @@ export default function WelcomeScreen() {
       alert('Failed to create game. Please try again.');
     }
   };
+
+  const tabs = [
+    {
+      id: 'myGames' as TabType,
+      label: 'My Games',
+      icon: Play,
+      count: myGames.length,
+    },
+    {
+      id: 'joinGames' as TabType,
+      label: 'Join Game',
+      icon: Search,
+      count: availableGames.length,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900
@@ -98,35 +147,84 @@ export default function WelcomeScreen() {
               Welcome back, <span className="text-blue-400 font-semibold">{user?.username}</span>!
             </p>
             <p className="text-gray-400">
-              Choose a game to join or create your own franchise empire
+              Continue your games or join new franchise empires
             </p>
           </div>
 
           {/* Main Content Card */}
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20
          overflow-hidden">
+            {/* Tabs */}
+            <div className="border-b border-white/10">
+              <div className="flex">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex-1 px-6 py-4 flex items-center justify-center gap-3 font-medium
+                        transition-all duration-300 ${
+                        activeTab === tab.id
+                          ? 'bg-white/10 text-white border-b-2 border-blue-400'
+                          : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{tab.label}</span>
+                      {tab.count > 0 && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                          activeTab === tab.id 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-600 text-gray-200'
+                        }`}>
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Content */}
             <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-white">Available Games</h3>
-                <button
-                  data-testid={DataTestIDs.CREATE_GAME_BUTTON}
-                  onClick={handleCreateGame}
-                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700
-                 hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg
-                  transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Create New Game
-                </button>
-              </div>
+              {activeTab === 'myGames' && (
+                <>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-white">Your Active Games</h3>
+                  </div>
+                  <ExistingGamesList
+                    games={myGames}
+                    isLoadingGames={isLoadingMyGames}
+                    onJoinGame={handleJoinGame}
+                  />
+                </>
+              )}
 
-              <ExistingGamesList
-                games={games}
-                isLoadingGames={isLoadingGames}
-                onJoinGame={handleJoinGame}
-                onGameDeleted={loadGames}
-              />
+              {activeTab === 'joinGames' && (
+                <>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-white">Available Games</h3>
+                    <button
+                      data-testid={DataTestIDs.CREATE_GAME_BUTTON}
+                      onClick={handleCreateGame}
+                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700
+                     hover:from-green-700 hover:to-green-800 text-white font-medium rounded-lg
+                      transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create New Game
+                    </button>
+                  </div>
+                  <GamesToJoin
+                    games={availableGames}
+                    isLoadingGames={isLoadingAvailableGames}
+                    onJoinGame={handleJoinGame}
+                    onGameDeleted={loadAvailableGames}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -148,6 +148,7 @@ export const dbOperations = {
           OR: [
             { createdBy: userId },
             { userGameMoney: { some: { userId } } },
+            { gameUsers: { some: { userId } } }, // Also include games from GameUser table
           ],
         },
         orderBy: { createdAt: 'desc' },
@@ -155,6 +156,26 @@ export const dbOperations = {
       return games;
     } catch (error) {
       console.error('Error getting user games:', error);
+      return [];
+    }
+  },
+
+  getUserLiveGames: async (userId: string): Promise<Game[]> => {
+    try {
+      const games = await prisma.game.findMany({
+        where: {
+          status: 'LIVE',
+          OR: [
+            { createdBy: userId },
+            { userGameMoney: { some: { userId } } },
+            { gameUsers: { some: { userId } } }, // Also include games from GameUser table
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return games;
+    } catch (error) {
+      console.error('Error getting user live games:', error);
       return [];
     }
   },
@@ -390,6 +411,62 @@ export const dbOperations = {
         return false;
       }
     },
+
+  // GameUser operations
+  addUserToGame: async (userId: string, gameId: string): Promise<boolean> => {
+    try {
+      await prisma.gameUser.upsert({
+        where: {
+          userId_gameId: {
+            userId,
+            gameId,
+          },
+        },
+        update: {
+          // No updates needed, just ensure the record exists
+        },
+        create: {
+          userId,
+          gameId,
+          joinedAt: new Date(),
+        },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error adding user to game:', error);
+      return false;
+    }
+  },
+
+  addUsersToGame: async (userIds: string[], gameId: string): Promise<boolean> => {
+    try {
+      // Use a transaction to ensure all users are added atomically
+      await prisma.$transaction(
+        userIds.map(userId => 
+          prisma.gameUser.upsert({
+            where: {
+              userId_gameId: {
+                userId,
+                gameId,
+              },
+            },
+            update: {
+              // No updates needed, just ensure the record exists
+            },
+            create: {
+              userId,
+              gameId,
+              joinedAt: new Date(),
+            },
+          })
+        )
+      );
+      return true;
+    } catch (error) {
+      console.error('Error adding users to game:', error);
+      return false;
+    }
+  },
 
   // Stats operations
   getStats: async (): Promise<any> => {

@@ -95,6 +95,18 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
         // Update game status in database
         await dbOperations.updateGameStatus(socket.gameId, 'LIVE');
         
+        // Add all lobby players to the GameUser table
+        if (gameState?.lobbyPlayers && gameState.lobbyPlayers.length > 0) {
+          const userIds = gameState.lobbyPlayers.map(player => player.userId);
+          const success = await dbOperations.addUsersToGame(userIds, socket.gameId);
+          
+          if (success) {
+            console.log(`Added ${userIds.length} players to GameUser table for game ${socket.gameId}:`, userIds);
+          } else {
+            console.error(`Failed to add players to GameUser table for game ${socket.gameId}`);
+          }
+        }
+        
         // Broadcast to all players in lobby that game is starting
         lobbyNamespace.to(`lobby-${socket.gameId}`).emit('game-starting', {
           gameId: socket.gameId,

@@ -1,5 +1,5 @@
 import { Franchise } from "../types/GameTypes";
-import { COLOR_OPTIONS } from "../constants/gameDefaults";
+import { COLOR_OPTIONS } from "../constants/GAMEDEFAULTS";
 
 // Generate a consistent color for a user based on their userId using predefined colors
 export function getUserColor(userId: string): string {
