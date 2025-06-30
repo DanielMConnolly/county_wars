@@ -5,6 +5,7 @@ import UserMenu from './auth/UserMenu';
 import { useAuth } from './auth/AuthContext';
 import { User } from './types/GameTypes';
 import { lobbySocketService } from './services/lobbySocketService';
+import { startGame } from './api_calls/HTTPRequests';
 import { GameLobbyStateProvider } from './GameLobbyStateProvider';
 import { useGameLobby } from './GameLobbyContext';
 

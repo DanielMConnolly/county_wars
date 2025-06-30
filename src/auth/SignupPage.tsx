@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../api_calls/CountyWarsHTTPRequests';
+import { login } from '../api_calls/HTTPRequests';
 import { DataTestIDs } from '../DataTestIDs';
 
 const SignupPage: React.FC = () => {

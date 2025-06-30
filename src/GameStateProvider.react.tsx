@@ -9,8 +9,8 @@ import {
   fetchUserGameMoney,
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
-} from "./api_calls/CountyWarsHTTPRequests";
-import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
+} from "./api_calls/HTTPRequests";
+import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
@@ -160,7 +160,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       lat: gameState.clickedLocation.lat,
       long: gameState.clickedLocation.lng,
       name: name,
-      placedAt: Date.now(),
+      placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
       username: user?.username?? "UNKNOWN"
     };
@@ -171,7 +171,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       gameState.clickedLocation.lat,
       gameState.clickedLocation.lng,
       name,
-      gameState.selectedCounty.name
+      gameState.selectedCounty.name,
+      gameState.gameTime.elapsedTime || 0
     );
 
     if (result.success) {
@@ -179,6 +180,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         ...prevState,
         franchises: [...prevState.franchises, newFranchise],
         money: result.remainingMoney ?? prevState.money - franchiseCost,
+        selectedFranchise: newFranchise, // Automatically select the newly placed franchise
+        selectedCounty: null, // Clear county selection to hide InfoCard
+        clickedLocation: null, // Clear clicked location
       }));
 
       // Emit socket event to notify other players

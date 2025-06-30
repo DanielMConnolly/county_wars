@@ -470,7 +470,7 @@ function getCountyCost(countyName: string): number {
 
 // Franchise management endpoints
 app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, countyName } = req.body;
+  const { userId, gameId, lat, long, name, countyName, elapsedTime } = req.body;
 
   if (!userId || !gameId || lat === undefined || long === undefined || !name || !countyName) {
     res.status(400).json({ error: 'userId, gameId, lat, long, name, and countyName are required' });
@@ -507,7 +507,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name);
+    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime || 0);
     if (!franchisePlaced) {
       // If franchise placement failed, refund the money
       const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);

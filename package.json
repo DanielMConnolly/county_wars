@@ -12,7 +12,8 @@
     "server": "npx tsx server/server.ts",
     "server:debug": "npx tsx --inspect server/server.ts",
     "start:prod": "NODE_ENV=production npx tsx server/server.ts",
-    "heroku-postbuild": "npm run build",
+    "db:setup": "npx prisma generate && npx prisma db push",
+    "heroku-postbuild": "npm run build && npx prisma generate && npx prisma db push",
     "jest-preview": "jest-preview",
     "test:frontend": "jest --config jest.frontend.config.js"
   },
