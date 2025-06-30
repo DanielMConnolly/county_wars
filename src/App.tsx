@@ -58,14 +58,14 @@ const App = () => {
 
 const AppContent = () => {
   const { gameState, selectFranchise } = useContext(GameStateContext);
-  const { selectedCounty, selectedFranchise } = gameState;
+  const { clickedLocation, selectedFranchise } = gameState;
   const { user, loading } = useAuth();
 
   const {
     mapControls,
     changeMapStyle,
     updateZoom,
-    toggleMapStyle
+    changeBoundaryType,
   } = useMapControls();
 
   // Show loading screen while checking authentication
@@ -103,12 +103,14 @@ const AppContent = () => {
         mapControls={mapControls}
         onChangeMapStyle={changeMapStyle}
         onUpdateZoom={updateZoom}
+        onChangeBoundaryType={changeBoundaryType}
       />
 
       <GameMap
-        mapControls={mapControls} />
+       mapControls={mapControls}
+      />
 
-      {selectedCounty && <InfoCard />}
+      {clickedLocation && <InfoCard />}
       {selectedFranchise && (
         <FranchiseInfoCard
           franchise={selectedFranchise}

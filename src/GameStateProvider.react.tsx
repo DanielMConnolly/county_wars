@@ -169,7 +169,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       name: name,
       placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
-      username: user?.username?? "UNKNOWN"
+      username: user?.username?? "UNKNOWN",
+      locationName: locationName
     };
 
     const result = await placeFranchiseAPI(

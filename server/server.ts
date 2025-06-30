@@ -409,6 +409,19 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
   }
 });
 
+// Get all players in a game with their money for standings
+app.get('/api/games/:gameId/players', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+
+  try {
+    const players = await dbOperations.getGamePlayersWithMoney(gameId);
+    res.json(players);
+  } catch (error) {
+    console.error('Error fetching game players:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
     const { status } = req.query;
 

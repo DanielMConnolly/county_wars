@@ -33,6 +33,7 @@ model User {
 enum GameStatus {
   DRAFT
   LIVE
+  FINISHED
 }
 
 model Game {

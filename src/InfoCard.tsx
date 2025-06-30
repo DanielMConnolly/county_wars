@@ -1,24 +1,20 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap, X } from 'lucide-react';
 import {
-  calculateCountyDifficulty,
-  getCountyCost,
   getDifficultyDisplayName,
   getDifficultyColor as getNewDifficultyColor,
   calculateDistanceMiles,
-  getStateName
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
-import { fetchPopulationData } from './api_calls/fetchPopulationData';
 import { DataTestIDs } from './DataTestIDs';
 import { fetchMetroAreaName } from './api_calls/HTTPRequests';
 
 const InfoCard = () => {
   const { gameState, placeFranchise, selectCounty } = useContext(GameStateContext);
-  const { selectedCounty, clickedLocation } = gameState;
+  const {  clickedLocation } = gameState;
 
-  if (!selectedCounty || !clickedLocation) {
-    throw new Error('InfoCard should only be rendered when a county is selected');
+  if (!clickedLocation) {
+    throw new Error('InfoCard should only be rendered when a location is clicked');
   }
   const [population, setPopulation] = useState<number | null>(null);
   const [metro, setMetro] = useState<string | null>(null);
@@ -32,16 +28,14 @@ const InfoCard = () => {
   };
 
   const canAffordFranchise = (): boolean => {
-    if (!selectedCounty) return false;
-    const cost = getCountyCost(selectedCounty.name);
-    return gameState.money >= cost;
+    return gameState.money >= 10;
   };
 
   useEffect(() => {
     const fetchLocationInformation = async () => {
       setMetro(null);
       setLoading(true);
-      const countyPopulation = await fetchPopulationData(selectedCounty);
+      const countyPopulation = 10000;
       const metroArea = await fetchMetroAreaName(clickedLocation.lat, clickedLocation.lng);
       if (metroArea && metroArea !== 'Unknown') {
         setMetro(metroArea);
@@ -61,12 +55,11 @@ const InfoCard = () => {
 
   const getLocationLabel = (): string => {
       if (metro) {
-        return `${metro}, ${getStateName(selectedCounty.stateFP)}`;
+        return `${metro}`;
       }
       else{
-        return `${selectedCounty.name}, ${getStateName(selectedCounty.stateFP)}`;
+        return "TBD";
       }
-
   }
 
 
@@ -119,7 +112,6 @@ const InfoCard = () => {
           value={loading ? 'Loading...': getLocationLabel()}
           className="text-white truncate ml-2"
         />
-        {selectedCounty && (
           <>
             <InfoRow
               label="Population:"
@@ -128,23 +120,20 @@ const InfoCard = () => {
             />
             <InfoRow
               label="Difficulty:"
-              value={getDifficultyDisplayName(calculateCountyDifficulty(selectedCounty.name))}
-              className={getNewDifficultyColor(calculateCountyDifficulty(selectedCounty.name))}
+              value={getDifficultyDisplayName('EASY')}
+              className={getNewDifficultyColor('EASY')}
             />
             <InfoRow
               label="Cost:"
-              value={`$${getCountyCost(selectedCounty.name)}`}
+              value={'100'}
               className="text-yellow-400"
             />
           </>
-        )}
       </div>
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={async () => {
-          if (selectedCounty != null) {
-            await placeFranchise(`${selectedCounty.name} Franchise`);
-          }
+            await placeFranchise(`${getLocationLabel()} Franchise`);
         }}
         disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold

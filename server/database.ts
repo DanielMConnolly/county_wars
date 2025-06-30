@@ -91,7 +91,7 @@ export const dbOperations = {
     }
   },
 
-  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE'): Promise<boolean> => {
+  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE' | 'FINISHED'): Promise<boolean> => {
     try {
       await prisma.game.update({
         where: { id: gameId },
@@ -306,13 +306,31 @@ export const dbOperations = {
   },
 
 
-  getGameFranchises: async (gameId: string): Promise<PlacedFranchise[]> => {
+  getGameFranchises: async (gameId: string): Promise<any[]> => {
     try {
       const franchises = await prisma.placedFranchise.findMany({
         where: { gameId },
+        include: {
+          user: {
+            select: {
+              username: true
+            }
+          }
+        },
         orderBy: { timePlaced: 'desc' },
       });
-      return franchises;
+      
+      // Transform to match client-side Franchise type
+      return franchises.map(franchise => ({
+        id: franchise.id.toString(),
+        lat: franchise.lat,
+        long: franchise.long,
+        name: franchise.name,
+        placedAt: franchise.timePlaced.getTime(),
+        userId: franchise.userId,
+        username: franchise.user.username || 'Unknown',
+        locationName: franchise.locationName
+      }));
     } catch (error) {
       console.error('Error getting game franchises:', error);
       return [];
@@ -466,6 +484,44 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error adding users to game:', error);
       return false;
+    }
+  },
+
+  // Get all players in a game with their money
+  getGamePlayersWithMoney: async (gameId: string): Promise<any[]> => {
+    try {
+      const gameUsers = await prisma.gameUser.findMany({
+        where: { gameId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              highlightColor: true
+            }
+          }
+        },
+        orderBy: { joinedAt: 'asc' }
+      });
+
+      const playersWithMoney = await Promise.all(
+        gameUsers.map(async (gameUser) => {
+          const money = await dbOperations.getUserGameMoney(gameUser.userId, gameId);
+          return {
+            userId: gameUser.user.id,
+            username: gameUser.user.username || gameUser.user.id,
+            highlightColor: gameUser.user.highlightColor,
+            money: money,
+            joinedAt: gameUser.joinedAt
+          };
+        })
+      );
+
+      // Sort by money descending for standings
+      return playersWithMoney.sort((a, b) => b.money - a.money);
+    } catch (error) {
+      console.error('Error getting game players with money:', error);
+      return [];
     }
   },
 

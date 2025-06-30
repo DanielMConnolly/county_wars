@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { MapControls, MapStyle } from './types/GameTypes';
+import { MapControls, MapStyle, BoundaryType } from './types/GameTypes';
 
 
 const useMapControls = () => {
   const [mapControls, setMapControls] = useState<MapControls>({
     zoom: 4,
-    style: 'terrain'
+    style: 'terrain',
+    boundaryType: 'states'
   });
 
   const changeMapStyle = (style: MapStyle) => {
@@ -14,6 +15,10 @@ const useMapControls = () => {
 
   const updateZoom = (zoom: number) => {
     setMapControls(prev => ({ ...prev, zoom }));
+  };
+
+  const changeBoundaryType = (boundaryType: BoundaryType) => {
+    setMapControls(prev => ({ ...prev, boundaryType }));
   };
 
   const toggleMapStyle = () => {
@@ -27,6 +32,7 @@ const useMapControls = () => {
     mapControls,
     changeMapStyle,
     updateZoom,
+    changeBoundaryType,
     toggleMapStyle
   };
 };

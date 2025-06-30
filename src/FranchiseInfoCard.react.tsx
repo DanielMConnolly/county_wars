@@ -87,7 +87,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         />
         <InfoRow
           label="Location:"
-          value={getCountyNameFromCoordinates(franchise.lat, franchise.long)}
+          value={franchise.locationName || getCountyNameFromCoordinates(franchise.lat, franchise.long)}
           className="text-gray-300 text-sm"
         />
       </div>

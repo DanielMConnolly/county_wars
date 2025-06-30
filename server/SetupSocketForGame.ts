@@ -44,8 +44,13 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           }
         }
 
-        // Only increment time if game is not paused
-        if (!gameState.isGamePaused) {
+        // Check if current date is January 2025 or later
+        const currentDate = new Date();
+        const january2025 = new Date('2025-01-01');
+        const isAfterJanuary2025 = currentDate >= january2025;
+
+        // Only increment time if game is not paused and we haven't reached January 2025
+        if (!gameState.isGamePaused && !isAfterJanuary2025) {
           gameState.elapsedTime += 10000; // Increment by 10 seconds (10000ms)
 
           // Update elapsed time in database
@@ -59,7 +64,6 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           } catch (error) {
             console.error(`Error updating elapsed time in DB for game ${gameId}:`, error);
           }
-
           // Update money for all players in this game every 10 seconds
           const connectedSockets = Array.from(sockets);
           for (const socketId of connectedSockets) {
@@ -84,6 +88,21 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
                 console.error(`Error updating money for user ${socket.userId}:`, error);
               }
             }
+          }
+        } else if (isAfterJanuary2025) {
+          // Mark game as FINISHED if we've reached January 2025
+          try {
+            const game = await dbOperations.getGame(gameId);
+            if (game && (game.status === 'LIVE' || game.status === 'DRAFT')) {
+              const statusUpdateSuccess = await dbOperations.updateGameStatus(gameId, 'FINISHED');
+              if (statusUpdateSuccess) {
+                console.log(`Game ${gameId} marked as FINISHED due to reaching January 2025`);
+              } else {
+                console.error(`Failed to mark game ${gameId} as FINISHED`);
+              }
+            }
+          } catch (error) {
+            console.error(`Error updating game status for game ${gameId}:`, error);
           }
         } else {
           console.log(`Game ${gameId} is paused - not incrementing time. Current: ${gameState.elapsedTime}ms`);

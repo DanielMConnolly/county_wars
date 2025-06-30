@@ -19,6 +19,7 @@ export type Franchise = {
     placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
+    locationName?: string; // Human-readable location name
 }
 
 export type GameState = {
@@ -35,9 +36,11 @@ export type GameState = {
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
 export type MapStyle = 'terrain' | 'satellite' | 'dark' | 'street';
+export type BoundaryType = 'counties' | 'states';
 export type MapControls = {
     zoom: number,
-    style: MapStyle
+    style: MapStyle,
+    boundaryType: BoundaryType
 }
 
 export interface User {
