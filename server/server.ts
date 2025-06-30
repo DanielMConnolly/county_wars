@@ -297,6 +297,10 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
   }
 
   try {
+    // Get game from database to check who created it
+    const game = await dbOperations.getGame(gameId);
+    const isUserHost = game?.createdBy === userId;
+
     // Get current game state from socket server
     let gameState = gameStates.get(gameId);
 
@@ -313,7 +317,7 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
         lobbyPlayers: [{
           userId: userId,
           username: user.username || userId,
-          isHost: true // First player becomes host
+          isHost: isUserHost // Check if user is the game creator
         }]
       };
       
@@ -335,7 +339,7 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
         gameState.lobbyPlayers.push({
           userId: userId,
           username: user.username || userId,
-          isHost: false // Additional players are not hosts
+          isHost: isUserHost // Check if user is the game creator
         });
         
         gameStates.set(gameId, gameState);
