@@ -7,7 +7,7 @@ import {
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { DataTestIDs } from './DataTestIDs';
-import { fetchMetroAreaName } from './api_calls/HTTPRequests';
+import { fetchClickedLocationData } from './api_calls/HTTPRequests';
 
 const InfoCard = () => {
   const { gameState, placeFranchise, selectCounty } = useContext(GameStateContext);
@@ -18,6 +18,7 @@ const InfoCard = () => {
   }
   const [population, setPopulation] = useState<number | null>(null);
   const [metro, setMetro] = useState<string | null>(null);
+  const [franchiseCost, setFranchiseCost] = useState<number>(100);
   const [loading, setLoading] = useState(false);
 
   const isLocationTooCloseToFranchise = (lat: number, lng: number): boolean => {
@@ -28,26 +29,24 @@ const InfoCard = () => {
   };
 
   const canAffordFranchise = (): boolean => {
-    return gameState.money >= 10;
+    return gameState.money >= franchiseCost;
   };
 
   useEffect(() => {
     const fetchLocationInformation = async () => {
+      console.log('Fetching location information');
       setMetro(null);
+      setPopulation(null);
+      setFranchiseCost(100);
       setLoading(true);
-      const countyPopulation = 10000;
-      const metroArea = await fetchMetroAreaName(clickedLocation.lat, clickedLocation.lng);
-      if (metroArea && metroArea !== 'Unknown') {
-        setMetro(metroArea);
+      const locationData = await fetchClickedLocationData(clickedLocation.lat, clickedLocation.lng);
+
+      if (locationData.metroAreaName && locationData.metroAreaName !== 'Unknown') {
+        setMetro(locationData.metroAreaName);
       }
-      if (countyPopulation) {
-        setPopulation(countyPopulation);
-      } else {
-        setPopulation(null);
-      }
-      if(metroArea && countyPopulation){
-        setLoading(false);
-      }
+      setPopulation(locationData.population);
+      setFranchiseCost(locationData.franchisePlacementCost);
+      setLoading(false);
     };
     fetchLocationInformation();
   }, [clickedLocation]);
@@ -125,7 +124,7 @@ const InfoCard = () => {
             />
             <InfoRow
               label="Cost:"
-              value={'100'}
+              value={loading ? 'Loading...' : `$${franchiseCost}`}
               className="text-yellow-400"
             />
           </>
@@ -133,7 +132,7 @@ const InfoCard = () => {
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={async () => {
-            await placeFranchise(`${getLocationLabel()} Franchise`);
+            await placeFranchise(`${getLocationLabel()} Franchise`, metro? metro: "UNKOWN");
         }}
         disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold

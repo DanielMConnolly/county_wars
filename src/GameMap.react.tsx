@@ -18,8 +18,7 @@ import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";
 import { getFranchiseColor } from "./utils/colorUtils";
 import { useToast } from "./Toast/ToastContext";
-import { loadCountyData } from "./utils/reverseGeocode";
-import useMapControls from "./useMapControls";
+import { loadCounties, loadStates } from "./GameMapHelper";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -85,34 +84,36 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const franchiseMarkersRef = useRef<leaflet.Marker[]>([]);
 
   // Helper function to check if a location is within any county boundary
-  const checkIfLocationInCounty = (lat: number, lng: number): boolean => {
-    if (!countyLayerRef.current) {
+  const checkIfLocationInUSA = (lat: number, lng: number): boolean => {
+    if (!countyLayerRef.current && !stateLayerRef.current) {
       return true; // If county layer not loaded, allow placement (fail open)
     }
 
-    let isInCounty = false;
+    let geoBoundary: leaflet.GeoJSON | null;
+    if (boundaryType === 'counties') {
+      geoBoundary = countyLayerRef.current;
+    } else {
+      geoBoundary = stateLayerRef.current;
+    }
 
+    if (!geoBoundary) return false;
+
+     let isInUSA = false;
     // Check each county layer to see if the point is within its boundaries
-    countyLayerRef.current.eachLayer((layer: any) => {
-      if (!isInCounty && layer.feature && layer.feature.geometry) {
+    geoBoundary.eachLayer((layer: any) => {
+      if (layer.feature && layer.feature.geometry) {
         const point = leaflet.latLng(lat, lng);
 
         // Check if point is within the bounding box of any county
         if (layer.getBounds && layer.getBounds().contains(point)) {
-          isInCounty = true;
+          isInUSA= true;
         }
       }
     });
-
-    return isInCounty;
+    return isInUSA;
   };
 
-  // Initialize map (only once)
   useEffect(() => {
-
-
-    console.log('Initializing map...' + boundaryType);
-
     if (mapRef.current != null) {
       mapInstance.current = map(mapRef.current, {
         minZoom: 4,
@@ -123,114 +124,75 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         ],
         maxBoundsViscosity: 1.0
       }).setView([39.8283, -98.5795], 4);
-
-      // Add click handler for the map itself (not just counties)
-      mapInstance.current.on('click', (e) => {
-
-        // Check if the click is within any county boundary
-        const isInCounty = checkIfLocationInCounty(e.latlng.lat, e.latlng.lng);
-
-        if (!isInCounty) {
-          showToast('Location must be in the United States', 'warning');
-          return;
-        }
-
-        setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
-      });
     }
 
-    const loadCounties = async () => {
-      try {
-        const response = await fetch("/counties.geojson");
+    if(!mapInstance.current) return;
+    mapInstance.current.on('click', (e) => {
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch counties: ${response.status} ${response.statusText}`);
-        }
+      // Check if the click is within any county boundary
+      const isInUSA = checkIfLocationInUSA(e.latlng.lat, e.latlng.lng);
 
-        const data = await response.json();
+      if (!isInUSA) {
+        showToast('Location must be in the United States', 'warning');
+        return;
+      }
 
-        // Load county data for reverse geocoding
-        await loadCountyData();
+      setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+    });
+  }, []);
 
-        const layer = leaflet.geoJSON(data, {
-          style: defaultStyle,
-          onEachFeature: function (feature, layer: Polyline) {
-            layer.on("click", () => {
-              selectCounty(
-                {
-                  name: layer.feature?.properties.NAME,
-                  stateFP: layer.feature?.properties.STATEFP,
-                  countyFP: layer.feature?.properties.COUNTYFP,
-                }
-              );
-            });
-            layer.on("mouseover", function () {
-              // Optional hover effects can be added here
-            });
-            layer.on("mouseout", function () {
-              // Optional hover effects can be added here
-            });
-          },
-        });
+  useEffect(() => {
 
-        countyLayerRef.current = layer;
 
-        if (mapInstance.current) {
-          layer.addTo(mapInstance.current);
+    if (!mapInstance.current) return;
+
+
+    const loadCountiesWrapper = async () => {
+      if (!mapInstance.current) {
+        setIsCountyLayerLoaded(false);
+        return;
+      }
+
+
+      await loadCounties({
+        mapInstance: mapInstance.current,
+        selectCounty,
+        onSuccess: (layer) => {
+          countyLayerRef.current = layer;
           setIsCountyLayerLoaded(true);
-        } else {
+        },
+        onError: () => {
           setIsCountyLayerLoaded(false);
         }
-      } catch (_error) {
-        setIsCountyLayerLoaded(false);
-      }
+      });
     };
 
-    const loadStates = async () => {
-      try {
-        const response = await fetch("/us-states.geojson");
+    const loadStatesWrapper = async () => {
+      if (!mapInstance.current) {
+        setIsStateLayerLoaded(false);
+        return;
+      }
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch states: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        const layer = leaflet.geoJSON(data, {
-          style: defaultStyle,
-          onEachFeature: function (feature, layer: Polyline) {
-            layer.on("click", () => {
-              // For states, we might want different behavior than counties
-              // For now, clear any selected county since state view is more zoomed out
-              selectCounty(null);
-            });
-            layer.on("mouseover", function () {
-              // Optional hover effects can be added here
-            });
-            layer.on("mouseout", function () {
-              // Optional hover effects can be added here
-            });
-          },
-        });
-
-        stateLayerRef.current = layer;
-
-        if (mapInstance.current) {
-          layer.addTo(mapInstance.current);
+      await loadStates({
+        mapInstance: mapInstance.current,
+        selectCounty,
+        onSuccess: (layer) => {
+          stateLayerRef.current = layer;
           setIsStateLayerLoaded(true);
-        } else {
+        },
+        onError: () => {
           setIsStateLayerLoaded(false);
         }
-      } catch (_error) {
-        setIsStateLayerLoaded(false);
-      }
+      });
     };
 
     // Load initial boundary type (counties by default)
     if (boundaryType === 'counties') {
-      loadCounties();
+
+       loadCountiesWrapper();
     } else {
-      loadStates();
+      console.log('Loading...', boundaryType);
+      loadStatesWrapper();
     }
 
     return () => {
@@ -251,7 +213,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    const loadCounties = async () => {
+    const loadCountiesForBoundarySwitch = async () => {
       try {
         // Remove state layer if it exists
         if (stateLayerRef.current) {
@@ -262,31 +224,17 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         // Load counties if not already loaded
         if (!countyLayerRef.current) {
-          const response = await fetch("/counties.geojson");
-          if (!response.ok) {
-            throw new Error(`Failed to fetch counties: ${response.status} ${response.statusText}`);
-          }
-          const data = await response.json();
-
-          // Load county data for reverse geocoding
-          await loadCountyData();
-
-          const layer = leaflet.geoJSON(data, {
-            style: defaultStyle,
-            onEachFeature: function (feature, layer: Polyline) {
-              layer.on("click", () => {
-                selectCounty({
-                  name: layer.feature?.properties.NAME,
-                  stateFP: layer.feature?.properties.STATEFP,
-                  countyFP: layer.feature?.properties.COUNTYFP,
-                });
-              });
+          await loadCounties({
+            mapInstance: mapInstance.current!,
+            selectCounty,
+            onSuccess: (layer) => {
+              countyLayerRef.current = layer;
+              setIsCountyLayerLoaded(true);
             },
+            onError: () => {
+              setIsCountyLayerLoaded(false);
+            }
           });
-
-          countyLayerRef.current = layer;
-          layer.addTo(mapInstance.current!);
-          setIsCountyLayerLoaded(true);
         } else {
           // Re-add existing county layer
           countyLayerRef.current.addTo(mapInstance.current!);
@@ -298,7 +246,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       }
     };
 
-    const loadStates = async () => {
+    const loadStatesForBoundarySwitch = async () => {
       try {
         // Remove county layer if it exists
         if (countyLayerRef.current) {
@@ -308,25 +256,17 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         // Load states if not already loaded
         if (!stateLayerRef.current) {
-          const response = await fetch("/us-states.geojson");
-          if (!response.ok) {
-            throw new Error(`Failed to fetch states: ${response.status} ${response.statusText}`);
-          }
-          const data = await response.json();
-
-          const layer = leaflet.geoJSON(data, {
-            style: defaultStyle,
-            onEachFeature: function (feature, layer: Polyline) {
-              layer.on("click", () => {
-                // Clear any selected county since state view is more zoomed out
-                selectCounty(null);
-              });
+          await loadStates({
+            mapInstance: mapInstance.current!,
+            selectCounty,
+            onSuccess: (layer) => {
+              stateLayerRef.current = layer;
+              setIsStateLayerLoaded(true);
             },
+            onError: () => {
+              setIsStateLayerLoaded(false);
+            }
           });
-
-          stateLayerRef.current = layer;
-          layer.addTo(mapInstance.current!);
-          setIsStateLayerLoaded(true);
         } else {
           // Re-add existing state layer
           stateLayerRef.current.addTo(mapInstance.current!);
@@ -339,9 +279,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     };
 
     if (mapControls.boundaryType === 'counties') {
-      loadCounties();
+      loadCountiesForBoundarySwitch();
     } else {
-      loadStates();
+      loadStatesForBoundarySwitch();
     }
   }, [mapControls.boundaryType]);
 

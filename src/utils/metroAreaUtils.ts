@@ -13,19 +13,29 @@ interface Geographies {
   [key: string]: any;
 }
 
+interface State {
+  NAME: string;
+  [key: string]: any;
+}
+
 interface CensusGeocoderResponse {
   result: {
-    geographies: Geographies;
+    geographies: {
+      CBSAs?: CBSA[];
+      States?: State[];
+      "Urban Areas"?: any[];
+      [key: string]: any;
+    };
   };
 }
 
 /**
- * Get metro area name from lat/lng using U.S. Census Geocoding API
+ * Get metro area name and state from lat/lng using U.S. Census Geocoding API
  * @param lat - Latitude
- * @param long - Longitude
- * @returns Metro area name or fallback string
+ * @param lng - Longitude
+ * @returns Object with metro area name and state, or null if not found
  */
-export const getMetroAreaFromCoordinates = async (lat: number, lng: number): Promise<string | null> => {
+export const getMetroAreaFromCoordinates = async (lat: number, lng: number): Promise<{metroArea: string; state: string} | null> => {
   const baseUrl =
     "https://geocoding.geo.census.gov/geocoder/geographies/coordinates";
   const params = new URLSearchParams({
@@ -42,11 +52,22 @@ export const getMetroAreaFromCoordinates = async (lat: number, lng: number): Pro
     const response = await fetch(url);
 
     const data = (await response.json()) as CensusGeocoderResponse;
-    const urbanData = data.result.geographies["Urban Areas"][0];
-    const name = urbanData.NAME;
-    const trimmedName = name.split(",")[0].trim();
-    console.log("Metro area:", trimmedName);
-    return trimmedName;
+    console.log("Census geocoder response:", data);
+    console.log("STATE data: ", data.result.geographies["States"]);
+    console.log("CBSA data: ", data.result.geographies["CBSAs"]);
+    console.log("URBAN AREA DATA: ", data.result.geographies["Urban Areas"]);
+    
+    const urbanData = data.result.geographies["Urban Areas"]?.[0];
+    const stateData = data.result.geographies["States"]?.[0];
+    
+    if (!urbanData || !stateData) {
+      return null;
+    }
+    
+    const metroArea = urbanData.NAME.split(",")[0].trim();
+    const state = stateData.NAME;
+    
+    return { metroArea, state };
   } catch (error) {
     console.error("Error fetching metro area:", error);
     return null;

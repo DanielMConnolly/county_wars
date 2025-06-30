@@ -22,7 +22,7 @@ export interface GameStateContextType {
   // Location tracking
   setClickedLocation: (_location: { lat: number, lng: number } | null) => void;
   // Franchise management
-  placeFranchise: (_name: string) => void;
+  placeFranchise: (_name: string, metro: string) => void;
 }
 
 // Create the context

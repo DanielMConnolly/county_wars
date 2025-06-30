@@ -65,3 +65,9 @@ export interface ServerGameState {
     isGamePaused: boolean;
     lobbyPlayers: LobbyPlayer[];
 }
+
+export interface ClickedLocationData {
+    metroAreaName: string;
+    franchisePlacementCost: number;
+    population: number;
+}

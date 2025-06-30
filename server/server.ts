@@ -331,6 +331,37 @@ app.get("/api/metro-area", async (req: Request, res: Response): Promise<void> =>
 
 });
 
+app.get("/api/clicked-location-data", async (req: Request, res: Response): Promise<void> => {
+  const lat = req.query.lat as unknown as number;
+  const lon = req.query.lng as unknown as number;
+
+  if (!lat || !lon) {
+    res.status(400).json({ error: "lat and lng are required query parameters." });
+    return;
+  }
+
+  try {
+    const locationData = await getMetroAreaFromCoordinates(lat, lon);
+    
+    // For now, using hardcoded population as in InfoCard
+    const population = 10000;
+    
+    // Calculate franchise cost using existing logic
+    const metroAreaName = locationData?.metroArea || 'Unknown';
+    const franchisePlacementCost = getCountyCost(metroAreaName);
+
+    res.json({
+      metroAreaName,
+      state: locationData?.state || 'Unknown',
+      franchisePlacementCost,
+      population
+    });
+  } catch (error) {
+    console.error('Error fetching clicked location data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 
 app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise<void> => {

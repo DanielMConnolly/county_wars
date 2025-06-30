@@ -30,10 +30,15 @@ export async function setup(): Promise<void> {
   // Initialize test database schema
   const { execSync } = require('child_process');
   try {
+    // Create test database if it doesn't exist
+    execSync('createdb county_wars_test 2>/dev/null || echo "Test database may already exist"', {
+      stdio: 'inherit'
+    });
+    
     execSync('npx prisma db push', {
       env: {
         ...process.env,
-        DATABASE_URL: 'file:./test_database.db'
+        DATABASE_URL: 'postgresql://danconnolly@localhost:5432/county_wars_test?schema=public'
       },
       stdio: 'inherit'
     });
@@ -47,8 +52,7 @@ export async function setup(): Promise<void> {
     env: {
       ...process.env,
       NODE_ENV: 'test',
-      TEST_DATABASE_PATH: './test_database.db',
-      DATABASE_URL: 'file:./test_database.db'
+      DATABASE_URL: 'postgresql://danconnolly@localhost:5432/county_wars_test?schema=public'
     }
   });
 

@@ -1,4 +1,4 @@
-import { Franchise, LobbyPlayer, User } from '../types/GameTypes';
+import { Franchise, LobbyPlayer, User, ClickedLocationData } from '../types/GameTypes';
 import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
@@ -67,6 +67,36 @@ export async function fetchMetroAreaName(lat: number, lng: number): Promise<stri
      console.error('Failed to fetch metro area name:', error);
      return 'Unknown';
    }
+}
+
+export async function fetchClickedLocationData(lat: number, lng: number): Promise<ClickedLocationData> {
+  try {
+    console.log('Fetching clicked location data for lat:', lat, 'lng:', lng);
+    const response = await fetch(`${API_BASE_URL}/api/clicked-location-data?lat=${lat}&lng=${lng}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Fetched clicked location data:', data);
+      return {
+        metroAreaName: data.metroAreaName ?? 'Unknown',
+        franchisePlacementCost: data.franchisePlacementCost ?? 100,
+        population: data.population ?? 0
+      };
+    }
+    
+    return {
+      metroAreaName: 'Unknown',
+      franchisePlacementCost: 100,
+      population: 0
+    };
+  } catch (error) {
+    console.error('Failed to fetch clicked location data:', error);
+    return {
+      metroAreaName: 'Unknown',
+      franchisePlacementCost: 100,
+      population: 0
+    };
+  }
 }
 
 export async function fetchGameTime(gameID: string): Promise<number | null> {
