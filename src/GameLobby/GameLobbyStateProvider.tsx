@@ -1,12 +1,12 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { GameLobbyContext, GameLobbyContextType } from './GameLobbyContext';
-import { LobbyPlayer } from './types/GameTypes';
-import { fetchLobbyState } from './api_calls/CountyWarsHTTPRequests';
-import { lobbySocketService } from './services/lobbySocketService';
-import { useAuth } from './auth/AuthContext';
+import { LobbyPlayer } from '../types/GameTypes';
+import { fetchLobbyState } from '../api_calls/HTTPRequests';
+import { socketService } from '../services/socketService';
+import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { connectToLobbySocket, disconnectFromLobbySocket } from './services/connectToLobbySocket';
-import { useToast } from './Toast/ToastContext';
+import { connectToSocket } from '../services/connectToSocket';
+import { useToast } from '../Toast/ToastContext';
 
 interface GameLobbyStateProviderProps {
   children: ReactNode;
@@ -32,7 +32,6 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
       const result = await fetchLobbyState(gameId, user.id);
 
       if (result.success && result.players) {
-        console.log('🏟️ LOBBY: Initial lobby state fetched:', result.players);
 
         // Add safety check to remove any potential duplicates from initial fetch
         const uniquePlayers = result.players.filter((player: LobbyPlayer, index: number, array: LobbyPlayer[]) =>

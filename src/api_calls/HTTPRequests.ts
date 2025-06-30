@@ -1,4 +1,4 @@
-import { Franchise, User } from '../types/GameTypes';
+import { Franchise, LobbyPlayer, User } from '../types/GameTypes';
 import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
@@ -351,7 +351,7 @@ export async function fetchGameState(gameId: string): Promise<{
 
 export async function fetchLobbyState(gameId: string, userId: string): Promise<{
   success: boolean;
-  players?: { userId: string; username: string; isHost: boolean }[];
+  players?: LobbyPlayer[];
   error?: string
 }> {
   try {

@@ -252,7 +252,7 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
     if (success) {
       // Emit game-started event to all players in the lobby
       io.to(`game-${gameId}`).emit('game-started', { gameId });
-      
+
       res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
     } else {
       res.status(500).json({ error: 'Failed to start game' });
@@ -310,10 +310,10 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
     if (!gameState) {
       // No game state exists yet, create one and add the requesting user
       console.log(`Creating new game state for game ${gameId} with initial player ${userId}`);
-      
+
       // Get user info from database
       const user = await dbOperations.createUser(userId);
-      
+
       gameState = {
         elapsedTime: 0,
         isGamePaused: false,
@@ -323,10 +323,10 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
           isHost: isUserHost // Check if user is the game creator
         }]
       };
-      
+
       lobbyStates.set(gameId, gameState);
       console.log(`Initialized game state for ${gameId} with host ${user.username} (${userId})`);
-      
+
       // Broadcast lobby update to all players in the lobby room
       io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
         players: gameState.lobbyPlayers
@@ -338,16 +338,16 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
       if (!existingPlayer) {
         // Add user to existing lobby if not already present
         const user = await dbOperations.createUser(userId);
-        
+
         gameState.lobbyPlayers.push({
           userId: userId,
           username: user.username || userId,
           isHost: isUserHost // Check if user is the game creator
         });
-        
+
         lobbyStates.set(gameId, gameState);
         console.log(`Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`);
-        
+
         // Broadcast lobby update to all players in the lobby room
         io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
           players: gameState.lobbyPlayers
@@ -368,7 +368,7 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
 
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
     const { status } = req.query;
-    
+
     try{
         let games;
         if (status === 'DRAFT') {
@@ -376,7 +376,7 @@ app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
         } else {
             games = await dbOperations.getAllGames();
         }
-        
+
         if(games){
             res.json({ games });
         }
@@ -520,10 +520,10 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     const remainingMoney = await dbOperations.getUserGameMoney(userId, gameId);
 
     // Emit money update to the specific user via socket
-    const userSockets = Array.from(io.sockets.sockets.values()).filter(socket => 
+    const userSockets = Array.from(io.sockets.sockets.values()).filter(socket =>
       socket.userId === userId && socket.gameId === gameId
     );
-    
+
     userSockets.forEach(socket => {
       socket.emit('money-update', { userId, newMoney: remainingMoney });
       console.log(`Emitted money update to user ${userId}: $${remainingMoney}`);
