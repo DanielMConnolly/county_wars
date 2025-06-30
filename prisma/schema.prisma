@@ -69,13 +69,14 @@ model UserGameMoney {
 }
 
 model PlacedFranchise {
-  id         Int      @id @default(autoincrement())
-  userId     String   @map("user_id")
-  gameId     String   @map("game_id")
-  lat        Float
-  long       Float
-  name       String
-  timePlaced DateTime @default(now()) @map("time_placed")
+  id           Int      @id @default(autoincrement())
+  userId       String   @map("user_id")
+  gameId       String   @map("game_id")
+  lat          Float
+  long         Float
+  name         String
+  timePlaced   DateTime @default(now()) @map("time_placed")
+  locationName String?  @map("location_name")
 
   // Relationships
   user User @relation(fields: [userId], references: [id])

@@ -55,10 +55,11 @@ export async function fetchMetroAreaName(lat: number, lng: number): Promise<stri
    try{
      console.log('Fetching metro area name for lat:', lat, 'lng:', lng);
      const response = await fetch(`${API_BASE_URL}/api/metro-area?lat=${lat}&lng=${lng}`);
+     console.log("RESPONSE: ", response);
      if(response.ok){
        const data = await response.json();
        console.log('Fetched metro area name:', data);
-       return data.metro_area;
+       return data.metro_area ?? 'Unknown';
      }
      return 'Unknown';
    }
@@ -413,7 +414,8 @@ export async function placeFranchise(
   long: number,
   name: string,
   countyName?: string,
-  elapsedTime?: number
+  elapsedTime?: number,
+  locationName?: string
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/franchises`, {
@@ -421,7 +423,7 @@ export async function placeFranchise(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, gameId, lat, long, name, countyName, elapsedTime }),
+      body: JSON.stringify({ userId, gameId, lat, long, name, countyName, elapsedTime, locationName }),
     });
 
     const data = await response.json();

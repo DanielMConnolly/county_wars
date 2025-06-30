@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Building, X, Trash2, Crown } from 'lucide-react';
+import { Building, X, Trash2 } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { Franchise } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
@@ -74,12 +74,9 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         <InfoRow
           label="Owner:"
           value={
-            <div className="flex items-center gap-2">
-              <span className={isOwnedByUser ? 'text-green-400' : 'text-blue-300'}>
-                {franchise.username}
-              </span>
-              {isOwnedByUser && <Crown className="w-4 h-4 text-yellow-400" />}
-            </div>
+            <span className={isOwnedByUser ? 'text-green-400' : 'text-blue-300'}>
+              {franchise.username}
+            </span>
           }
           className=""
         />

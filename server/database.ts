@@ -285,7 +285,7 @@ export const dbOperations = {
   },
 
   // Franchise operations
-  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number): Promise<boolean> => {
+  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, locationName?: string): Promise<boolean> => {
     try {
       await prisma.placedFranchise.create({
         data: {
@@ -295,6 +295,7 @@ export const dbOperations = {
           long,
           name,
           timePlaced: new Date(elapsedTime),
+          locationName,
         },
       });
       return true;

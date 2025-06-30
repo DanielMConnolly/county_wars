@@ -11,7 +11,6 @@ import {
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
 import { DataTestIDs } from './DataTestIDs';
-import { getMetroAreaFromCoordinates } from './utils/metroAreaUtils';
 import { fetchMetroAreaName } from './api_calls/HTTPRequests';
 
 const InfoCard = () => {
@@ -40,14 +39,11 @@ const InfoCard = () => {
 
   useEffect(() => {
     const fetchLocationInformation = async () => {
-      if (!selectedCounty) {
-        return;
-      }
-
+      setMetro(null);
       setLoading(true);
       const countyPopulation = await fetchPopulationData(selectedCounty);
       const metroArea = await fetchMetroAreaName(clickedLocation.lat, clickedLocation.lng);
-      if (metroArea) {
+      if (metroArea && metroArea !== 'Unknown') {
         setMetro(metroArea);
       }
       if (countyPopulation) {
@@ -60,7 +56,7 @@ const InfoCard = () => {
       }
     };
     fetchLocationInformation();
-  }, [selectedCounty, clickedLocation]);
+  }, [clickedLocation]);
 
 
   const getLocationLabel = (): string => {
@@ -120,7 +116,7 @@ const InfoCard = () => {
       <div className="space-y-3">
         <InfoRow
           label="Location:"
-          value={getLocationLabel()}
+          value={loading ? 'Loading...': getLocationLabel()}
           className="text-white truncate ml-2"
         />
         {selectedCounty && (

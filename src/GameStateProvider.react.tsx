@@ -9,12 +9,13 @@ import {
   fetchUserGameMoney,
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
+  fetchMetroAreaName,
 } from "./api_calls/HTTPRequests";
 import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
-import { getCountyCost } from "./utils/countyUtils";
+import { getCountyCost, getStateName } from "./utils/countyUtils";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
 import { useToast } from "./Toast/ToastContext";
@@ -155,6 +156,12 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       return;
     }
 
+    // Fetch metro area name to create location label
+    const metroArea = await fetchMetroAreaName(gameState.clickedLocation.lat, gameState.clickedLocation.lng);
+    const locationName = metroArea && metroArea !== 'Unknown' 
+      ? `${metroArea}, ${getStateName(gameState.selectedCounty.stateFP)}`
+      : `${gameState.selectedCounty.name}, ${getStateName(gameState.selectedCounty.stateFP)}`;
+
     const newFranchise: Franchise = {
       id: `franchise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       lat: gameState.clickedLocation.lat,
@@ -172,7 +179,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       gameState.clickedLocation.lng,
       name,
       gameState.selectedCounty.name,
-      gameState.gameTime.elapsedTime || 0
+      gameState.gameTime.elapsedTime || 0,
+      locationName
     );
 
     if (result.success) {
