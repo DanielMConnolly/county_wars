@@ -139,11 +139,10 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
       setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
-  }, []);
+  }, [boundaryType]);
 
   useEffect(() => {
-
-
+    console.log('Loading counties...');
     if (!mapInstance.current) return;
 
 
@@ -187,11 +186,10 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     };
 
     // Load initial boundary type (counties by default)
-    if (boundaryType === 'counties') {
-
+    if (boundaryType === 'states') {
+      console.log('Loading counties');
        loadCountiesWrapper();
     } else {
-      console.log('Loading...', boundaryType);
       loadStatesWrapper();
     }
 
@@ -204,86 +202,10 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       }
       if (mapInstance.current) {
         mapInstance.current.remove();
-        mapInstance.current = null;
       }
     };
   }, [boundaryType]); // No dependencies - only run once
 
-  // Handle boundary type switching
-  useEffect(() => {
-    if (!mapInstance.current) return;
-
-    const loadCountiesForBoundarySwitch = async () => {
-      try {
-        // Remove state layer if it exists
-        if (stateLayerRef.current) {
-          mapInstance.current!.removeLayer(stateLayerRef.current);
-          stateLayerRef.current = null;
-          setIsStateLayerLoaded(false);
-        }
-
-        // Load counties if not already loaded
-        if (!countyLayerRef.current) {
-          await loadCounties({
-            mapInstance: mapInstance.current!,
-            selectCounty,
-            onSuccess: (layer) => {
-              countyLayerRef.current = layer;
-              setIsCountyLayerLoaded(true);
-            },
-            onError: () => {
-              setIsCountyLayerLoaded(false);
-            }
-          });
-        } else {
-          // Re-add existing county layer
-          countyLayerRef.current.addTo(mapInstance.current!);
-          setIsCountyLayerLoaded(true);
-        }
-      } catch (error) {
-        console.error('Error loading counties:', error);
-        setIsCountyLayerLoaded(false);
-      }
-    };
-
-    const loadStatesForBoundarySwitch = async () => {
-      try {
-        // Remove county layer if it exists
-        if (countyLayerRef.current) {
-          mapInstance.current!.removeLayer(countyLayerRef.current);
-          setIsCountyLayerLoaded(false);
-        }
-
-        // Load states if not already loaded
-        if (!stateLayerRef.current) {
-          await loadStates({
-            mapInstance: mapInstance.current!,
-            selectCounty,
-            onSuccess: (layer) => {
-              stateLayerRef.current = layer;
-              setIsStateLayerLoaded(true);
-            },
-            onError: () => {
-              setIsStateLayerLoaded(false);
-            }
-          });
-        } else {
-          // Re-add existing state layer
-          stateLayerRef.current.addTo(mapInstance.current!);
-          setIsStateLayerLoaded(true);
-        }
-      } catch (error) {
-        console.error('Error loading states:', error);
-        setIsStateLayerLoaded(false);
-      }
-    };
-
-    if (mapControls.boundaryType === 'counties') {
-      loadCountiesForBoundarySwitch();
-    } else {
-      loadStatesForBoundarySwitch();
-    }
-  }, [mapControls.boundaryType]);
 
   // Update county styling when ownership or colors change
   useEffect(() => {

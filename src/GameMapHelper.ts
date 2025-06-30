@@ -28,8 +28,8 @@ export interface LoadStatesOptions {
  */
 export const loadCounties = async (options: LoadCountiesOptions): Promise<void> => {
   const { mapInstance, selectCounty, onSuccess, onError } = options;
+  if (!mapInstance) return;
 
-  try {
     const response = await fetch("/counties.geojson");
 
     if (!response.ok) {
@@ -38,8 +38,6 @@ export const loadCounties = async (options: LoadCountiesOptions): Promise<void> 
 
     const data = await response.json();
 
-    // Load county data for reverse geocoding
-    await loadCountyData();
 
     const layer = leaflet.geoJSON(data, {
       style: defaultStyle,
@@ -62,10 +60,6 @@ export const loadCounties = async (options: LoadCountiesOptions): Promise<void> 
 
     layer.addTo(mapInstance);
     onSuccess(layer);
-  } catch (error) {
-    console.error('Error loading counties:', error);
-    onError();
-  }
 };
 
 /**
@@ -73,8 +67,8 @@ export const loadCounties = async (options: LoadCountiesOptions): Promise<void> 
  */
 export const loadStates = async (options: LoadStatesOptions): Promise<void> => {
   const { mapInstance, selectCounty, onSuccess, onError } = options;
+  if (!mapInstance) return;
 
-  try {
     const response = await fetch("/us-states.geojson");
 
     if (!response.ok) {
@@ -102,8 +96,4 @@ export const loadStates = async (options: LoadStatesOptions): Promise<void> => {
 
     layer.addTo(mapInstance);
     onSuccess(layer);
-  } catch (error) {
-    console.error('Error loading states:', error);
-    onError();
-  }
 };
