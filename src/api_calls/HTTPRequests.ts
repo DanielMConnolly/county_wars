@@ -92,29 +92,6 @@ export async function fetchUserGameMoney(userId: string, gameId: string): Promis
   }
 }
 
-export async function updateUserGameMoney(userId: string, gameId: string, amount: number): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/money`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ amount }),
-    });
-
-    if (!response.ok) {
-      console.error('Failed to update money:', response.status);
-      return false;
-    } else {
-      console.log('Money updated successfully:', amount);
-      return true;
-    }
-  } catch (error) {
-    console.error('Failed to update money:', error);
-    return false;
-  }
-}
-
 // Authentication functions
 export async function signup(
   username: string,
