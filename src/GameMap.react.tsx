@@ -18,6 +18,7 @@ import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";
 import { getFranchiseColor } from "./utils/colorUtils";
 import { useToast } from "./Toast/ToastContext";
+import { loadCountyData } from "./utils/reverseGeocode";
 
 const defaultStyle = {
   fillColor: "#3388ff",
@@ -143,6 +144,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         }
 
         const data = await response.json();
+
+        // Load county data for reverse geocoding
+        await loadCountyData();
 
         const layer = leaflet.geoJSON(data, {
           style: defaultStyle,

@@ -6,6 +6,7 @@ import { useAuth } from './auth/AuthContext';
 import { removeFranchise } from './api_calls/HTTPRequests';
 import { DataTestIDs } from './DataTestIDs';
 import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
+import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
 
 interface FranchiseInfoCardProps {
   franchise: Franchise;
@@ -89,7 +90,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         />
         <InfoRow
           label="Location:"
-          value={`${franchise.lat.toFixed(4)}, ${franchise.long.toFixed(4)}`}
+          value={getCountyNameFromCoordinates(franchise.lat, franchise.long)}
           className="text-gray-300 text-sm"
         />
       </div>

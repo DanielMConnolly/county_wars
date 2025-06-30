@@ -5,7 +5,8 @@ import {
   getCountyCost,
   getDifficultyDisplayName,
   getDifficultyColor as getNewDifficultyColor,
-  calculateDistanceMiles
+  calculateDistanceMiles,
+  getStateName
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
@@ -98,8 +99,8 @@ const InfoCard = () => {
       </div>
       <div className="space-y-3">
         <InfoRow
-          label="Selected:"
-          value={selectedCounty?.name || 'None'}
+          label="Location:"
+          value={selectedCounty ? `${selectedCounty.name}, ${getStateName(selectedCounty.stateFP)}` : 'None'}
           className="text-white truncate ml-2"
         />
         {selectedCounty && (

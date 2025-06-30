@@ -3,6 +3,8 @@ import { X, Coins, UtensilsCrossed } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { useAuth } from './auth/AuthContext';
 import { DataTestIDs } from './DataTestIDs';
+import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
+import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
 
 type TabType = 'income' | 'franchises';
 
@@ -126,11 +128,10 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-800">{franchise.name}</h4>
                           <p className="text-sm text-gray-600 mt-1">
-                            Location: {franchise.lat.toFixed(4)}, {franchise.long.toFixed(4)}
+                            Location: {getCountyNameFromCoordinates(franchise.lat, franchise.long)}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            Placed: {new Date(franchise.placedAt).toLocaleDateString()} at{' '}
-                            {new Date(franchise.placedAt).toLocaleTimeString()}
+                            Placed: {elapsedTimeToGameDate(franchise.placedAt, gameState.gameTime.gameDurationHours)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 ml-4">

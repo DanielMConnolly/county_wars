@@ -93,6 +93,16 @@ console.log('Using SQLite database for data persistence');
 setupSocketForLobby(io, '/lobby');
 setupSocketForGame(io, '/game');
 
+// Setup general welcome screen socket for real-time game updates
+const welcomeNamespace = io.of('/');
+welcomeNamespace.on('connection', (socket) => {
+  console.log('Client connected to welcome socket');
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected from welcome socket');
+  });
+});
+
 // Authentication routes
 app.use('/api/auth', authRoutes);
 
@@ -233,6 +243,15 @@ app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
     const success = await dbOperations.createGame(gameId, createdBy);
 
     if (success) {
+      // Get the created game details to broadcast
+      const game = await dbOperations.getGame(gameId);
+      
+      // Broadcast new game to all welcome screen clients
+      if (game) {
+        welcomeNamespace.emit('game-created', game);
+        console.log(`Broadcasted new game creation: ${gameId}`);
+      }
+      
       res.json({ gameId, createdBy, message: 'Game created successfully' });
     } else {
       res.status(500).json({ error: 'Failed to create game' });
@@ -252,6 +271,10 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
     if (success) {
       // Emit game-started event to all players in the lobby
       io.to(`game-${gameId}`).emit('game-started', { gameId });
+      
+      // Broadcast status change to welcome screen clients (game no longer available to join)
+      welcomeNamespace.emit('game-status-changed', { gameId, status: 'LIVE' });
+      console.log(`Broadcasted game status change to LIVE: ${gameId}`);
 
       res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
     } else {
@@ -439,6 +462,10 @@ app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<vo
     const success = await dbOperations.deleteGame(gameId);
 
     if (success) {
+      // Broadcast game deletion to all welcome screen clients
+      welcomeNamespace.emit('game-deleted', { gameId });
+      console.log(`Broadcasted game deletion: ${gameId}`);
+      
       res.json({ message: 'Game deleted successfully' });
     } else {
       res.status(404).json({ error: 'Game not found' });

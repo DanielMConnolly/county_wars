@@ -7,12 +7,15 @@ import UserMenu from './auth/UserMenu';
 import ExistingGamesList from './ExistingGamesList';
 import GamesToJoin from './GamesToJoin';
 import { DataTestIDs } from './DataTestIDs';
+import { useToast } from './Toast/ToastContext';
+import { connectToWelcomeSocket, disconnectFromWelcomeSocket } from './services/connectToWelcomeSocket';
 import {Game} from '@prisma/client';
 
 type TabType = 'myGames' | 'joinGames';
 
 export default function WelcomeScreen() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('myGames');
   const [myGames, setMyGames] = useState<Game[]>([]);
   const [availableGames, setAvailableGames] = useState<Game[]>([]);
@@ -26,6 +29,43 @@ export default function WelcomeScreen() {
     }
     loadAvailableGames();
   }, [user?.id]);
+
+  // Socket connection for real-time updates
+  useEffect(() => {
+    const handleGameCreated = (game: Game) => {
+      if (game.status === 'DRAFT') {
+        setAvailableGames(prevGames => [game, ...prevGames]);
+      }
+    };
+
+    const handleGameDeleted = (gameId: string) => {
+      setAvailableGames(prevGames => prevGames.filter(g => g.id !== gameId));
+      // Also remove from myGames if it was there
+      setMyGames(prevGames => prevGames.filter(g => g.id !== gameId));
+    };
+
+    const handleGameStatusChanged = (data: { gameId: string; status: string }) => {
+      if (data.status === 'LIVE') {
+        // Remove from available games when it becomes live
+        setAvailableGames(prevGames => prevGames.filter(g => g.id !== data.gameId));
+        // Refresh myGames to potentially include the new live game
+        if (user?.id) {
+          loadMyGames();
+        }
+      }
+    };
+
+    connectToWelcomeSocket({
+      onGameCreated: handleGameCreated,
+      onGameDeleted: handleGameDeleted,
+      onGameStatusChanged: handleGameStatusChanged,
+      showToast
+    });
+
+    return () => {
+      disconnectFromWelcomeSocket();
+    };
+  }, [user?.id]); // Removed showToast from dependencies to prevent re-connections
 
   const loadMyGames = async () => {
     if (!user?.id) return;

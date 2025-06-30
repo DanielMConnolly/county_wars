@@ -242,7 +242,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     disconnectFromGameSocket();
 
     connectToGameSocket({ userId, gameId, setGameState, setIsConnected, showToast });
-  }, [userId, gameId, showToast]);
+
+    return () => {
+      disconnectFromGameSocket();
+    };
+  }, [userId, gameId]); // Removed showToast from dependencies to prevent re-runs
 
 
   useInterval(() => {
