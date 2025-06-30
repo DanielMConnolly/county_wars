@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { Users, Play, Crown } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import UserMenu from './auth/UserMenu';
-import { useAuth } from './auth/AuthContext';
-import { User } from './types/GameTypes';
-import { startGame } from './api_calls/HTTPRequests';
+import UserMenu from '../auth/UserMenu';
+import { useAuth } from '../auth/AuthContext';
+import { User } from '../types/GameTypes';
+import { startGame } from '../api_calls/HTTPRequests';
 import { GameLobbyStateProvider } from './GameLobbyStateProvider';
 import { useGameLobby } from './GameLobbyContext';
 

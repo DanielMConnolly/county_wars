@@ -16,7 +16,7 @@ import WelcomeScreen from './WelcomeScreen';
 import AuthModal from './auth/AuthModal';
 import { ToastProvider } from './Toast/ToastContext';
 import ToastContainer from './Toast/ToastContainer';
-import GameLobby from './GameLobby';
+import GameLobby from './GameLobby/GameLobby';
 
 
 const App = () => {
@@ -110,8 +110,8 @@ const AppContent = () => {
 
       {selectedCounty && <InfoCard />}
       {selectedFranchise && (
-        <FranchiseInfoCard 
-          franchise={selectedFranchise} 
+        <FranchiseInfoCard
+          franchise={selectedFranchise}
           onClose={() => selectFranchise(null)}
         />
       )}

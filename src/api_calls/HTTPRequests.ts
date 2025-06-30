@@ -1,4 +1,4 @@
-import { Franchise, User } from '../types/GameTypes';
+import { Franchise, LobbyPlayer, User } from '../types/GameTypes';
 import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
@@ -89,29 +89,6 @@ export async function fetchUserGameMoney(userId: string, gameId: string): Promis
   } catch (error) {
     console.error('Failed to fetch user game money:', error);
     return 1000; // Default starting money
-  }
-}
-
-export async function updateUserGameMoney(userId: string, gameId: string, amount: number): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/money`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ amount }),
-    });
-
-    if (!response.ok) {
-      console.error('Failed to update money:', response.status);
-      return false;
-    } else {
-      console.log('Money updated successfully:', amount);
-      return true;
-    }
-  } catch (error) {
-    console.error('Failed to update money:', error);
-    return false;
   }
 }
 
@@ -374,7 +351,7 @@ export async function fetchGameState(gameId: string): Promise<{
 
 export async function fetchLobbyState(gameId: string, userId: string): Promise<{
   success: boolean;
-  players?: { userId: string; username: string; isHost: boolean }[];
+  players?: LobbyPlayer[];
   error?: string
 }> {
   try {
