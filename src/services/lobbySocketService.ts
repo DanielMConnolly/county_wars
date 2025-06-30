@@ -1,0 +1,114 @@
+import { io, Socket } from 'socket.io-client';
+
+export class LobbySocketService {
+  private socket: Socket | null = null;
+  private userId: string | null = null;
+  private gameId: string | null = null;
+  private callbacks: Map<string, Function[]> = new Map();
+
+  connect(userId: string, gameId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.userId = userId;
+      this.gameId = gameId;
+
+      this.socket = io('http://localhost:3001/lobby', {
+        auth: {
+          userId: userId,
+          gameId: gameId
+        }
+      });
+
+      this.socket.on('connect', () => {
+        console.log('Connected to lobby server');
+        resolve();
+      });
+
+      this.socket.on('connect_error', (error) => {
+        console.error('Lobby connection error:', error);
+        reject(error);
+      });
+
+      // Set up lobby-specific event listeners
+      this.setupEventListeners();
+    });
+  }
+
+  private setupEventListeners() {
+    if (!this.socket) return;
+
+    this.socket.on('lobby-updated', (data) => {
+      this.emit('lobby-updated', data);
+    });
+
+    this.socket.on('game-starting', (data) => {
+      this.emit('game-starting', data);
+    });
+
+    this.socket.on('lobby-chat-message', (data) => {
+      this.emit('lobby-chat-message', data);
+    });
+
+    this.socket.on('error', (data) => {
+      this.emit('error', data);
+    });
+  }
+
+  // Lobby-specific methods
+  startGame() {
+    if (this.socket) {
+      this.socket.emit('start-game', {});
+    }
+  }
+
+  setPlayerReady(isReady: boolean) {
+    if (this.socket) {
+      this.socket.emit('player-ready', { isReady });
+    }
+  }
+
+  sendChatMessage(message: string) {
+    if (this.socket) {
+      this.socket.emit('lobby-chat', { message });
+    }
+  }
+
+  // Event system for React components
+  on(event: string, callback: Function) {
+    if (!this.callbacks.has(event)) {
+      this.callbacks.set(event, []);
+    }
+    this.callbacks.get(event)!.push(callback);
+  }
+
+  off(event: string, callback: Function) {
+    const callbacks = this.callbacks.get(event);
+    if (callbacks) {
+      const index = callbacks.indexOf(callback);
+      if (index > -1) {
+        callbacks.splice(index, 1);
+      }
+    }
+  }
+
+  private emit<T>(event: string, data: T) {
+    const callbacks = this.callbacks.get(event);
+    if (callbacks) {
+      callbacks.forEach(callback => callback(data));
+    }
+  }
+
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    this.callbacks.clear();
+  }
+
+  isConnected(): boolean {
+    return this.socket?.connected || false;
+  }
+}
+
+// Export a singleton instance
+export const lobbySocketService = new LobbySocketService();
