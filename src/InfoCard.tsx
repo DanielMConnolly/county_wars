@@ -11,15 +11,18 @@ import {
 import { GameStateContext } from './GameStateContext';
 import { fetchPopulationData } from './api_calls/fetchPopulationData';
 import { DataTestIDs } from './DataTestIDs';
+import { getMetroAreaFromCoordinates } from './utils/metroAreaUtils';
+import { fetchMetroAreaName } from './api_calls/HTTPRequests';
 
 const InfoCard = () => {
   const { gameState, placeFranchise, selectCounty } = useContext(GameStateContext);
-  const { selectedCounty } = gameState;
+  const { selectedCounty, clickedLocation } = gameState;
 
-  if (!selectedCounty) {
+  if (!selectedCounty || !clickedLocation) {
     throw new Error('InfoCard should only be rendered when a county is selected');
   }
   const [population, setPopulation] = useState<number | null>(null);
+  const [metro, setMetro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isLocationTooCloseToFranchise = (lat: number, lng: number): boolean => {
@@ -36,38 +39,55 @@ const InfoCard = () => {
   };
 
   useEffect(() => {
-    const fetchPopulation = async () => {
+    const fetchLocationInformation = async () => {
       if (!selectedCounty) {
         return;
       }
 
       setLoading(true);
       const countyPopulation = await fetchPopulationData(selectedCounty);
+      const metroArea = await fetchMetroAreaName(clickedLocation.lat, clickedLocation.lng);
+      if (metroArea) {
+        setMetro(metroArea);
+      }
       if (countyPopulation) {
         setPopulation(countyPopulation);
       } else {
         setPopulation(null);
       }
-      setLoading(false);
+      if(metroArea && countyPopulation){
+        setLoading(false);
+      }
     };
-    fetchPopulation();
-  }, [selectedCounty]);
+    fetchLocationInformation();
+  }, [selectedCounty, clickedLocation]);
+
+
+  const getLocationLabel = (): string => {
+      if (metro) {
+        return `${metro}, ${getStateName(selectedCounty.stateFP)}`;
+      }
+      else{
+        return `${selectedCounty.name}, ${getStateName(selectedCounty.stateFP)}`;
+      }
+
+  }
 
 
   const isPlaceFranchiseButtonEnabled = (): boolean => {
-    if (!gameState.clickedLocation) return false;
+    if (!clickedLocation) return false;
     if (gameState.gameTime?.isPaused) return false;
-    if(isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)){
+    if(isLocationTooCloseToFranchise(clickedLocation.lat, clickedLocation.lng)){
       return false;
     }
     return canAffordFranchise();
   }
 
   const placeFranchiseButtonText = (): string => {
-    if (!gameState.clickedLocation) {
+    if (!clickedLocation) {
       return 'Click Map to Place';
     }
-    if (isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)) {
+    if (isLocationTooCloseToFranchise(clickedLocation.lat, clickedLocation.lng)) {
       return 'Too Close to Existing Franchise';
     }
     if (!canAffordFranchise()) {
@@ -100,7 +120,7 @@ const InfoCard = () => {
       <div className="space-y-3">
         <InfoRow
           label="Location:"
-          value={selectedCounty ? `${selectedCounty.name}, ${getStateName(selectedCounty.stateFP)}` : 'None'}
+          value={getLocationLabel()}
           className="text-white truncate ml-2"
         />
         {selectedCounty && (

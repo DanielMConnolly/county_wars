@@ -51,6 +51,23 @@ export async function updateUserHighlightColor(userId: string, color: string): P
   }
 }
 
+export async function fetchMetroAreaName(lat: number, lng: number): Promise<string> {
+   try{
+     console.log('Fetching metro area name for lat:', lat, 'lng:', lng);
+     const response = await fetch(`${API_BASE_URL}/api/metro-area?lat=${lat}&lng=${lng}`);
+     if(response.ok){
+       const data = await response.json();
+       console.log('Fetched metro area name:', data);
+       return data.metro_area;
+     }
+     return 'Unknown';
+   }
+   catch(error){
+     console.error('Failed to fetch metro area name:', error);
+     return 'Unknown';
+   }
+}
+
 export async function fetchGameTime(gameID: string): Promise<number | null> {
   try {
     console.log('Fetching game time for game id: ', gameID);

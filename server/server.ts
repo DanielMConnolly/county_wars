@@ -8,6 +8,7 @@ import { dbOperations } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
+import { getMetroAreaFromCoordinates } from '../src/utils/metroAreaUtils.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -97,7 +98,7 @@ setupSocketForGame(io, '/game');
 const welcomeNamespace = io.of('/');
 welcomeNamespace.on('connection', (socket) => {
   console.log('Client connected to welcome socket');
-  
+
   socket.on('disconnect', () => {
     console.log('Client disconnected from welcome socket');
   });
@@ -245,13 +246,13 @@ app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
     if (success) {
       // Get the created game details to broadcast
       const game = await dbOperations.getGame(gameId);
-      
+
       // Broadcast new game to all welcome screen clients
       if (game) {
         welcomeNamespace.emit('game-created', game);
         console.log(`Broadcasted new game creation: ${gameId}`);
       }
-      
+
       res.json({ gameId, createdBy, message: 'Game created successfully' });
     } else {
       res.status(500).json({ error: 'Failed to create game' });
@@ -271,7 +272,7 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
     if (success) {
       // Emit game-started event to all players in the lobby
       io.to(`game-${gameId}`).emit('game-started', { gameId });
-      
+
       // Broadcast status change to welcome screen clients (game no longer available to join)
       welcomeNamespace.emit('game-status-changed', { gameId, status: 'LIVE' });
       console.log(`Broadcasted game status change to LIVE: ${gameId}`);
@@ -312,6 +313,25 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+app.get("/api/metro-area", async (req: Request, res: Response): Promise<void> => {
+  const lat = req.query.lat as unknown as number;
+  const lon = req.query.lng as unknown as number;
+
+  if (!lat || !lon) {
+    res.status(400).json({ error: "lat and lon are required query parameters." });
+  }
+
+  const metroAreaName = await getMetroAreaFromCoordinates(lat, lon);
+
+  res.json({
+    "metro_area":
+    metroAreaName
+  });
+
+});
+
+
 
 app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
@@ -465,7 +485,7 @@ app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<vo
       // Broadcast game deletion to all welcome screen clients
       welcomeNamespace.emit('game-deleted', { gameId });
       console.log(`Broadcasted game deletion: ${gameId}`);
-      
+
       res.json({ message: 'Game deleted successfully' });
     } else {
       res.status(404).json({ error: 'Game not found' });
