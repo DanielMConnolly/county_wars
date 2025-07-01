@@ -8,6 +8,7 @@ import { dbOperations } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
+import { getGeoDataFromCoordinates, getPopulationCost } from './metroAreaUtils';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -92,6 +93,16 @@ console.log('Using SQLite database for data persistence');
 // Setup both lobby and game socket namespaces
 setupSocketForLobby(io, '/lobby');
 setupSocketForGame(io, '/game');
+
+// Setup general welcome screen socket for real-time game updates
+const welcomeNamespace = io.of('/');
+welcomeNamespace.on('connection', (socket) => {
+  console.log('Client connected to welcome socket');
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected from welcome socket');
+  });
+});
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
@@ -233,6 +244,15 @@ app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
     const success = await dbOperations.createGame(gameId, createdBy);
 
     if (success) {
+      // Get the created game details to broadcast
+      const game = await dbOperations.getGame(gameId);
+
+      // Broadcast new game to all welcome screen clients
+      if (game) {
+        welcomeNamespace.emit('game-created', game);
+        console.log(`Broadcasted new game creation: ${gameId}`);
+      }
+
       res.json({ gameId, createdBy, message: 'Game created successfully' });
     } else {
       res.status(500).json({ error: 'Failed to create game' });
@@ -252,7 +272,11 @@ app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promis
     if (success) {
       // Emit game-started event to all players in the lobby
       io.to(`game-${gameId}`).emit('game-started', { gameId });
-      
+
+      // Broadcast status change to welcome screen clients (game no longer available to join)
+      welcomeNamespace.emit('game-status-changed', { gameId, status: 'LIVE' });
+      console.log(`Broadcasted game status change to LIVE: ${gameId}`);
+
       res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
     } else {
       res.status(500).json({ error: 'Failed to start game' });
@@ -290,6 +314,45 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
   }
 });
 
+app.get("/api/clicked-location-data", async (req: Request, res: Response): Promise<void> => {
+  const lat = req.query.lat as unknown as number;
+  const lon = req.query.lng as unknown as number;
+
+  if (!lat || !lon) {
+    res.status(400).json({ error: "lat and lng are required query parameters." });
+    return;
+  }
+
+  try {
+    const locationData = await getGeoDataFromCoordinates(lat, lon);
+    console.log(locationData);
+    if (!locationData) {
+      res.status(404).json({ error: "Location data not found" });
+      return;
+    }
+
+    const {county, metroArea, state} = locationData;
+
+    // Get population and cost data from Overpass API
+    const populationData = await getPopulationCost(lat, lon);
+    const population = populationData.population;
+    const franchisePlacementCost = populationData.cost;
+
+    res.json({
+      county: county,
+      metroAreaName: metroArea,
+      state: state,
+      population: population,
+      franchisePlacementCost: franchisePlacementCost
+    })
+  } catch (error) {
+    console.error('Error fetching clicked location data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
 app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
   const { userId } = req.query;
@@ -310,10 +373,10 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
     if (!gameState) {
       // No game state exists yet, create one and add the requesting user
       console.log(`Creating new game state for game ${gameId} with initial player ${userId}`);
-      
+
       // Get user info from database
       const user = await dbOperations.createUser(userId);
-      
+
       gameState = {
         elapsedTime: 0,
         isGamePaused: false,
@@ -323,10 +386,10 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
           isHost: isUserHost // Check if user is the game creator
         }]
       };
-      
+
       lobbyStates.set(gameId, gameState);
       console.log(`Initialized game state for ${gameId} with host ${user.username} (${userId})`);
-      
+
       // Broadcast lobby update to all players in the lobby room
       io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
         players: gameState.lobbyPlayers
@@ -338,16 +401,16 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
       if (!existingPlayer) {
         // Add user to existing lobby if not already present
         const user = await dbOperations.createUser(userId);
-        
+
         gameState.lobbyPlayers.push({
           userId: userId,
           username: user.username || userId,
           isHost: isUserHost // Check if user is the game creator
         });
-        
+
         lobbyStates.set(gameId, gameState);
         console.log(`Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`);
-        
+
         // Broadcast lobby update to all players in the lobby room
         io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
           players: gameState.lobbyPlayers
@@ -366,9 +429,22 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
   }
 });
 
+// Get all players in a game with their money for standings
+app.get('/api/games/:gameId/players', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+
+  try {
+    const players = await dbOperations.getGamePlayersWithMoney(gameId);
+    res.json(players);
+  } catch (error) {
+    console.error('Error fetching game players:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
     const { status } = req.query;
-    
+
     try{
         let games;
         if (status === 'DRAFT') {
@@ -376,7 +452,7 @@ app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
         } else {
             games = await dbOperations.getAllGames();
         }
-        
+
         if(games){
             res.json({ games });
         }
@@ -420,6 +496,18 @@ app.get('/api/users/:userId/games', async (req: Request, res: Response): Promise
   }
 });
 
+app.get('/api/users/:userId/live-games', async (req: Request, res: Response): Promise<void> => {
+  const { userId } = req.params;
+
+  try {
+    const games = await dbOperations.getUserLiveGames(userId);
+    res.json({ games });
+  } catch (error) {
+    console.error('Error fetching user live games:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
 
@@ -427,6 +515,10 @@ app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<vo
     const success = await dbOperations.deleteGame(gameId);
 
     if (success) {
+      // Broadcast game deletion to all welcome screen clients
+      welcomeNamespace.emit('game-deleted', { gameId });
+      console.log(`Broadcasted game deletion: ${gameId}`);
+
       res.json({ message: 'Game deleted successfully' });
     } else {
       res.status(404).json({ error: 'Game not found' });
@@ -468,12 +560,19 @@ function getCountyCost(countyName: string): number {
   return COUNTY_COSTS[difficulty];
 }
 
+function getMetroAreaCost(metroAreaName: string | null): number {
+  // Use metroAreaName if available, otherwise fall back to a default
+  const nameForCostCalculation = metroAreaName || 'Unknown';
+  const difficulty = calculateCountyDifficulty(nameForCostCalculation);
+  return COUNTY_COSTS[difficulty];
+}
+
 // Franchise management endpoints
 app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, countyName, elapsedTime } = req.body;
+  const { userId, gameId, lat, long, name, elapsedTime } = req.body;
 
-  if (!userId || !gameId || lat === undefined || long === undefined || !name || !countyName) {
-    res.status(400).json({ error: 'userId, gameId, lat, long, name, and countyName are required' });
+  if (!userId || !gameId || lat === undefined || long === undefined || !name) {
+    res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
     return;
   }
 
@@ -490,8 +589,13 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Calculate franchise cost
-    const franchiseCost = getCountyCost(countyName);
+    // Get geo data (with automatic caching) and calculate franchise cost
+    const geoData = await getGeoDataFromCoordinates(lat, long);
+    if (!geoData) {
+      res.status(400).json({ error: 'Unable to determine location data for franchise placement' });
+      return;
+    }
+    const franchiseCost = getMetroAreaCost(geoData.metroArea);
 
     // Check if user has enough money in this game
     const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
@@ -507,7 +611,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime || 0);
+    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime || 0, geoData.county, geoData.state, geoData.metroArea || undefined);
     if (!franchisePlaced) {
       // If franchise placement failed, refund the money
       const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
@@ -520,10 +624,10 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     const remainingMoney = await dbOperations.getUserGameMoney(userId, gameId);
 
     // Emit money update to the specific user via socket
-    const userSockets = Array.from(io.sockets.sockets.values()).filter(socket => 
+    const userSockets = Array.from(io.sockets.sockets.values()).filter(socket =>
       socket.userId === userId && socket.gameId === gameId
     );
-    
+
     userSockets.forEach(socket => {
       socket.emit('money-update', { userId, newMoney: remainingMoney });
       console.log(`Emitted money update to user ${userId}: $${remainingMoney}`);
@@ -546,6 +650,32 @@ app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Pr
 
   try {
     const franchises = await dbOperations.getGameFranchises(gameId);
+    
+    // Backfill location data for franchises that don't have it
+    for (const franchise of franchises) {
+      if (!franchise.county && !franchise.state && !franchise.metroArea) {
+        try {
+          const geoData = await getGeoDataFromCoordinates(franchise.lat, franchise.long);
+          if (geoData) {
+            const updated = await dbOperations.updateFranchiseLocation(
+              parseInt(franchise.id), 
+              geoData.county || undefined, 
+              geoData.state || undefined, 
+              geoData.metroArea || undefined
+            );
+            if (updated) {
+              // Update the franchise object for this response
+              franchise.county = geoData.county;
+              franchise.state = geoData.state;
+              franchise.metroArea = geoData.metroArea;
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to backfill location for franchise ${franchise.id}:`, error);
+        }
+      }
+    }
+    
     res.json({ franchises });
   } catch (error) {
     console.error('Error fetching game franchises:', error);
@@ -562,14 +692,8 @@ app.delete('/api/franchises/:franchiseId', async (req: Request, res: Response): 
     return;
   }
 
-  const franchiseIdNum = parseInt(franchiseId, 10);
-  if (isNaN(franchiseIdNum)) {
-    res.status(400).json({ error: 'franchiseId must be a valid number' });
-    return;
-  }
-
   try {
-    const success = await dbOperations.removeFranchise(franchiseIdNum, userId);
+    const success = await dbOperations.removeFranchise(franchiseId, userId);
 
     if (success) {
       res.json({ message: 'Franchise removed successfully' });

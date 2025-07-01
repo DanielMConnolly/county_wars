@@ -1,4 +1,4 @@
-import { Franchise, User } from '../types/GameTypes';
+import { Franchise, LobbyPlayer, User, ClickedLocationData } from '../types/GameTypes';
 import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
@@ -51,6 +51,42 @@ export async function updateUserHighlightColor(userId: string, color: string): P
   }
 }
 
+export async function fetchMetroAreaName(lat: number, lng: number): Promise<string> {
+   try{
+     console.log('Fetching metro area name for lat:', lat, 'lng:', lng);
+     const response = await fetch(`${API_BASE_URL}/api/metro-area?lat=${lat}&lng=${lng}`);
+     console.log("RESPONSE: ", response);
+     if(response.ok){
+       const data = await response.json();
+       console.log('Fetched metro area name:', data);
+       return data.metro_area ?? 'Unknown';
+     }
+     return 'Unknown';
+   }
+   catch(error){
+     console.error('Failed to fetch metro area name:', error);
+     return 'Unknown';
+   }
+}
+
+export async function fetchClickedLocationData(lat: number, lng: number): Promise<ClickedLocationData | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/clicked-location-data?lat=${lat}&lng=${lng}`);
+     if (!response.ok) return null;
+      const data = await response.json();
+      return {
+        metroAreaName: data.metroAreaName,
+        franchisePlacementCost: data.franchisePlacementCost ?? 100,
+        population: data.population ?? 0,
+        state: data.state,
+        county: data.county ,
+      };
+  } catch (error) {
+    console.error('Failed to fetch clicked location data:', error);
+    return null;
+  }
+}
+
 export async function fetchGameTime(gameID: string): Promise<number | null> {
   try {
     console.log('Fetching game time for game id: ', gameID);
@@ -89,29 +125,6 @@ export async function fetchUserGameMoney(userId: string, gameId: string): Promis
   } catch (error) {
     console.error('Failed to fetch user game money:', error);
     return 1000; // Default starting money
-  }
-}
-
-export async function updateUserGameMoney(userId: string, gameId: string, amount: number): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games/${gameId}/money`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ amount }),
-    });
-
-    if (!response.ok) {
-      console.error('Failed to update money:', response.status);
-      return false;
-    } else {
-      console.log('Money updated successfully:', amount);
-      return true;
-    }
-  } catch (error) {
-    console.error('Failed to update money:', error);
-    return false;
   }
 }
 
@@ -305,6 +318,22 @@ export async function fetchDraftGames(): Promise<{ success: boolean; games?: Gam
   }
 }
 
+export async function fetchUserLiveGames(userId: string): Promise<{ success: boolean; games?: Game[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/live-games`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, games: data.games };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch user live games' };
+    }
+  } catch (error) {
+    console.error('Fetch user live games request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function deleteGame(gameId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
@@ -374,7 +403,7 @@ export async function fetchGameState(gameId: string): Promise<{
 
 export async function fetchLobbyState(gameId: string, userId: string): Promise<{
   success: boolean;
-  players?: { userId: string; username: string; isHost: boolean }[];
+  players?: LobbyPlayer[];
   error?: string
 }> {
   try {
@@ -402,7 +431,6 @@ export async function placeFranchise(
   lat: number,
   long: number,
   name: string,
-  countyName?: string,
   elapsedTime?: number
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
@@ -411,7 +439,7 @@ export async function placeFranchise(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, gameId, lat, long, name, countyName, elapsedTime }),
+      body: JSON.stringify({ userId, gameId, lat, long, name, elapsedTime }),
     });
 
     const data = await response.json();
@@ -450,7 +478,7 @@ export async function getGameFranchises(
 }
 
 export async function removeFranchise(
-  franchiseId: number,
+  franchiseId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {

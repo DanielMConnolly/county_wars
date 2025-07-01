@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { LobbyPlayer } from './types/GameTypes';
+import { LobbyPlayer } from '../types/GameTypes';
 
 export interface GameLobbyContextType {
   players: LobbyPlayer[];

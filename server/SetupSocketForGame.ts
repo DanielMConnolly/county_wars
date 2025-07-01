@@ -29,14 +29,35 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
       if (roomName.startsWith('game-') && sockets.size > 0) {
         const gameId = roomName.replace('game-', '');
 
-        // Get current game state, or initialize with defaults
-        let gameState = gameStates.get(gameId) || { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+        // Get current game state, or initialize with elapsed time from database
+        let gameState = gameStates.get(gameId);
+        if (!gameState) {
+          try {
+            const elapsedTimeFromDB = await dbOperations.getGameElapsedTime(gameId);
+            gameState = { elapsedTime: elapsedTimeFromDB, isGamePaused: false, lobbyPlayers: [] };
+            gameStates.set(gameId, gameState);
+            console.log(`Initialized game state for ${gameId} from DB with elapsed time: ${elapsedTimeFromDB}ms`);
+          } catch (error) {
+            console.error(`Error reading elapsed time from DB for game ${gameId}:`, error);
+            gameState = { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+            gameStates.set(gameId, gameState);
+          }
+        }
+        if(gameState.isGamePaused) return;
 
-        // Only increment time if game is not paused
-        if (!gameState.isGamePaused) {
           gameState.elapsedTime += 10000; // Increment by 10 seconds (10000ms)
-          console.log(`Emitting elapsed time to ${sockets.size} players in game ${gameId}: ${gameState.elapsedTime}ms (running)`);
 
+          // Update elapsed time in database
+          try {
+            const dbUpdateSuccess = await dbOperations.updateGameElapsedTime(gameId, gameState.elapsedTime);
+            if (dbUpdateSuccess) {
+              console.log(`Updated elapsed time in DB for game ${gameId}: ${gameState.elapsedTime}ms`);
+            } else {
+              console.error(`Failed to update elapsed time in DB for game ${gameId}`);
+            }
+          } catch (error) {
+            console.error(`Error updating elapsed time in DB for game ${gameId}:`, error);
+          }
           // Update money for all players in this game every 10 seconds
           const connectedSockets = Array.from(sockets);
           for (const socketId of connectedSockets) {
@@ -46,10 +67,10 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
                 // Fetch current money
                 const currentMoney = await dbOperations.getUserGameMoney(socket.userId, gameId);
                 const newMoney = currentMoney + 1000;
-                
+
                 // Update money in database
                 const success = await dbOperations.updateUserGameMoney(socket.userId, gameId, newMoney);
-                
+
                 if (success) {
                   console.log(`Updated money for user ${socket.userId} in game ${gameId}: $${newMoney}`);
                   // Emit money update to this specific user
@@ -62,9 +83,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
               }
             }
           }
-        } else {
-          console.log(`Game ${gameId} is paused - not incrementing time. Current: ${gameState.elapsedTime}ms`);
-        }
+
 
         // Update the stored game state
         gameStates.set(gameId, gameState);
@@ -87,7 +106,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     next();
   });
 
-  gameNamespace.on('connection', (socket) => {
+  gameNamespace.on('connection', async (socket) => {
     console.log(`User ${socket.userId} connected to game ${socket.gameId}`);
 
     // Register user session and ensure user exists in database
@@ -97,13 +116,26 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     // Join the game-specific room
     socket.join(`game-${socket.gameId}`);
 
-    // Initialize game state if it doesn't exist
+    // Initialize game state if it doesn't exist, reading elapsed time from database
     if (!gameStates.has(socket.gameId)) {
-      gameStates.set(socket.gameId, { 
-        elapsedTime: 0, 
-        isGamePaused: false, 
-        lobbyPlayers: [] 
-      });
+      try {
+        const elapsedTimeFromDB = await dbOperations.getGameElapsedTime(socket.gameId);
+        console.log(`Initializing game state for ${socket.gameId} with elapsed time from DB: ${elapsedTimeFromDB}ms`);
+
+        gameStates.set(socket.gameId, {
+          elapsedTime: elapsedTimeFromDB,
+          isGamePaused: false,
+          lobbyPlayers: []
+        });
+      } catch (error) {
+        console.error(`Error reading elapsed time from DB for game ${socket.gameId}:`, error);
+        // Fallback to default state
+        gameStates.set(socket.gameId, {
+          elapsedTime: 0,
+          isGamePaused: false,
+          lobbyPlayers: []
+        });
+      }
     }
 
     // Handle franchise placement events
@@ -124,18 +156,28 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     // Handle franchise removal events
     socket.on('franchise-removed', (franchiseData) => {
       console.log(`Broadcasting franchise removal from user ${socket.userId} in game ${socket.gameId}`);
-      
+
       // Broadcast to all other users in the same game
       socket.to(`game-${socket.gameId}`).emit('franchise-removed', franchiseData);
       console.log('Franchise-removed event broadcasted');
     });
 
     // Handle game pause events
-    socket.on('game-paused', (data) => {
+    socket.on('game-paused', async (data) => {
       console.log(`User ${socket.userId} paused game ${socket.gameId}`);
 
       // Update server game state to paused
-      let gameState = gameStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+      let gameState = gameStates.get(socket.gameId);
+      if (!gameState) {
+        try {
+          const elapsedTimeFromDB = await dbOperations.getGameElapsedTime(socket.gameId);
+          gameState = { elapsedTime: elapsedTimeFromDB, isGamePaused: false, lobbyPlayers: [] };
+        } catch (error) {
+          console.error(`Error reading elapsed time from DB for game ${socket.gameId}:`, error);
+          gameState = { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+        }
+      }
+
       gameState.isGamePaused = true;
       gameStates.set(socket.gameId, gameState);
 
@@ -149,11 +191,21 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     });
 
     // Handle game resume events
-    socket.on('game-resumed', (data) => {
+    socket.on('game-resumed', async (data) => {
       console.log(`User ${socket.userId} resumed game ${socket.gameId}`);
 
       // Update server game state to resumed
-      let gameState = gameStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+      let gameState = gameStates.get(socket.gameId);
+      if (!gameState) {
+        try {
+          const elapsedTimeFromDB = await dbOperations.getGameElapsedTime(socket.gameId);
+          gameState = { elapsedTime: elapsedTimeFromDB, isGamePaused: false, lobbyPlayers: [] };
+        } catch (error) {
+          console.error(`Error reading elapsed time from DB for game ${socket.gameId}:`, error);
+          gameState = { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+        }
+      }
+
       gameState.isGamePaused = false;
       gameStates.set(socket.gameId, gameState);
 
@@ -169,7 +221,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     // Handle player actions (county selection, etc.)
     socket.on('county-selected', (data) => {
       console.log(`User ${socket.userId} selected county in game ${socket.gameId}:`, data);
-      
+
       // Broadcast county selection to other players
       socket.to(`game-${socket.gameId}`).emit('player-county-selected', {
         userId: socket.userId,
@@ -180,7 +232,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     // Handle player chat in game
     socket.on('game-chat', (data) => {
       console.log(`Chat message from ${socket.userId} in game ${socket.gameId}: ${data.message}`);
-      
+
       // Broadcast chat message to all players in game
       gameNamespace.to(`game-${socket.gameId}`).emit('game-chat-message', {
         userId: socket.userId,
@@ -190,21 +242,31 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     });
 
     // Handle game state sync requests
-    socket.on('request-game-sync', () => {
-      const gameState = gameStates.get(socket.gameId);
-      if (gameState) {
-        socket.emit('game-state-sync', {
-          elapsedTime: gameState.elapsedTime,
-          isGamePaused: gameState.isGamePaused
-        });
+    socket.on('request-game-sync', async () => {
+      let gameState = gameStates.get(socket.gameId);
+      if (!gameState) {
+        try {
+          const elapsedTimeFromDB = await dbOperations.getGameElapsedTime(socket.gameId);
+          gameState = { elapsedTime: elapsedTimeFromDB, isGamePaused: false, lobbyPlayers: [] };
+          gameStates.set(socket.gameId, gameState);
+        } catch (error) {
+          console.error(`Error reading elapsed time from DB for sync request in game ${socket.gameId}:`, error);
+          gameState = { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+          gameStates.set(socket.gameId, gameState);
+        }
       }
+
+      socket.emit('game-state-sync', {
+        elapsedTime: gameState.elapsedTime,
+        isGamePaused: gameState.isGamePaused
+      });
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log(`User ${socket.userId} disconnected from game`);
       userSessions.delete(socket.id);
-      
+
       // Notify other players that this user left the game
       socket.to(`game-${socket.gameId}`).emit('player-left', {
         userId: socket.userId

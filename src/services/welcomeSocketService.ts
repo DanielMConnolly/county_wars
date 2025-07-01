@@ -1,16 +1,15 @@
 import { io, Socket } from 'socket.io-client';
+import { Game } from '@prisma/client';
 
-export class LobbySocketService {
+export class WelcomeSocketService {
   private socket: Socket | null = null;
-  private userId: string | null = null;
-  private gameId: string | null = null;
   private callbacks: Map<string, Function[]> = new Map();
 
-  connect(userId: string, gameId: string): Promise<void> {
+  connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      // If already connected to the same game, just resolve
-      if (this.socket && this.socket.connected && this.gameId === gameId && this.userId === userId) {
-        console.log('Already connected to lobby server');
+      // If already connected, just resolve
+      if (this.socket && this.socket.connected) {
+        console.log('Already connected to welcome server');
         resolve();
         return;
       }
@@ -18,30 +17,23 @@ export class LobbySocketService {
       // Disconnect any existing connection first
       this.disconnect();
 
-      this.userId = userId;
-      this.gameId = gameId;
-
-      this.socket = io('http://localhost:3001/lobby', {
-        auth: {
-          userId: userId,
-          gameId: gameId
-        },
+      this.socket = io('http://localhost:3001', {
         autoConnect: true,
         reconnection: false, // Disable automatic reconnection to prevent loops
         timeout: 5000
       });
 
       this.socket.on('connect', () => {
-        console.log('Connected to lobby server');
+        console.log('Connected to welcome server');
         resolve();
       });
 
       this.socket.on('connect_error', (error) => {
-        console.error('Lobby connection error:', error);
+        console.error('Welcome connection error:', error);
         reject(error);
       });
 
-      // Set up lobby-specific event listeners
+      // Set up welcome-specific event listeners
       this.setupEventListeners();
     });
   }
@@ -49,40 +41,21 @@ export class LobbySocketService {
   private setupEventListeners() {
     if (!this.socket) return;
 
-    this.socket.on('lobby-updated', (data) => {
-      this.emit('lobby-updated', data);
+    this.socket.on('game-created', (data) => {
+      this.emit('game-created', data);
     });
 
-    this.socket.on('game-starting', (data) => {
-      this.emit('game-starting', data);
+    this.socket.on('game-deleted', (data) => {
+      this.emit('game-deleted', data);
     });
 
-    this.socket.on('lobby-chat-message', (data) => {
-      this.emit('lobby-chat-message', data);
+    this.socket.on('game-status-changed', (data) => {
+      this.emit('game-status-changed', data);
     });
 
     this.socket.on('error', (data) => {
       this.emit('error', data);
     });
-  }
-
-  // Lobby-specific methods
-  startGame() {
-    if (this.socket) {
-      this.socket.emit('start-game', {});
-    }
-  }
-
-  setPlayerReady(isReady: boolean) {
-    if (this.socket) {
-      this.socket.emit('player-ready', { isReady });
-    }
-  }
-
-  sendChatMessage(message: string) {
-    if (this.socket) {
-      this.socket.emit('lobby-chat', { message });
-    }
   }
 
   // Event system for React components
@@ -112,14 +85,12 @@ export class LobbySocketService {
 
   disconnect() {
     if (this.socket) {
-      console.log('Disconnecting from lobby server');
+      console.log('Disconnecting from welcome server');
       this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
     }
     this.callbacks.clear();
-    this.userId = null;
-    this.gameId = null;
   }
 
   isConnected(): boolean {
@@ -128,4 +99,4 @@ export class LobbySocketService {
 }
 
 // Export a singleton instance
-export const lobbySocketService = new LobbySocketService();
+export const welcomeSocketService = new WelcomeSocketService();

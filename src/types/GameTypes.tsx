@@ -19,11 +19,13 @@ export type Franchise = {
     placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
+    county?: string;
+    state?: string;
+    metroArea?: string;
 }
 
 export type GameState = {
     money: number, // Changed from resources to money (USD)
-    selectedCounty: County | null,
     selectedFranchise: Franchise | null,
     mapStyle: string
     highlightColor: string,
@@ -35,9 +37,11 @@ export type GameState = {
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
 export type MapStyle = 'terrain' | 'satellite' | 'dark' | 'street';
+export type BoundaryType = 'counties' | 'states';
 export type MapControls = {
     zoom: number,
-    style: MapStyle
+    style: MapStyle,
+    boundaryType: BoundaryType
 }
 
 export interface User {
@@ -61,4 +65,12 @@ export interface ServerGameState {
     elapsedTime: number;
     isGamePaused: boolean;
     lobbyPlayers: LobbyPlayer[];
+}
+
+export interface ClickedLocationData {
+    metroAreaName: string;
+    state: string;
+    county: string;
+    franchisePlacementCost: number;
+    population: number;
 }

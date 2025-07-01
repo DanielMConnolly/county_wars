@@ -1,11 +1,13 @@
 import React, { useContext, useState } from 'react';
-import { Building, X, Trash2, Crown } from 'lucide-react';
+import { Building, X, Trash2, Settings, DollarSign, AlertTriangle } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { Franchise } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
 import { removeFranchise } from './api_calls/HTTPRequests';
 import { DataTestIDs } from './DataTestIDs';
 import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
+import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
+import InfoRow from './components/InfoRow';
 
 interface FranchiseInfoCardProps {
   franchise: Franchise;
@@ -16,6 +18,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
   const { gameState, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showOptionsPanel, setShowOptionsPanel] = useState(false);
 
   const isOwnedByUser = franchise.userId === user?.id;
 
@@ -24,7 +27,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
 
     setIsRemoving(true);
     try {
-      const result = await removeFranchise(parseInt(franchise.id, 10), user.id);
+      const result = await removeFranchise(franchise.id, user.id);
       if (result.success) {
         // Remove franchise from local state
         setGameState(prevState => ({
@@ -46,7 +49,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
   return (
     <div
       data-testid={DataTestIDs.FRANCHISE_INFO_CARD}
-      className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
+      className="fixed bottom-6 right-6 w-96 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-600">
@@ -73,12 +76,9 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         <InfoRow
           label="Owner:"
           value={
-            <div className="flex items-center gap-2">
-              <span className={isOwnedByUser ? 'text-green-400' : 'text-blue-300'}>
-                {franchise.username}
-              </span>
-              {isOwnedByUser && <Crown className="w-4 h-4 text-yellow-400" />}
-            </div>
+            <span className={isOwnedByUser ? 'text-green-400' : 'text-blue-300'}>
+              {franchise.username}
+            </span>
           }
           className=""
         />
@@ -89,34 +89,86 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         />
         <InfoRow
           label="Location:"
-          value={`${franchise.lat.toFixed(4)}, ${franchise.long.toFixed(4)}`}
+          value={franchise.metroArea && franchise.state ? `${franchise.metroArea}, ${franchise.state}` : 
+                 franchise.county && franchise.state ? `${franchise.county}, ${franchise.state}` :
+                 franchise.county ? franchise.county :
+                 franchise.metroArea ? franchise.metroArea :
+                 getCountyNameFromCoordinates(franchise.lat, franchise.long)}
           className="text-gray-300 text-sm"
         />
       </div>
 
-      {isOwnedByUser && (
+      {isOwnedByUser && !showOptionsPanel && (
         <button
-          onClick={handleRemoveFranchise}
-          disabled={isRemoving || gameState.gameTime?.isPaused}
+          onClick={() => setShowOptionsPanel(true)}
+          disabled={gameState.gameTime?.isPaused}
           className="w-full mt-6 px-4 py-3 rounded-lg font-bold
-            bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600
+            bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600
             text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
             flex items-center justify-center gap-2"
-          data-testid={DataTestIDs.REMOVE_FRANCHISE_BUTTON}
+          data-testid={DataTestIDs.FRANCHISE_OPTIONS_BUTTON}
         >
-          {isRemoving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Removing...
-            </>
-          ) : (
-            <>
-              <Trash2 className="w-4 h-4" />
-              Remove Franchise
-            </>
-          )}
+          <Settings className="w-4 h-4" />
+          Franchise Options
         </button>
+      )}
+
+      {isOwnedByUser && showOptionsPanel && (
+        <div className="mt-6 space-y-3">
+          <div className="text-center mb-4">
+            <h4 className="text-lg font-semibold text-blue-400">Franchise Options</h4>
+            <p className="text-gray-400 text-sm">Choose an action for your franchise</p>
+          </div>
+          
+          <button
+            onClick={() => {
+              // TODO: Implement sell franchise functionality
+              alert('Sell functionality coming soon!');
+            }}
+            disabled={gameState.gameTime?.isPaused}
+            className="w-full px-4 py-3 rounded-lg font-bold
+              bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600
+              text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+              flex items-center justify-center gap-2"
+          >
+            <DollarSign className="w-4 h-4" />
+            Sell Franchise
+          </button>
+          
+          <button
+            onClick={handleRemoveFranchise}
+            disabled={isRemoving || gameState.gameTime?.isPaused}
+            className="w-full px-4 py-3 rounded-lg font-bold
+              bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600
+              text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+              flex items-center justify-center gap-2"
+            data-testid={DataTestIDs.REMOVE_FRANCHISE_BUTTON}
+          >
+            {isRemoving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Abandoning...
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-4 h-4" />
+                Abandon Franchise
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={() => setShowOptionsPanel(false)}
+            className="w-full px-4 py-2 rounded-lg font-medium
+              bg-slate-600 hover:bg-slate-500 text-gray-300 hover:text-white
+              transition-all duration-300"
+          >
+            Cancel
+          </button>
+        </div>
       )}
 
       {!isOwnedByUser && (
@@ -128,23 +180,5 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
   );
 };
 
-const InfoRow = ({ 
-  label, 
-  value, 
-  className 
-}: { 
-  label: string; 
-  value: string | React.ReactNode; 
-  className: string;
-}) => (
-  <div className="flex justify-between items-center">
-    <span className="text-gray-400">{label}</span>
-    {typeof value === 'string' ? (
-      <span className={`font-semibold ${className}`}>{value}</span>
-    ) : (
-      <div className={`font-semibold ${className}`}>{value}</div>
-    )}
-  </div>
-);
 
 export default FranchiseInfoCard;

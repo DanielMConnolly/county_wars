@@ -91,7 +91,7 @@ export const dbOperations = {
     }
   },
 
-  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE'): Promise<boolean> => {
+  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE' | 'FINISHED'): Promise<boolean> => {
     try {
       await prisma.game.update({
         where: { id: gameId },
@@ -148,6 +148,7 @@ export const dbOperations = {
           OR: [
             { createdBy: userId },
             { userGameMoney: { some: { userId } } },
+            { gameUsers: { some: { userId } } }, // Also include games from GameUser table
           ],
         },
         orderBy: { createdAt: 'desc' },
@@ -155,6 +156,26 @@ export const dbOperations = {
       return games;
     } catch (error) {
       console.error('Error getting user games:', error);
+      return [];
+    }
+  },
+
+  getUserLiveGames: async (userId: string): Promise<Game[]> => {
+    try {
+      const games = await prisma.game.findMany({
+        where: {
+          status: 'LIVE',
+          OR: [
+            { createdBy: userId },
+            { userGameMoney: { some: { userId } } },
+            { gameUsers: { some: { userId } } }, // Also include games from GameUser table
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return games;
+    } catch (error) {
+      console.error('Error getting user live games:', error);
       return [];
     }
   },
@@ -264,7 +285,7 @@ export const dbOperations = {
   },
 
   // Franchise operations
-  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number): Promise<boolean> => {
+  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
     try {
       await prisma.placedFranchise.create({
         data: {
@@ -274,6 +295,9 @@ export const dbOperations = {
           long,
           name,
           timePlaced: new Date(elapsedTime),
+          county,
+          state,
+          metroArea,
         },
       });
       return true;
@@ -284,24 +308,68 @@ export const dbOperations = {
   },
 
 
-  getGameFranchises: async (gameId: string): Promise<PlacedFranchise[]> => {
+  getGameFranchises: async (gameId: string): Promise<any[]> => {
     try {
       const franchises = await prisma.placedFranchise.findMany({
         where: { gameId },
+        include: {
+          user: {
+            select: {
+              username: true
+            }
+          }
+        },
         orderBy: { timePlaced: 'desc' },
       });
-      return franchises;
+      
+      // Transform to match client-side Franchise type
+      return franchises.map(franchise => ({
+        id: franchise.id.toString(),
+        lat: franchise.lat,
+        long: franchise.long,
+        name: franchise.name,
+        placedAt: franchise.timePlaced.getTime(),
+        userId: franchise.userId,
+        username: franchise.user.username || 'Unknown',
+        county: franchise.county,
+        state: franchise.state,
+        metroArea: franchise.metroArea
+      }));
     } catch (error) {
       console.error('Error getting game franchises:', error);
       return [];
     }
   },
 
-  removeFranchise: async (franchiseId: number, userId: string): Promise<boolean> => {
+  // Update existing franchises with location data
+  updateFranchiseLocation: async (franchiseId: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
     try {
+      await prisma.placedFranchise.update({
+        where: { id: franchiseId },
+        data: {
+          county,
+          state,
+          metroArea
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating franchise location:', error);
+      return false;
+    }
+  },
+
+  removeFranchise: async (franchiseId: string, userId: string): Promise<boolean> => {
+    try {
+      const franchiseIdNum = parseInt(franchiseId, 10);
+      if (isNaN(franchiseIdNum)) {
+        console.error('Invalid franchise ID:', franchiseId);
+        return false;
+      }
+      
       const result = await prisma.placedFranchise.deleteMany({
         where: {
-          id: franchiseId,
+          id: franchiseIdNum,
           userId,
         },
       });
@@ -390,6 +458,100 @@ export const dbOperations = {
         return false;
       }
     },
+
+  // GameUser operations
+  addUserToGame: async (userId: string, gameId: string): Promise<boolean> => {
+    try {
+      await prisma.gameUser.upsert({
+        where: {
+          userId_gameId: {
+            userId,
+            gameId,
+          },
+        },
+        update: {
+          // No updates needed, just ensure the record exists
+        },
+        create: {
+          userId,
+          gameId,
+          joinedAt: new Date(),
+        },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error adding user to game:', error);
+      return false;
+    }
+  },
+
+  addUsersToGame: async (userIds: string[], gameId: string): Promise<boolean> => {
+    try {
+      // Use a transaction to ensure all users are added atomically
+      await prisma.$transaction(
+        userIds.map(userId => 
+          prisma.gameUser.upsert({
+            where: {
+              userId_gameId: {
+                userId,
+                gameId,
+              },
+            },
+            update: {
+              // No updates needed, just ensure the record exists
+            },
+            create: {
+              userId,
+              gameId,
+              joinedAt: new Date(),
+            },
+          })
+        )
+      );
+      return true;
+    } catch (error) {
+      console.error('Error adding users to game:', error);
+      return false;
+    }
+  },
+
+  // Get all players in a game with their money
+  getGamePlayersWithMoney: async (gameId: string): Promise<any[]> => {
+    try {
+      const gameUsers = await prisma.gameUser.findMany({
+        where: { gameId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              highlightColor: true
+            }
+          }
+        },
+        orderBy: { joinedAt: 'asc' }
+      });
+
+      const playersWithMoney = await Promise.all(
+        gameUsers.map(async (gameUser) => {
+          const money = await dbOperations.getUserGameMoney(gameUser.userId, gameId);
+          return {
+            userId: gameUser.user.id,
+            username: gameUser.user.username || gameUser.user.id,
+            highlightColor: gameUser.user.highlightColor,
+            money: money,
+            joinedAt: gameUser.joinedAt
+          };
+        })
+      );
+
+      // Sort by money descending for standings
+      return playersWithMoney.sort((a, b) => b.money - a.money);
+    } catch (error) {
+      console.error('Error getting game players with money:', error);
+      return [];
+    }
+  },
 
   // Stats operations
   getStats: async (): Promise<any> => {

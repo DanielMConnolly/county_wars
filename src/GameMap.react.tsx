@@ -18,22 +18,21 @@ import { createFranchiseIcon } from "./FranchiseIcon";
 import { useAuth } from "./auth/AuthContext";
 import { getFranchiseColor } from "./utils/colorUtils";
 import { useToast } from "./Toast/ToastContext";
+import { loadCounties, loadStates } from "./GameMapHelper";
 
-const defaultStyle = {
-  fillColor: "#3388ff",
-  weight: 1,
-  opacity: 1,
-  color: "white",
-  fillOpacity: 0.3,
-};
+
+
 
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-  const { gameState, selectCounty, selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
+  const { gameState,selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
+
   const { showToast } = useToast();
   const gameID = getCurrentGameId();
+
+  const { boundaryType } = mapControls;
 
   // Assert that gameID is non-null
   if (!gameID) {
@@ -44,7 +43,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const gameId: string = gameID;
 
   useEffect(() => {
-
     async function loadGameData() {
       const franchises = (await getGameFranchises(gameId)).franchises;
       const elapsedTime = await fetchGameTime(gameId);
@@ -67,48 +65,50 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const clickRef = useRef<leaflet.Marker<any>>(null);
 
   const [isCountyLayerLoaded, setIsCountyLayerLoaded] = useState<boolean>(false);
+  const [isStateLayerLoaded, setIsStateLayerLoaded] = useState<boolean>(false);
+
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
 
-
-
-
-  // Store the county layer reference
+  // Store the layer references
   const countyLayerRef = useRef<leaflet.GeoJSON | null>(null);
+  const stateLayerRef = useRef<leaflet.GeoJSON | null>(null);
   const gameStateRef = useRef(gameState);
   const franchiseMarkersRef = useRef<leaflet.Marker[]>([]);
 
   // Helper function to check if a location is within any county boundary
-  const checkIfLocationInCounty = (lat: number, lng: number): boolean => {
-    if (!countyLayerRef.current) {
+  const checkIfLocationInUSA = (lat: number, lng: number): boolean => {
+    if (!countyLayerRef.current && !stateLayerRef.current) {
       return true; // If county layer not loaded, allow placement (fail open)
     }
 
-    let isInCounty = false;
+    let geoBoundary: leaflet.GeoJSON | null;
+    if (boundaryType === 'counties') {
+      geoBoundary = countyLayerRef.current;
+    } else {
+      geoBoundary = stateLayerRef.current;
+    }
 
+    if (!geoBoundary) return false;
+
+    let isInUSA = false;
     // Check each county layer to see if the point is within its boundaries
-    countyLayerRef.current.eachLayer((layer: any) => {
-      if (!isInCounty && layer.feature && layer.feature.geometry) {
+    geoBoundary.eachLayer((layer: any) => {
+      if (layer.feature && layer.feature.geometry) {
         const point = leaflet.latLng(lat, lng);
 
         // Check if point is within the bounding box of any county
         if (layer.getBounds && layer.getBounds().contains(point)) {
-          isInCounty = true;
+          isInUSA= true;
         }
       }
     });
-
-    return isInCounty;
+    return isInUSA;
   };
 
-  // Initialize map (only once)
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-
-    console.log('Initializing map...');
-
-    if (mapRef.current != null) {
+    if(!mapRef.current || mapInstance.current) return;
       mapInstance.current = map(mapRef.current, {
         minZoom: 4,
         maxZoom: 18,
@@ -119,96 +119,74 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         maxBoundsViscosity: 1.0
       }).setView([39.8283, -98.5795], 4);
 
-      // Add click handler for the map itself (not just counties)
-      mapInstance.current.on('click', (e) => {
+    mapInstance.current.on('click', (e) => {
+      // Check if the click is within any county boundary
+      const isInUSA = checkIfLocationInUSA(e.latlng.lat, e.latlng.lng);
 
-        // Check if the click is within any county boundary
-        const isInCounty = checkIfLocationInCounty(e.latlng.lat, e.latlng.lng);
-
-        if (!isInCounty) {
-          showToast('Location must be in the United States', 'warning');
-          return;
-        }
-
-        setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
-      });
-    }
-
-    const loadCounties = async () => {
-      try {
-        const response = await fetch("/counties.geojson");
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch counties: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        const layer = leaflet.geoJSON(data, {
-          style: defaultStyle,
-          onEachFeature: function (feature, layer: Polyline) {
-            layer.on("click", () => {
-              selectCounty(
-                {
-                  name: layer.feature?.properties.NAME,
-                  stateFP: layer.feature?.properties.STATEFP,
-                  countyFP: layer.feature?.properties.COUNTYFP,
-                }
-              );
-            });
-            layer.on("mouseover", function () {
-              // Optional hover effects can be added here
-            });
-            layer.on("mouseout", function () {
-              // Optional hover effects can be added here
-            });
-          },
-        });
-
-        countyLayerRef.current = layer;
-
-        if (mapInstance.current) {
-          layer.addTo(mapInstance.current);
-          setIsCountyLayerLoaded(true);
-        } else {
-          setIsCountyLayerLoaded(false);
-        }
-      } catch (_error) {
-        setIsCountyLayerLoaded(false);
+      if (!isInUSA) {
+        showToast('Location must be in the United States', 'warning');
+        return;
       }
+      setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+
+    const loadCountiesWrapper = async () => {
+      if (!mapInstance.current) {
+        setIsCountyLayerLoaded(false);
+        return;
+      }
+
+
+      await loadCounties({
+        mapInstance: mapInstance.current,
+        onSuccess: (layer) => {
+          countyLayerRef.current = layer;
+          setIsCountyLayerLoaded(true);
+        },
+      });
     };
 
-    loadCounties();
+    const loadStatesWrapper = async () => {
+      if (!mapInstance.current) {
+        setIsStateLayerLoaded(false);
+        return;
+      }
+
+      await loadStates({
+        mapInstance: mapInstance.current,
+        onSuccess: (layer) => {
+          stateLayerRef.current = layer;
+          setIsStateLayerLoaded(true);
+        },
+        onError: () => {
+          setIsStateLayerLoaded(false);
+        }
+      });
+    };
+
+    // Load initial boundary type (counties by default)
+    if (boundaryType === 'counties') {
+      console.log('Loading counties');
+       loadCountiesWrapper();
+    } else {
+      loadStatesWrapper();
+    }
 
     return () => {
       if (countyLayerRef.current && mapInstance.current) {
         mapInstance.current.removeLayer(countyLayerRef.current);
       }
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
+      if (stateLayerRef.current && mapInstance.current) {
+        mapInstance.current.removeLayer(stateLayerRef.current);
       }
     };
-  }, []); // No dependencies - only run once
+  }, [boundaryType]); // No dependencies - only run once
 
-
-  // Update county styling when ownership or colors change
-  useEffect(() => {
-    if (!countyLayerRef.current || !isCountyLayerLoaded) {
-      console.log('County layer not ready yet, skipping style update. Layer loaded:', isCountyLayerLoaded);
-      return;
-    }
-
-    let styledCount = 0;
-    countyLayerRef.current.eachLayer((layer: Layer) => {
-      if (!(layer instanceof Polyline)) return;
-
-      layer.setStyle(defaultStyle);
-
-    });
-
-    console.log(`Styled ${styledCount} owned counties`);
-  }, [gameState.highlightColor, isCountyLayerLoaded]);
 
   // Update franchise markers when franchises change
   useEffect(() => {

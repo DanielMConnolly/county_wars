@@ -1,14 +1,16 @@
 import React from 'react';
-import { MapControls, MapStyle } from './types/GameTypes';
+import { MapControls, MapStyle, BoundaryType } from './types/GameTypes';
 
 const MapControlsComponent = ({
   mapControls,
   onChangeMapStyle,
   onUpdateZoom,
+  onChangeBoundaryType,
 }: {
   mapControls: MapControls;
   onChangeMapStyle: (_arg: MapStyle) => void;
   onUpdateZoom: (arg: number) => void;
+  onChangeBoundaryType: (arg: BoundaryType) => void;
 }) => {
   return (
     <div
@@ -44,6 +46,20 @@ const MapControlsComponent = ({
             onChange={(e) => onUpdateZoom(parseInt(e.target.value))}
             className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Boundaries
+          </label>
+          <select
+            value={mapControls.boundaryType}
+            onChange={(e) => onChangeBoundaryType(e.target.value as BoundaryType)}
+            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white
+             focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="counties">Counties</option>
+            <option value="states">States</option>
+          </select>
         </div>
       </div>
 

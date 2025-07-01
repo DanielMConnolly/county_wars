@@ -10,11 +10,10 @@ import {
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
 } from "./api_calls/HTTPRequests";
-import { GAME_DEFAULTS } from "./constants/gameDefaults";
+import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
-import { getCountyCost } from "./utils/countyUtils";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
 import { useToast } from "./Toast/ToastContext";
@@ -133,6 +132,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     setGameState((prevState) => ({
       ...prevState,
       clickedLocation: location,
+      selectedFranchise: null,
     }));
   };
 
@@ -143,17 +143,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       return;
     }
 
-    if (!gameState.selectedCounty) {
-      console.error('No selected county available for franchise placement');
-      return;
-    }
-
-    const franchiseCost = getCountyCost(gameState.selectedCounty.name);
-
-    if (gameState.money < franchiseCost) {
-      console.error('Insufficient funds to place franchise');
-      return;
-    }
 
     const newFranchise: Franchise = {
       id: `franchise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -162,7 +151,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       name: name,
       placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
-      username: user?.username?? "UNKNOWN"
+      username: user?.username?? "UNKNOWN",
+      county: undefined,
+      state: undefined,
+      metroArea: undefined
     };
 
     const result = await placeFranchiseAPI(
@@ -171,15 +163,15 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       gameState.clickedLocation.lat,
       gameState.clickedLocation.lng,
       name,
-      gameState.selectedCounty.name,
-      gameState.gameTime.elapsedTime || 0
+      gameState.gameTime.elapsedTime || 0,
     );
 
     if (result.success) {
+      const cost = result.cost?? 0;
       setGameState((prevState) => ({
         ...prevState,
         franchises: [...prevState.franchises, newFranchise],
-        money: result.remainingMoney ?? prevState.money - franchiseCost,
+        money: result.remainingMoney ?? prevState.money - cost,
         selectedFranchise: newFranchise, // Automatically select the newly placed franchise
         selectedCounty: null, // Clear county selection to hide InfoCard
         clickedLocation: null, // Clear clicked location
@@ -188,7 +180,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       // Emit socket event to notify other players
       gameSocketService.placeFranchise(newFranchise);
 
-      console.log('Franchise placed:', newFranchise, 'Cost:', result.cost || franchiseCost);
+      console.log('Franchise placed:', newFranchise, 'Cost:', result.cost );
       // Note: Server will also emit money-update event to keep all clients synchronized
     } else {
       console.error('Failed to place franchise:', result.error);
@@ -242,7 +234,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     disconnectFromGameSocket();
 
     connectToGameSocket({ userId, gameId, setGameState, setIsConnected, showToast });
-  }, [userId, gameId, showToast]);
+
+    return () => {
+      disconnectFromGameSocket();
+    };
+  }, [userId, gameId]); // Removed showToast from dependencies to prevent re-runs
 
 
   useInterval(() => {
@@ -287,7 +283,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const contextValue: GameStateContextType = {
     gameState,
     setGameState,
-    selectCounty,
     selectFranchise,
     setMapStyle,
     setHighlightColor,

@@ -1,5 +1,5 @@
 import { getMonthAndYear } from './useGetMonthAndYear';
-import { GAME_DEFAULTS } from '../constants/gameDefaults';
+import { GAME_DEFAULTS } from '../constants/GAMEDEFAULTS';
 
 /**
  * Converts elapsed game time (in milliseconds) to a readable game date string

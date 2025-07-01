@@ -9,6 +9,16 @@ export class GameSocketService {
 
   connect(userId: string, gameId: string): Promise<void> {
     return new Promise((resolve, reject) => {
+      // If already connected to the same game, just resolve
+      if (this.socket && this.socket.connected && this.gameId === gameId && this.userId === userId) {
+        console.log('Already connected to game server');
+        resolve();
+        return;
+      }
+
+      // Disconnect any existing connection first
+      this.disconnect();
+
       this.userId = userId;
       this.gameId = gameId;
 
@@ -16,7 +26,10 @@ export class GameSocketService {
         auth: {
           userId: userId,
           gameId: gameId
-        }
+        },
+        autoConnect: true,
+        reconnection: false, // Disable automatic reconnection to prevent loops
+        timeout: 5000
       });
 
       this.socket.on('connect', () => {
@@ -152,10 +165,14 @@ export class GameSocketService {
 
   disconnect() {
     if (this.socket) {
+      console.log('Disconnecting from game server');
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
     }
     this.callbacks.clear();
+    this.userId = null;
+    this.gameId = null;
   }
 
   isConnected(): boolean {

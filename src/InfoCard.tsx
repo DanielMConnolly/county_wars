@@ -1,24 +1,24 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap, X } from 'lucide-react';
 import {
-  calculateCountyDifficulty,
-  getCountyCost,
   getDifficultyDisplayName,
   getDifficultyColor as getNewDifficultyColor,
-  calculateDistanceMiles
+  calculateDistanceMiles,
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
-import { fetchPopulationData } from './api_calls/fetchPopulationData';
 import { DataTestIDs } from './DataTestIDs';
+import { fetchClickedLocationData } from './api_calls/HTTPRequests';
+import { ClickedLocationData } from './types/GameTypes';
+import InfoRow from './components/InfoRow';
 
 const InfoCard = () => {
-  const { gameState, placeFranchise, selectCounty } = useContext(GameStateContext);
-  const { selectedCounty } = gameState;
+  const { gameState, placeFranchise, setClickedLocation} = useContext(GameStateContext);
+  const {  clickedLocation } = gameState;
 
-  if (!selectedCounty) {
-    throw new Error('InfoCard should only be rendered when a county is selected');
+  if (!clickedLocation) {
+    throw new Error('InfoCard should only be rendered when a location is clicked');
   }
-  const [population, setPopulation] = useState<number | null>(null);
+  const [locationData, setLocationData] = useState<ClickedLocationData | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isLocationTooCloseToFranchise = (lat: number, lng: number): boolean => {
@@ -29,44 +29,50 @@ const InfoCard = () => {
   };
 
   const canAffordFranchise = (): boolean => {
-    if (!selectedCounty) return false;
-    const cost = getCountyCost(selectedCounty.name);
-    return gameState.money >= cost;
+    if (!locationData) return false;
+    return gameState.money >= locationData?.franchisePlacementCost;
   };
 
   useEffect(() => {
-    const fetchPopulation = async () => {
-      if (!selectedCounty) {
-        return;
+    const fetchLocationInformation = async () => {
+      setLocationData(null);
+      setLoading(true);
+      const locationData = await fetchClickedLocationData(clickedLocation.lat, clickedLocation.lng);
+      if (locationData == null){
+        throw new Error('Failed to fetch location information');
       }
 
-      setLoading(true);
-      const countyPopulation = await fetchPopulationData(selectedCounty);
-      if (countyPopulation) {
-        setPopulation(countyPopulation);
-      } else {
-        setPopulation(null);
-      }
+      setLocationData(locationData);
       setLoading(false);
     };
-    fetchPopulation();
-  }, [selectedCounty]);
+    fetchLocationInformation();
+  }, [clickedLocation]);
+
+
+  const getLocationLabel = (): string => {
+      if (locationData?.metroAreaName) {
+        return `${locationData?.metroAreaName}, ${locationData?.state}`;
+      }
+      else{
+        return `${locationData?.county}, ${locationData?.state}`
+      }
+  }
 
 
   const isPlaceFranchiseButtonEnabled = (): boolean => {
-    if (!gameState.clickedLocation) return false;
+    if (!clickedLocation) return false;
     if (gameState.gameTime?.isPaused) return false;
-    if(isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)){
+    if(isLocationTooCloseToFranchise(clickedLocation.lat, clickedLocation.lng)){
       return false;
     }
     return canAffordFranchise();
   }
 
   const placeFranchiseButtonText = (): string => {
-    if (!gameState.clickedLocation) {
+    if (!clickedLocation) {
       return 'Click Map to Place';
     }
-    if (isLocationTooCloseToFranchise(gameState.clickedLocation.lat, gameState.clickedLocation.lng)) {
+    if (isLocationTooCloseToFranchise(clickedLocation.lat, clickedLocation.lng)) {
       return 'Too Close to Existing Franchise';
     }
     if (!canAffordFranchise()) {
@@ -79,7 +85,7 @@ const InfoCard = () => {
   return (
     <div
       data-testid={DataTestIDs.INFO_CARD}
-      className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
+      className="fixed bottom-6 right-6 w-96 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-600">
@@ -88,7 +94,7 @@ const InfoCard = () => {
           <h3 className="text-xl font-bold text-blue-400">Territory Info</h3>
         </div>
         <button
-          onClick={() => selectCounty(null)}
+          onClick={() => setClickedLocation(null)}
           className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-slate-700"
           aria-label="Close info card"
           data-testid={DataTestIDs.CLOSE_INFO_CARD_BUTTON}
@@ -97,26 +103,31 @@ const InfoCard = () => {
         </button>
       </div>
       <div className="space-y-3">
-        <InfoRow
-          label="Selected:"
-          value={selectedCounty?.name || 'None'}
-          className="text-white truncate ml-2"
-        />
-        {selectedCounty && (
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-gray-300">Loading location data...</span>
+          </div>
+        ) : (
           <>
             <InfoRow
+              label="Location:"
+              value={getLocationLabel()}
+              className="text-white ml-2"
+            />
+            <InfoRow
               label="Population:"
-              value={loading ? 'Loading...' : population ? population.toLocaleString() : 'Unknown'}
+              value={`${locationData?.population?.toLocaleString()}`}
               className="text-blue-300"
             />
             <InfoRow
               label="Difficulty:"
-              value={getDifficultyDisplayName(calculateCountyDifficulty(selectedCounty.name))}
-              className={getNewDifficultyColor(calculateCountyDifficulty(selectedCounty.name))}
+              value={getDifficultyDisplayName('EASY')}
+              className={getNewDifficultyColor('EASY')}
             />
             <InfoRow
               label="Cost:"
-              value={`$${getCountyCost(selectedCounty.name)}`}
+              value={`$${locationData?.franchisePlacementCost}`}
               className="text-yellow-400"
             />
           </>
@@ -125,9 +136,7 @@ const InfoCard = () => {
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={async () => {
-          if (selectedCounty != null) {
-            await placeFranchise(`${selectedCounty.name} Franchise`);
-          }
+            await placeFranchise(`${getLocationLabel()} Franchise`);
         }}
         disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold
@@ -143,12 +152,6 @@ const InfoCard = () => {
   );
 };
 
-const InfoRow = ({ label, value, className }: { label: string, value: string, className: string }) => (
-  <div className="flex justify-between items-center">
-    <span className="text-gray-400">{label}</span>
-    <span className={`font-semibold ${className}`}>{value}</span>
-  </div>
-);
 
 
 export default InfoCard;

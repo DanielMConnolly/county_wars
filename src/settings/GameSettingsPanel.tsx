@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { Palette, Map } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
-import { COLOR_OPTIONS } from '../constants/gameDefaults';
+import { COLOR_OPTIONS } from '../constants/GAMEDEFAULTS';
 import { GameDurationSettings } from './GameDurationSettings';
 import { mapStyles } from '../data/mapStyles';
 import { MapStyle } from '../types/GameTypes';
