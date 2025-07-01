@@ -48,7 +48,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   const gameId: string = gameID;
 
   useEffect(() => {
-
     async function loadGameData() {
       const franchises = (await getGameFranchises(gameId)).franchises;
       const elapsedTime = await fetchGameTime(gameId);
@@ -98,7 +97,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     if (!geoBoundary) return false;
 
-     let isInUSA = false;
+    let isInUSA = false;
     // Check each county layer to see if the point is within its boundaries
     geoBoundary.eachLayer((layer: any) => {
       if (layer.feature && layer.feature.geometry) {
@@ -114,7 +113,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   };
 
   useEffect(() => {
-    if (mapRef.current != null) {
+    if(!mapRef.current || mapInstance.current) return;
       mapInstance.current = map(mapRef.current, {
         minZoom: 4,
         maxZoom: 18,
@@ -124,11 +123,8 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         ],
         maxBoundsViscosity: 1.0
       }).setView([39.8283, -98.5795], 4);
-    }
 
-    if(!mapInstance.current) return;
     mapInstance.current.on('click', (e) => {
-
       // Check if the click is within any county boundary
       const isInUSA = checkIfLocationInUSA(e.latlng.lat, e.latlng.lng);
 
@@ -139,10 +135,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
       setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
-  }, [boundaryType]);
+  }, []);
 
   useEffect(() => {
-    console.log('Loading counties...');
     if (!mapInstance.current) return;
 
 
@@ -186,7 +181,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     };
 
     // Load initial boundary type (counties by default)
-    if (boundaryType === 'states') {
+    if (boundaryType === 'counties') {
       console.log('Loading counties');
        loadCountiesWrapper();
     } else {
@@ -200,30 +195,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       if (stateLayerRef.current && mapInstance.current) {
         mapInstance.current.removeLayer(stateLayerRef.current);
       }
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-      }
     };
   }, [boundaryType]); // No dependencies - only run once
 
-
-  // Update county styling when ownership or colors change
-  useEffect(() => {
-    if (!countyLayerRef.current || !isCountyLayerLoaded) {
-      console.log('County layer not ready yet, skipping style update. Layer loaded:', isCountyLayerLoaded);
-      return;
-    }
-
-    let styledCount = 0;
-    countyLayerRef.current.eachLayer((layer: Layer) => {
-      if (!(layer instanceof Polyline)) return;
-
-      layer.setStyle(defaultStyle);
-
-    });
-
-    console.log(`Styled ${styledCount} owned counties`);
-  }, [gameState.highlightColor, isCountyLayerLoaded]);
 
   // Update franchise markers when franchises change
   useEffect(() => {
