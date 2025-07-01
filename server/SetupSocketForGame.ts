@@ -43,14 +43,8 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
             gameStates.set(gameId, gameState);
           }
         }
+        if(gameState.isGamePaused) return;
 
-        // Check if current date is January 2025 or later
-        const currentDate = new Date();
-        const january2025 = new Date('2025-01-01');
-        const isAfterJanuary2025 = currentDate >= january2025;
-
-        // Only increment time if game is not paused and we haven't reached January 2025
-        if (!gameState.isGamePaused && !isAfterJanuary2025) {
           gameState.elapsedTime += 10000; // Increment by 10 seconds (10000ms)
 
           // Update elapsed time in database
@@ -89,24 +83,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
               }
             }
           }
-        } else if (isAfterJanuary2025) {
-          // Mark game as FINISHED if we've reached January 2025
-          try {
-            const game = await dbOperations.getGame(gameId);
-            if (game && (game.status === 'LIVE' || game.status === 'DRAFT')) {
-              const statusUpdateSuccess = await dbOperations.updateGameStatus(gameId, 'FINISHED');
-              if (statusUpdateSuccess) {
-                console.log(`Game ${gameId} marked as FINISHED due to reaching January 2025`);
-              } else {
-                console.error(`Failed to mark game ${gameId} as FINISHED`);
-              }
-            }
-          } catch (error) {
-            console.error(`Error updating game status for game ${gameId}:`, error);
-          }
-        } else {
-          console.log(`Game ${gameId} is paused - not incrementing time. Current: ${gameState.elapsedTime}ms`);
-        }
+
 
         // Update the stored game state
         gameStates.set(gameId, gameState);
@@ -144,7 +121,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
       try {
         const elapsedTimeFromDB = await dbOperations.getGameElapsedTime(socket.gameId);
         console.log(`Initializing game state for ${socket.gameId} with elapsed time from DB: ${elapsedTimeFromDB}ms`);
-        
+
         gameStates.set(socket.gameId, {
           elapsedTime: elapsedTimeFromDB,
           isGamePaused: false,
@@ -200,7 +177,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           gameState = { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
         }
       }
-      
+
       gameState.isGamePaused = true;
       gameStates.set(socket.gameId, gameState);
 
@@ -228,7 +205,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           gameState = { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
         }
       }
-      
+
       gameState.isGamePaused = false;
       gameStates.set(socket.gameId, gameState);
 
@@ -278,7 +255,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           gameStates.set(socket.gameId, gameState);
         }
       }
-      
+
       socket.emit('game-state-sync', {
         elapsedTime: gameState.elapsedTime,
         isGamePaused: gameState.isGamePaused

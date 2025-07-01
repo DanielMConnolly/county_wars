@@ -36,7 +36,7 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
   // Fetch game players when standings tab is opened
   const fetchGamePlayers = async () => {
     if (!gameState.currentGameId) return;
-    
+
     setLoadingPlayers(true);
     try {
       const response = await fetch(`/api/games/${gameState.currentGameId}/players`);
@@ -145,7 +145,8 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
 
                 <div className="bg-green-50 rounded-lg p-4">
                   <h4 className="font-semibold text-green-800 mb-2">Your Franchises</h4>
-                  <p className="text-2xl font-bold text-green-600" data-testid={DataTestIDs.GAME_INFO_FRANCHISES_COUNT}>{userFranchises.length}</p>
+                  <p className="text-2xl font-bold text-green-600"
+                   data-testid={DataTestIDs.GAME_INFO_FRANCHISES_COUNT}>{userFranchises.length}</p>
                   <p className="text-sm text-green-600 mt-1">Owned locations</p>
                 </div>
               </div>
@@ -238,7 +239,7 @@ export default function GameInformation({ isOpen, onClose }: GameInformationProp
                                 {player.username}
                                 {user && player.userId === user.id && <span className="text-xs text-blue-600 ml-1">(You)</span>}
                               </h4>
-                              <div 
+                              <div
                                 className={`w-3 h-3 rounded-full border-2 border-white shadow-sm`}
                                 style={{ backgroundColor: player.highlightColor }}
                               ></div>

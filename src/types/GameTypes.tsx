@@ -68,6 +68,8 @@ export interface ServerGameState {
 
 export interface ClickedLocationData {
     metroAreaName: string;
+    state: string;
+    county: string;
     franchisePlacementCost: number;
     population: number;
 }

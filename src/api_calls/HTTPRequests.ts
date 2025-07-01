@@ -69,33 +69,21 @@ export async function fetchMetroAreaName(lat: number, lng: number): Promise<stri
    }
 }
 
-export async function fetchClickedLocationData(lat: number, lng: number): Promise<ClickedLocationData> {
+export async function fetchClickedLocationData(lat: number, lng: number): Promise<ClickedLocationData | null> {
   try {
-    console.log('Fetching clicked location data for lat:', lat, 'lng:', lng);
     const response = await fetch(`${API_BASE_URL}/api/clicked-location-data?lat=${lat}&lng=${lng}`);
-    
-    if (response.ok) {
+     if (!response.ok) return null;
       const data = await response.json();
-      console.log('Fetched clicked location data:', data);
       return {
-        metroAreaName: data.metroAreaName ?? 'Unknown',
+        metroAreaName: data.metroAreaName,
         franchisePlacementCost: data.franchisePlacementCost ?? 100,
-        population: data.population ?? 0
+        population: data.population ?? 0,
+        state: data.state,
+        county: data.county ,
       };
-    }
-    
-    return {
-      metroAreaName: 'Unknown',
-      franchisePlacementCost: 100,
-      population: 0
-    };
   } catch (error) {
     console.error('Failed to fetch clicked location data:', error);
-    return {
-      metroAreaName: 'Unknown',
-      franchisePlacementCost: 100,
-      population: 0
-    };
+    return null;
   }
 }
 

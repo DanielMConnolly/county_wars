@@ -8,7 +8,7 @@ import { dbOperations } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
-import { getMetroAreaFromCoordinates } from '../src/utils/metroAreaUtils.js';
+import { getGeoDataFromCoordinates } from './metroAreaUtils';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -314,23 +314,6 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
   }
 });
 
-app.get("/api/metro-area", async (req: Request, res: Response): Promise<void> => {
-  const lat = req.query.lat as unknown as number;
-  const lon = req.query.lng as unknown as number;
-
-  if (!lat || !lon) {
-    res.status(400).json({ error: "lat and lon are required query parameters." });
-  }
-
-  const metroAreaName = await getMetroAreaFromCoordinates(lat, lon);
-
-  res.json({
-    "metro_area":
-    metroAreaName
-  });
-
-});
-
 app.get("/api/clicked-location-data", async (req: Request, res: Response): Promise<void> => {
   const lat = req.query.lat as unknown as number;
   const lon = req.query.lng as unknown as number;
@@ -341,21 +324,29 @@ app.get("/api/clicked-location-data", async (req: Request, res: Response): Promi
   }
 
   try {
-    const locationData = await getMetroAreaFromCoordinates(lat, lon);
-    
+    const locationData = await getGeoDataFromCoordinates(lat, lon);
+    console.log(locationData);
+    if (!locationData) {
+      res.status(404).json({ error: "Location data not found" });
+      return;
+    }
+
+    const {county, metroArea, state} = locationData;
+
     // For now, using hardcoded population as in InfoCard
     const population = 10000;
-    
+
     // Calculate franchise cost using existing logic
     const metroAreaName = locationData?.metroArea || 'Unknown';
     const franchisePlacementCost = getCountyCost(metroAreaName);
 
     res.json({
-      metroAreaName,
-      state: locationData?.state || 'Unknown',
-      franchisePlacementCost,
-      population
-    });
+      county: county,
+      metroAreaName: metroArea,
+      state: state,
+      population: population,
+      franchisePlacementCost: franchisePlacementCost
+    })
   } catch (error) {
     console.error('Error fetching clicked location data:', error);
     res.status(500).json({ error: 'Internal server error' });
