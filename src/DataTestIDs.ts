@@ -11,6 +11,7 @@ export enum DataTestIDs {
   FRANCHISE_INFO_CARD = 'franchise-info-card',
   CLOSE_FRANCHISE_INFO_CARD_BUTTON = 'close-franchise-info-card-button',
   REMOVE_FRANCHISE_BUTTON = 'remove-franchise-button',
+  FRANCHISE_OPTIONS_BUTTON = 'franchise-options-button',
 
   // GameMap
   GAME_MAP = 'game-map',

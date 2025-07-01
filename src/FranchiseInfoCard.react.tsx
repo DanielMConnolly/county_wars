@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Building, X, Trash2 } from 'lucide-react';
+import { Building, X, Trash2, Settings, DollarSign, AlertTriangle } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { Franchise } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
@@ -18,6 +18,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
   const { gameState, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
   const [isRemoving, setIsRemoving] = useState(false);
+  const [showOptionsPanel, setShowOptionsPanel] = useState(false);
 
   const isOwnedByUser = franchise.userId === user?.id;
 
@@ -26,7 +27,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
 
     setIsRemoving(true);
     try {
-      const result = await removeFranchise(parseInt(franchise.id, 10), user.id);
+      const result = await removeFranchise(franchise.id, user.id);
       if (result.success) {
         // Remove franchise from local state
         setGameState(prevState => ({
@@ -97,29 +98,77 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         />
       </div>
 
-      {isOwnedByUser && (
+      {isOwnedByUser && !showOptionsPanel && (
         <button
-          onClick={handleRemoveFranchise}
-          disabled={isRemoving || gameState.gameTime?.isPaused}
+          onClick={() => setShowOptionsPanel(true)}
+          disabled={gameState.gameTime?.isPaused}
           className="w-full mt-6 px-4 py-3 rounded-lg font-bold
-            bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600
+            bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600
             text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
             flex items-center justify-center gap-2"
-          data-testid={DataTestIDs.REMOVE_FRANCHISE_BUTTON}
+          data-testid={DataTestIDs.FRANCHISE_OPTIONS_BUTTON}
         >
-          {isRemoving ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Removing...
-            </>
-          ) : (
-            <>
-              <Trash2 className="w-4 h-4" />
-              Remove Franchise
-            </>
-          )}
+          <Settings className="w-4 h-4" />
+          Franchise Options
         </button>
+      )}
+
+      {isOwnedByUser && showOptionsPanel && (
+        <div className="mt-6 space-y-3">
+          <div className="text-center mb-4">
+            <h4 className="text-lg font-semibold text-blue-400">Franchise Options</h4>
+            <p className="text-gray-400 text-sm">Choose an action for your franchise</p>
+          </div>
+          
+          <button
+            onClick={() => {
+              // TODO: Implement sell franchise functionality
+              alert('Sell functionality coming soon!');
+            }}
+            disabled={gameState.gameTime?.isPaused}
+            className="w-full px-4 py-3 rounded-lg font-bold
+              bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600
+              text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+              flex items-center justify-center gap-2"
+          >
+            <DollarSign className="w-4 h-4" />
+            Sell Franchise
+          </button>
+          
+          <button
+            onClick={handleRemoveFranchise}
+            disabled={isRemoving || gameState.gameTime?.isPaused}
+            className="w-full px-4 py-3 rounded-lg font-bold
+              bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600
+              text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+              flex items-center justify-center gap-2"
+            data-testid={DataTestIDs.REMOVE_FRANCHISE_BUTTON}
+          >
+            {isRemoving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Abandoning...
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="w-4 h-4" />
+                Abandon Franchise
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={() => setShowOptionsPanel(false)}
+            className="w-full px-4 py-2 rounded-lg font-medium
+              bg-slate-600 hover:bg-slate-500 text-gray-300 hover:text-white
+              transition-all duration-300"
+          >
+            Cancel
+          </button>
+        </div>
       )}
 
       {!isOwnedByUser && (

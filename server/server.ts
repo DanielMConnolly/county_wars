@@ -8,7 +8,7 @@ import { dbOperations } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
-import { getGeoDataFromCoordinates, getCachedGeoDataFromCoordinates, getPopulationCost } from './metroAreaUtils';
+import { getGeoDataFromCoordinates, getPopulationCost } from './metroAreaUtils';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -589,8 +589,8 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Get geo data from cache and calculate franchise cost
-    const geoData = await getCachedGeoDataFromCoordinates(lat, long);
+    // Get geo data (with automatic caching) and calculate franchise cost
+    const geoData = await getGeoDataFromCoordinates(lat, long);
     if (!geoData) {
       res.status(400).json({ error: 'Unable to determine location data for franchise placement' });
       return;
@@ -655,7 +655,7 @@ app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Pr
     for (const franchise of franchises) {
       if (!franchise.county && !franchise.state && !franchise.metroArea) {
         try {
-          const geoData = await getCachedGeoDataFromCoordinates(franchise.lat, franchise.long);
+          const geoData = await getGeoDataFromCoordinates(franchise.lat, franchise.long);
           if (geoData) {
             const updated = await dbOperations.updateFranchiseLocation(
               parseInt(franchise.id), 
@@ -692,14 +692,8 @@ app.delete('/api/franchises/:franchiseId', async (req: Request, res: Response): 
     return;
   }
 
-  const franchiseIdNum = parseInt(franchiseId, 10);
-  if (isNaN(franchiseIdNum)) {
-    res.status(400).json({ error: 'franchiseId must be a valid number' });
-    return;
-  }
-
   try {
-    const success = await dbOperations.removeFranchise(franchiseIdNum, userId);
+    const success = await dbOperations.removeFranchise(franchiseId, userId);
 
     if (success) {
       res.json({ message: 'Franchise removed successfully' });

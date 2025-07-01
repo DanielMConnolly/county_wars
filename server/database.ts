@@ -359,11 +359,17 @@ export const dbOperations = {
     }
   },
 
-  removeFranchise: async (franchiseId: number, userId: string): Promise<boolean> => {
+  removeFranchise: async (franchiseId: string, userId: string): Promise<boolean> => {
     try {
+      const franchiseIdNum = parseInt(franchiseId, 10);
+      if (isNaN(franchiseIdNum)) {
+        console.error('Invalid franchise ID:', franchiseId);
+        return false;
+      }
+      
       const result = await prisma.placedFranchise.deleteMany({
         where: {
-          id: franchiseId,
+          id: franchiseIdNum,
           userId,
         },
       });

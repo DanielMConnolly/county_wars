@@ -6,6 +6,8 @@ interface CachedGeoData {
   metroArea: string | null;
   state: string;
   county: string;
+  population?: number;
+  cost?: number;
 }
 
 interface CacheEntry {
@@ -15,10 +17,11 @@ interface CacheEntry {
 
 const geoDataCache = new Map<string, CacheEntry>();
 const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
-const COORDINATE_PRECISION = 3; // Round to ~100m precision
+const COORDINATE_PRECISION = 3; // Round to ~1 mile precision
 
 /**
  * Generate cache key from coordinates with rounding for nearby points
+ * Rounds to ~1 mile precision for better cache hit rates
  */
 const generateCacheKey = (lat: number, lng: number): string => {
   const roundedLat = Math.round(lat * Math.pow(10, COORDINATE_PRECISION)) / Math.pow(10, COORDINATE_PRECISION);
@@ -35,34 +38,6 @@ const isCacheEntryValid = (entry: CacheEntry): boolean => {
 
 
 
-/**
- * Get cached or fresh geo data from coordinates
- * @param lat - Latitude
- * @param lng - Longitude
- * @returns Object with metro area name and state, or null if not found
- */
-export const getCachedGeoDataFromCoordinates = async (lat: number, lng: number): Promise<CachedGeoData | null> => {
-  const cacheKey = generateCacheKey(lat, lng);
-  
-  // Check cache first
-  const cachedEntry = geoDataCache.get(cacheKey);
-  if (cachedEntry && isCacheEntryValid(cachedEntry)) {
-    return cachedEntry.data;
-  }
-
-  // Cache miss - fetch fresh data
-  const freshData = await getGeoDataFromCoordinates(lat, lng);
-  if (freshData) {
-    // Cache the result
-    geoDataCache.set(cacheKey, {
-      data: freshData,
-      timestamp: Date.now()
-    });
-    return freshData;
-  }
-
-  return null;
-};
 
 /**
  * Get population data around a point using Overpass API and calculate franchise cost
@@ -71,6 +46,14 @@ export const getCachedGeoDataFromCoordinates = async (lat: number, lng: number):
  * @returns Object with population and franchise placement cost
  */
 export const getPopulationCost = async (lat: number, lng: number): Promise<{ population: number; cost: number }> => {
+  const cacheKey = generateCacheKey(lat, lng);
+
+  // Check if we have cached population data
+  const cachedEntry = geoDataCache.get(cacheKey);
+  if (cachedEntry && isCacheEntryValid(cachedEntry) && cachedEntry.data.population !== undefined && cachedEntry.data.cost !== undefined) {
+    return { population: cachedEntry.data.population, cost: cachedEntry.data.cost };
+  }
+
   try {
     // Overpass API query to get population data around the point
     // Search for places with population data within ~10km radius
@@ -97,7 +80,7 @@ export const getPopulationCost = async (lat: number, lng: number): Promise<{ pop
     }
 
     const data = await response.json();
-    
+
     // Find the largest population value from nearby places
     let maxPopulation = 0;
     if (data.elements && data.elements.length > 0) {
@@ -113,9 +96,29 @@ export const getPopulationCost = async (lat: number, lng: number): Promise<{ pop
 
     // If no population data found, use a default
     const population = maxPopulation > 0 ? maxPopulation : 10000;
-    
+
     // Calculate cost based on population
     const cost = Math.max(10000, Math.floor(population * 0.1));
+
+    // Update or create cache entry with population data
+    const existingEntry = geoDataCache.get(cacheKey);
+    if (existingEntry && isCacheEntryValid(existingEntry)) {
+      // Update existing entry with population data
+      existingEntry.data.population = population;
+      existingEntry.data.cost = cost;
+    } else {
+      // Create new cache entry with minimal geo data (will be filled by getGeoDataFromCoordinates if needed)
+      geoDataCache.set(cacheKey, {
+        data: {
+          metroArea: null,
+          state: '',
+          county: '',
+          population,
+          cost
+        },
+        timestamp: Date.now()
+      });
+    }
 
     return { population, cost };
   } catch (error) {
@@ -123,6 +126,25 @@ export const getPopulationCost = async (lat: number, lng: number): Promise<{ pop
     // Fallback to default values
     const population = 10000;
     const cost = Math.max(10000, Math.floor(population * 0.1));
+
+    // Cache fallback values to avoid repeated failures
+    const existingEntry = geoDataCache.get(cacheKey);
+    if (existingEntry && isCacheEntryValid(existingEntry)) {
+      existingEntry.data.population = population;
+      existingEntry.data.cost = cost;
+    } else {
+      geoDataCache.set(cacheKey, {
+        data: {
+          metroArea: null,
+          state: '',
+          county: '',
+          population,
+          cost
+        },
+        timestamp: Date.now()
+      });
+    }
+
     return { population, cost };
   }
 };
@@ -135,6 +157,14 @@ export const getPopulationCost = async (lat: number, lng: number): Promise<{ pop
  */
 export const getGeoDataFromCoordinates
   = async (lat: number, lng: number): Promise<{ metroArea: string | null; state: string, county: string } | null> => {
+    const cacheKey = generateCacheKey(lat, lng);
+
+    // Check cache first
+    const cachedEntry = geoDataCache.get(cacheKey);
+    if (cachedEntry && isCacheEntryValid(cachedEntry)) {
+      return cachedEntry.data;
+    }
+
     const baseUrl =
       "https://geocoding.geo.census.gov/geocoder/geographies/coordinates";
     const params = new URLSearchParams({
@@ -163,7 +193,24 @@ export const getGeoDataFromCoordinates
       const state = geoData["States"]?.[0].NAME;
       const county = geoData["Counties"]?.[0].NAME;
 
-      return { metroArea, state, county };
+      const result = { metroArea, state, county };
+
+      // Update or create cache entry, preserving any existing population data
+      const existingEntry = geoDataCache.get(cacheKey);
+      if (existingEntry && isCacheEntryValid(existingEntry)) {
+        // Update existing entry with geo data, keep population/cost if present
+        existingEntry.data.metroArea = metroArea;
+        existingEntry.data.state = state;
+        existingEntry.data.county = county;
+      } else {
+        // Create new cache entry
+        geoDataCache.set(cacheKey, {
+          data: result,
+          timestamp: Date.now()
+        });
+      }
+
+      return result;
     } catch (error) {
       console.error("Error fetching metro area:", error);
       return null;

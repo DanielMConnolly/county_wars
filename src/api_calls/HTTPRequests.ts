@@ -478,7 +478,7 @@ export async function getGameFranchises(
 }
 
 export async function removeFranchise(
-  franchiseId: number,
+  franchiseId: string,
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
