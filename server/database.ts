@@ -285,7 +285,7 @@ export const dbOperations = {
   },
 
   // Franchise operations
-  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, locationName?: string): Promise<boolean> => {
+  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
     try {
       await prisma.placedFranchise.create({
         data: {
@@ -295,7 +295,9 @@ export const dbOperations = {
           long,
           name,
           timePlaced: new Date(elapsedTime),
-          locationName,
+          county,
+          state,
+          metroArea,
         },
       });
       return true;
@@ -329,11 +331,31 @@ export const dbOperations = {
         placedAt: franchise.timePlaced.getTime(),
         userId: franchise.userId,
         username: franchise.user.username || 'Unknown',
-        locationName: franchise.locationName
+        county: franchise.county,
+        state: franchise.state,
+        metroArea: franchise.metroArea
       }));
     } catch (error) {
       console.error('Error getting game franchises:', error);
       return [];
+    }
+  },
+
+  // Update existing franchises with location data
+  updateFranchiseLocation: async (franchiseId: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
+    try {
+      await prisma.placedFranchise.update({
+        where: { id: franchiseId },
+        data: {
+          county,
+          state,
+          metroArea
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating franchise location:', error);
+      return false;
     }
   },
 

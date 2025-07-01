@@ -9,9 +9,10 @@ import { GameStateContext } from './GameStateContext';
 import { DataTestIDs } from './DataTestIDs';
 import { fetchClickedLocationData } from './api_calls/HTTPRequests';
 import { ClickedLocationData } from './types/GameTypes';
+import InfoRow from './components/InfoRow';
 
 const InfoCard = () => {
-  const { gameState, placeFranchise, selectCounty } = useContext(GameStateContext);
+  const { gameState, placeFranchise, setClickedLocation} = useContext(GameStateContext);
   const {  clickedLocation } = gameState;
 
   if (!clickedLocation) {
@@ -84,7 +85,7 @@ const InfoCard = () => {
   return (
     <div
       data-testid={DataTestIDs.INFO_CARD}
-      className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
+      className="fixed bottom-6 right-6 w-96 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-600">
@@ -93,7 +94,7 @@ const InfoCard = () => {
           <h3 className="text-xl font-bold text-blue-400">Territory Info</h3>
         </div>
         <button
-          onClick={() => selectCounty(null)}
+          onClick={() => setClickedLocation(null)}
           className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-slate-700"
           aria-label="Close info card"
           data-testid={DataTestIDs.CLOSE_INFO_CARD_BUTTON}
@@ -102,15 +103,21 @@ const InfoCard = () => {
         </button>
       </div>
       <div className="space-y-3">
-        <InfoRow
-          label="Location:"
-          value={loading ? 'Loading...': getLocationLabel()}
-          className="text-white truncate ml-2"
-        />
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-gray-300">Loading location data...</span>
+          </div>
+        ) : (
           <>
             <InfoRow
+              label="Location:"
+              value={getLocationLabel()}
+              className="text-white ml-2"
+            />
+            <InfoRow
               label="Population:"
-              value={loading ? 'Loading...' : `${locationData?.population}`}
+              value={`${locationData?.population?.toLocaleString()}`}
               className="text-blue-300"
             />
             <InfoRow
@@ -120,15 +127,16 @@ const InfoCard = () => {
             />
             <InfoRow
               label="Cost:"
-              value={loading ? 'Loading...' : `$${locationData?.franchisePlacementCost}`}
+              value={`$${locationData?.franchisePlacementCost}`}
               className="text-yellow-400"
             />
           </>
+        )}
       </div>
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={async () => {
-            await placeFranchise(`${getLocationLabel()} Franchise`, locationData?.metroAreaName?? "NON");
+            await placeFranchise(`${getLocationLabel()} Franchise`);
         }}
         disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold
@@ -144,12 +152,6 @@ const InfoCard = () => {
   );
 };
 
-const InfoRow = ({ label, value, className }: { label: string, value: string, className: string }) => (
-  <div className="flex justify-between items-center">
-    <span className="text-gray-400">{label}</span>
-    <span className={`font-semibold ${className}`}>{value}</span>
-  </div>
-);
 
 
 export default InfoCard;

@@ -7,6 +7,7 @@ import { removeFranchise } from './api_calls/HTTPRequests';
 import { DataTestIDs } from './DataTestIDs';
 import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
 import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
+import InfoRow from './components/InfoRow';
 
 interface FranchiseInfoCardProps {
   franchise: Franchise;
@@ -47,7 +48,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
   return (
     <div
       data-testid={DataTestIDs.FRANCHISE_INFO_CARD}
-      className="fixed bottom-6 right-6 w-80 bg-gradient-to-br from-slate-800 to-slate-900
+      className="fixed bottom-6 right-6 w-96 bg-gradient-to-br from-slate-800 to-slate-900
         backdrop-blur-sm rounded-xl p-6 z-[1000] border border-slate-600 shadow-2xl"
     >
       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-600">
@@ -87,7 +88,11 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
         />
         <InfoRow
           label="Location:"
-          value={franchise.locationName || getCountyNameFromCoordinates(franchise.lat, franchise.long)}
+          value={franchise.metroArea && franchise.state ? `${franchise.metroArea}, ${franchise.state}` : 
+                 franchise.county && franchise.state ? `${franchise.county}, ${franchise.state}` :
+                 franchise.county ? franchise.county :
+                 franchise.metroArea ? franchise.metroArea :
+                 getCountyNameFromCoordinates(franchise.lat, franchise.long)}
           className="text-gray-300 text-sm"
         />
       </div>
@@ -126,23 +131,5 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
   );
 };
 
-const InfoRow = ({ 
-  label, 
-  value, 
-  className 
-}: { 
-  label: string; 
-  value: string | React.ReactNode; 
-  className: string;
-}) => (
-  <div className="flex justify-between items-center">
-    <span className="text-gray-400">{label}</span>
-    {typeof value === 'string' ? (
-      <span className={`font-semibold ${className}`}>{value}</span>
-    ) : (
-      <div className={`font-semibold ${className}`}>{value}</div>
-    )}
-  </div>
-);
 
 export default FranchiseInfoCard;

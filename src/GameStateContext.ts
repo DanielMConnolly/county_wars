@@ -1,6 +1,6 @@
 
 import { createContext, useContext } from 'react';
-import { County, GameState, Franchise } from './types/GameTypes';
+import { GameState, Franchise } from './types/GameTypes';
 import React from 'react';
 
 // Define the context type
@@ -8,7 +8,6 @@ export interface GameStateContextType {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // Helper functions
-  selectCounty: (_countyName: County | null)=> void;
   selectFranchise: (_franchise: Franchise | null)=> void;
   setMapStyle: (_style: string) => void;
   setHighlightColor: (_color: string) => void;
@@ -22,7 +21,7 @@ export interface GameStateContextType {
   // Location tracking
   setClickedLocation: (_location: { lat: number, lng: number } | null) => void;
   // Franchise management
-  placeFranchise: (_name: string, metro: string) => void;
+  placeFranchise: (_name: string) => void;
 }
 
 // Create the context

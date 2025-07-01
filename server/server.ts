@@ -8,7 +8,7 @@ import { dbOperations } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
-import { getGeoDataFromCoordinates } from './metroAreaUtils';
+import { getGeoDataFromCoordinates, getCachedGeoDataFromCoordinates, getPopulationCost } from './metroAreaUtils';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -333,12 +333,10 @@ app.get("/api/clicked-location-data", async (req: Request, res: Response): Promi
 
     const {county, metroArea, state} = locationData;
 
-    // For now, using hardcoded population as in InfoCard
-    const population = 10000;
-
-    // Calculate franchise cost using existing logic
-    const metroAreaName = locationData?.metroArea || 'Unknown';
-    const franchisePlacementCost = getCountyCost(metroAreaName);
+    // Get population and cost data from Overpass API
+    const populationData = await getPopulationCost(lat, lon);
+    const population = populationData.population;
+    const franchisePlacementCost = populationData.cost;
 
     res.json({
       county: county,
@@ -562,12 +560,19 @@ function getCountyCost(countyName: string): number {
   return COUNTY_COSTS[difficulty];
 }
 
+function getMetroAreaCost(metroAreaName: string | null): number {
+  // Use metroAreaName if available, otherwise fall back to a default
+  const nameForCostCalculation = metroAreaName || 'Unknown';
+  const difficulty = calculateCountyDifficulty(nameForCostCalculation);
+  return COUNTY_COSTS[difficulty];
+}
+
 // Franchise management endpoints
 app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, countyName, elapsedTime, locationName } = req.body;
+  const { userId, gameId, lat, long, name, elapsedTime } = req.body;
 
-  if (!userId || !gameId || lat === undefined || long === undefined || !name || !countyName) {
-    res.status(400).json({ error: 'userId, gameId, lat, long, name, and countyName are required' });
+  if (!userId || !gameId || lat === undefined || long === undefined || !name) {
+    res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
     return;
   }
 
@@ -584,8 +589,13 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Calculate franchise cost
-    const franchiseCost = getCountyCost(countyName);
+    // Get geo data from cache and calculate franchise cost
+    const geoData = await getCachedGeoDataFromCoordinates(lat, long);
+    if (!geoData) {
+      res.status(400).json({ error: 'Unable to determine location data for franchise placement' });
+      return;
+    }
+    const franchiseCost = getMetroAreaCost(geoData.metroArea);
 
     // Check if user has enough money in this game
     const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
@@ -601,7 +611,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime || 0, locationName);
+    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime || 0, geoData.county, geoData.state, geoData.metroArea || undefined);
     if (!franchisePlaced) {
       // If franchise placement failed, refund the money
       const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
@@ -640,6 +650,32 @@ app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Pr
 
   try {
     const franchises = await dbOperations.getGameFranchises(gameId);
+    
+    // Backfill location data for franchises that don't have it
+    for (const franchise of franchises) {
+      if (!franchise.county && !franchise.state && !franchise.metroArea) {
+        try {
+          const geoData = await getCachedGeoDataFromCoordinates(franchise.lat, franchise.long);
+          if (geoData) {
+            const updated = await dbOperations.updateFranchiseLocation(
+              parseInt(franchise.id), 
+              geoData.county || undefined, 
+              geoData.state || undefined, 
+              geoData.metroArea || undefined
+            );
+            if (updated) {
+              // Update the franchise object for this response
+              franchise.county = geoData.county;
+              franchise.state = geoData.state;
+              franchise.metroArea = geoData.metroArea;
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to backfill location for franchise ${franchise.id}:`, error);
+        }
+      }
+    }
+    
     res.json({ franchises });
   } catch (error) {
     console.error('Error fetching game franchises:', error);

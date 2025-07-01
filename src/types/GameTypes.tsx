@@ -19,12 +19,13 @@ export type Franchise = {
     placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
-    locationName?: string; // Human-readable location name
+    county?: string;
+    state?: string;
+    metroArea?: string;
 }
 
 export type GameState = {
     money: number, // Changed from resources to money (USD)
-    selectedCounty: County | null,
     selectedFranchise: Franchise | null,
     mapStyle: string
     highlightColor: string,

@@ -20,18 +20,13 @@ import { getFranchiseColor } from "./utils/colorUtils";
 import { useToast } from "./Toast/ToastContext";
 import { loadCounties, loadStates } from "./GameMapHelper";
 
-const defaultStyle = {
-  fillColor: "#3388ff",
-  weight: 1,
-  opacity: 1,
-  color: "white",
-  fillOpacity: 0.3,
-};
+
+
 
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-  const { gameState, selectCounty, selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
+  const { gameState,selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
 
   const { showToast } = useToast();
@@ -132,7 +127,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         showToast('Location must be in the United States', 'warning');
         return;
       }
-
       setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
   }, []);
@@ -150,14 +144,10 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
       await loadCounties({
         mapInstance: mapInstance.current,
-        selectCounty,
         onSuccess: (layer) => {
           countyLayerRef.current = layer;
           setIsCountyLayerLoaded(true);
         },
-        onError: () => {
-          setIsCountyLayerLoaded(false);
-        }
       });
     };
 
@@ -169,7 +159,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
       await loadStates({
         mapInstance: mapInstance.current,
-        selectCounty,
         onSuccess: (layer) => {
           stateLayerRef.current = layer;
           setIsStateLayerLoaded(true);

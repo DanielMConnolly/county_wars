@@ -9,13 +9,11 @@ import {
   fetchUserGameMoney,
   placeFranchise as placeFranchiseAPI,
   fetchGameState,
-  fetchMetroAreaName,
 } from "./api_calls/HTTPRequests";
 import { GAME_DEFAULTS } from "./constants/GAMEDEFAULTS";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
 import useInterval from "./utils/useInterval";
-import { getCountyCost, getStateName } from "./utils/countyUtils";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
 import { useToast } from "./Toast/ToastContext";
@@ -134,10 +132,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     setGameState((prevState) => ({
       ...prevState,
       clickedLocation: location,
+      selectedFranchise: null,
     }));
   };
 
-  const placeFranchise = async (name: string, metroArea: string) => {
+  const placeFranchise = async (name: string) => {
     if (userId == null || gameId == null) return;
     if (!gameState.clickedLocation) {
       console.error('No clicked location available for franchise placement');
@@ -153,7 +152,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
       username: user?.username?? "UNKNOWN",
-      locationName: metroArea
+      county: undefined,
+      state: undefined,
+      metroArea: undefined
     };
 
     const result = await placeFranchiseAPI(
@@ -162,9 +163,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       gameState.clickedLocation.lat,
       gameState.clickedLocation.lng,
       name,
-      "COUNTUY",
       gameState.gameTime.elapsedTime || 0,
-      metroArea
     );
 
     if (result.success) {
@@ -284,7 +283,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const contextValue: GameStateContextType = {
     gameState,
     setGameState,
-    selectCounty,
     selectFranchise,
     setMapStyle,
     setHighlightColor,

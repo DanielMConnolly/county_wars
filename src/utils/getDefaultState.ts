@@ -4,7 +4,6 @@ import { GAME_DEFAULTS } from '../constants/GAMEDEFAULTS';
 export const getDefaultState = (): GameState => {
   return {
     money: GAME_DEFAULTS.STARTING_MONEY,
-    selectedCounty: null,
     selectedFranchise: null,
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
     highlightColor: GAME_DEFAULTS.HIGHLIGHT_COLOR,
