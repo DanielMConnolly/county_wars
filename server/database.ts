@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { User, Game } from '@prisma/client';
-import { Franchise } from '../src/types/GameTypes';
+import { Franchise, GamePlayer } from '../src/types/GameTypes';
 
 const prisma = new PrismaClient();
 
@@ -523,7 +523,7 @@ export const dbOperations = {
   },
 
   // Get all players in a game with their money
-  getGamePlayersWithMoney: async (gameId: string): Promise<any[]> => {
+  getGamePlayersWithMoney: async (gameId: string): Promise<GamePlayer[]> => {
     try {
       const gameUsers = await prisma.gameUser.findMany({
         where: { gameId },
@@ -545,9 +545,7 @@ export const dbOperations = {
           return {
             userId: gameUser.user.id,
             username: gameUser.user.username || gameUser.user.id,
-            highlightColor: gameUser.user.highlightColor,
             money: money,
-            joinedAt: gameUser.joinedAt
           };
         })
       );

@@ -1,4 +1,4 @@
-import { Franchise, LobbyPlayer, User, ClickedLocationData } from '../types/GameTypes';
+import { Franchise, LobbyPlayer, User, ClickedLocationData, GamePlayer } from '../types/GameTypes';
 import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
@@ -486,6 +486,23 @@ export async function removeFranchise(
     }
   } catch (error) {
     console.error('Remove franchise request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchGamePlayers(gameId: string): Promise<{ success: boolean; players?: GamePlayer[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/players`);
+    const data = await response.json();
+    console.log("DATA: ", data );
+
+    if (response.ok) {
+      return { success: true, players: data };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch game players' };
+    }
+  } catch (error) {
+    console.error('Fetch game players request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

@@ -2,14 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Trophy } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { useAuth } from '../auth/AuthContext';
-
-interface GamePlayer {
-  userId: string;
-  username: string;
-  highlightColor: string;
-  money: number;
-  joinedAt: string;
-}
+import { fetchGamePlayers } from '../api_calls/HTTPRequests';
+import { GamePlayer } from '../types/GameTypes';
+import { getCurrentGameId } from '../utils/gameUrl';
 
 interface GameStandingsProps {
   isVisible: boolean;
@@ -21,20 +16,23 @@ export default function GameStandings({ isVisible }: GameStandingsProps) {
   const { gameState } = useContext(GameStateContext);
   const { user } = useAuth();
 
-  const fetchGamePlayers = async () => {
-    if (!gameState.currentGameId) return;
+  const loadGamePlayers = async () => {
+    console.log('Loading game players...', gameState);
 
     setLoadingPlayers(true);
     try {
-      const response = await fetch(`/api/games/${gameState.currentGameId}/players`);
-      if (response.ok) {
-        const players = await response.json();
-        setGamePlayers(players);
+      const gameId = getCurrentGameId();
+      const result = await fetchGamePlayers(gameId!);
+      console.log('Game players:', result);
+      if (result.success && result.players) {
+        setGamePlayers(result.players);
       } else {
-        console.error('Failed to fetch game players');
+        console.error('Failed to fetch game players:', result.error);
+        setGamePlayers([]);
       }
     } catch (error) {
       console.error('Error fetching game players:', error);
+      setGamePlayers([]);
     } finally {
       setLoadingPlayers(false);
     }
@@ -42,7 +40,7 @@ export default function GameStandings({ isVisible }: GameStandingsProps) {
 
   useEffect(() => {
     if (isVisible) {
-      fetchGamePlayers();
+      loadGamePlayers();
     }
   }, [isVisible, gameState.currentGameId]);
 
@@ -82,10 +80,6 @@ export default function GameStandings({ isVisible }: GameStandingsProps) {
                         {player.username}
                         {user && player.userId === user.id && <span className="text-xs text-blue-600 ml-1">(You)</span>}
                       </h4>
-                      <div
-                        className={`w-3 h-3 rounded-full border-2 border-white shadow-sm`}
-                        style={{ backgroundColor: player.highlightColor }}
-                      ></div>
                     </div>
                   </div>
                 </div>

@@ -55,6 +55,12 @@ export interface LobbyPlayer {
     isReady?: boolean;
 }
 
+export type GamePlayer =  {
+    userId: string;
+    username: string;
+    money: number;
+}
+
 export interface ServerGameState {
     elapsedTime: number;
     isGamePaused: boolean;
