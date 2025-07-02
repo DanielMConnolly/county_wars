@@ -38,6 +38,8 @@ enum GameStatus {
 
 model Game {
   id          String     @id
+  name        String     @default("New Game")
+  duration    Int        @default(30) // Duration in minutes (15, 30, or 60)
   createdBy   String     @map("created_by")
   createdAt   DateTime   @default(now()) @map("created_at")
   isActive    Boolean    @default(true) @map("is_active")

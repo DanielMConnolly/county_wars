@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { User, Game } from '@prisma/client';
-import { Franchise, GamePlayer } from '../src/types/GameTypes';
+import { Franchise, GamePlayer, GameUpdate } from '../src/types/GameTypes';
 
 const prisma = new PrismaClient();
 
@@ -92,15 +92,28 @@ export const dbOperations = {
     }
   },
 
-  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE' | 'FINISHED'): Promise<boolean> => {
+  updateGame: async (gameId: string, updates: GameUpdate): Promise<boolean> => {
     try {
+      const updateData: GameUpdate = {};
+
+      // Add fields if provided
+      if (updates.name !== undefined) {
+        updateData.name = updates.name;
+      }
+      if (updates.duration !== undefined) {
+        updateData.duration = updates.duration;
+      }
+      if (updates.status !== undefined) {
+        updateData.status = updates.status;
+      }
+
       await prisma.game.update({
         where: { id: gameId },
-        data: { status }
+        data: updateData
       });
       return true;
     } catch (error) {
-      console.error('Error updating game status:', error);
+      console.error('Error updating game:', error);
       return false;
     }
   },

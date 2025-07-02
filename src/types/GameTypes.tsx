@@ -73,3 +73,9 @@ export interface ClickedLocationData {
     franchisePlacementCost: number;
     population: number;
 }
+
+export interface GameUpdate {
+    name?: string;
+    duration?: number;
+    status?: 'DRAFT' | 'LIVE' | 'FINISHED';
+}

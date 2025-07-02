@@ -263,29 +263,6 @@ app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-app.post('/api/games/:gameId/start', async (req: Request, res: Response): Promise<void> => {
-  const { gameId } = req.params;
-
-  try {
-    const success = await dbOperations.updateGameStatus(gameId, 'LIVE');
-
-    if (success) {
-      // Emit game-started event to all players in the lobby
-      io.to(`game-${gameId}`).emit('game-started', { gameId });
-
-      // Broadcast status change to welcome screen clients (game no longer available to join)
-      welcomeNamespace.emit('game-status-changed', { gameId, status: 'LIVE' });
-      console.log(`Broadcasted game status change to LIVE: ${gameId}`);
-
-      res.json({ gameId, status: 'LIVE', message: 'Game started successfully' });
-    } else {
-      res.status(500).json({ error: 'Failed to start game' });
-    }
-  } catch (error) {
-    console.error('Error starting game:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
