@@ -13,9 +13,9 @@ export type Franchise = {
     placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
-    county?: string;
-    state?: string;
-    metroArea?: string;
+    county: string | null;
+    state: string | null;
+    metroArea: string | null;
 }
 
 export type GameState = {

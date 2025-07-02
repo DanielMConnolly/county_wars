@@ -156,9 +156,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
       username: user?.username ?? "UNKNOWN",
-      county: undefined,
-      state: undefined,
-      metroArea: undefined
+      county: null,
+      state: null,
+      metroArea: null,
     };
 
     const result = await placeFranchiseAPI(
@@ -180,9 +180,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         selectedCounty: null, // Clear county selection to hide InfoCard
         clickedLocation: null, // Clear clicked location
       }));
-
-      // Emit socket event to notify other players
-      gameSocketService.placeFranchise(newFranchise);
 
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost);
       // Note: Server will also emit money-update event to keep all clients synchronized

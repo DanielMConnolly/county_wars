@@ -95,12 +95,6 @@ export class GameSocketService {
     });
   }
 
-  // Game-specific methods
-  placeFranchise(franchiseData: Franchise) {
-    if (this.socket) {
-      this.socket.emit('franchise-placed', franchiseData);
-    }
-  }
 
   removeFranchise(franchiseData: any) {
     if (this.socket) {

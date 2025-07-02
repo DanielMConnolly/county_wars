@@ -23,7 +23,6 @@ export const connectToGameSocket = async ({
     gameSocketService.on('franchise-added', (franchiseData: Franchise) => {
       console.log('🎯 GAME: Received franchise-added event:', franchiseData);
       setGameState((prevState) => {
-        console.log('🎯 GAME: Updating franchise list. Current count:', prevState.franchises.length);
         const newState = {
           ...prevState,
           franchises: [...prevState.franchises, franchiseData]

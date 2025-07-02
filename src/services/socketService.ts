@@ -66,12 +66,6 @@ export class SocketService {
     });
   }
 
-  placeFranchise(franchiseData: Franchise) {
-    if (this.socket) {
-      this.socket.emit('franchise-placed', franchiseData);
-    }
-  }
-
   pauseGame() {
     if (this.socket) {
       this.socket.emit('game-paused', {});

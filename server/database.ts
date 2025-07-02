@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { User, Game, PlacedFranchise } from '@prisma/client';
+import { User, Game } from '@prisma/client';
+import { Franchise } from '../src/types/GameTypes';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,7 @@ export const initDatabase = async () => {
   try {
     await prisma.$connect();
     console.log('Connected to database using Prisma');
-    
+
     // Test database connection with a simple query
     const userCount = await prisma.user.count();
     console.log(`Database connection verified. User count: ${userCount}`);
@@ -285,9 +286,11 @@ export const dbOperations = {
   },
 
   // Franchise operations
-  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
+  placeFranchise:
+   async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string |null): Promise<Franchise | null> => {
     try {
-      await prisma.placedFranchise.create({
+      const userData = await dbOperations.getUserById(userId)
+      const result = await prisma.placedFranchise.create({
         data: {
           userId,
           gameId,
@@ -300,10 +303,14 @@ export const dbOperations = {
           metroArea,
         },
       });
-      return true;
-    } catch (error) {
-      console.error('Error placing franchise:', error);
-      return false;
+      return {
+        ...result,
+        placedAt: elapsedTime,
+        username: userData?.username??'Unknown',
+        id: result.id.toString(),
+      }
+    } catch (_error) {
+      return null;
     }
   },
 
@@ -321,7 +328,7 @@ export const dbOperations = {
         },
         orderBy: { timePlaced: 'desc' },
       });
-      
+
       // Transform to match client-side Franchise type
       return franchises.map(franchise => ({
         id: franchise.id.toString(),
@@ -366,7 +373,7 @@ export const dbOperations = {
         console.error('Invalid franchise ID:', franchiseId);
         return false;
       }
-      
+
       const result = await prisma.placedFranchise.deleteMany({
         where: {
           id: franchiseIdNum,
@@ -489,7 +496,7 @@ export const dbOperations = {
     try {
       // Use a transaction to ensure all users are added atomically
       await prisma.$transaction(
-        userIds.map(userId => 
+        userIds.map(userId =>
           prisma.gameUser.upsert({
             where: {
               userId_gameId: {

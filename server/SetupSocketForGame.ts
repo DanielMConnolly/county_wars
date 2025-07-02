@@ -138,21 +138,6 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
       }
     }
 
-    // Handle franchise placement events
-    socket.on('franchise-placed', (franchiseData) => {
-      console.log(`Broadcasting franchise placement from user ${socket.userId} in game ${socket.gameId}`);
-      console.log(`Broadcasting to room: game-${socket.gameId}`);
-      console.log('Franchise data:', franchiseData);
-
-      // Get list of sockets in the room for debugging
-      const socketsInRoom = gameNamespace.adapter.rooms.get(`game-${socket.gameId}`);
-      console.log(`Sockets in room game-${socket.gameId}:`, socketsInRoom ? socketsInRoom.size : 0);
-
-      // Broadcast to all other users in the same game
-      socket.to(`game-${socket.gameId}`).emit('franchise-added', franchiseData);
-      console.log('Franchise-added event broadcasted');
-    });
-
     // Handle franchise removal events
     socket.on('franchise-removed', (franchiseData) => {
       console.log(`Broadcasting franchise removal from user ${socket.userId} in game ${socket.gameId}`);

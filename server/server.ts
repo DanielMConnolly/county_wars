@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use((req: Request, res: Response, next: NextFunction) => {
   const originalJson = res.json;
 
-  res.json = function(body: any) {
+  res.json = function (body: any) {
     // Log the response for debugging
     console.log(`📤 Response [${req.method} ${req.path}]:`, {
       statusCode: res.statusCode,
@@ -119,7 +119,7 @@ app.get('/api/stats', (_, res) => {
 });
 
 // Update user highlight color
-app.put('/api/users/:userId/highlight-color', async function(req: Request, res: Response): Promise<void> {
+app.put('/api/users/:userId/highlight-color', async function (req: Request, res: Response): Promise<void> {
   const { userId } = req.params;
   const { color } = req.body;
 
@@ -332,7 +332,7 @@ app.get("/api/clicked-location-data", async (req: Request, res: Response): Promi
       return;
     }
 
-    const {county, metroArea, state} = locationData;
+    const { county, metroArea, state } = locationData;
 
     // Get population and cost data from Overpass API
     const populationData = await getPopulationCost(lat, lon);
@@ -444,27 +444,27 @@ app.get('/api/games/:gameId/players', async (req: Request, res: Response): Promi
 });
 
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
-    const { status } = req.query;
+  const { status } = req.query;
 
-    try{
-        let games;
-        if (status === 'DRAFT') {
-            games = await dbOperations.getDraftGames();
-        } else {
-            games = await dbOperations.getAllGames();
-        }
+  try {
+    let games;
+    if (status === 'DRAFT') {
+      games = await dbOperations.getDraftGames();
+    } else {
+      games = await dbOperations.getAllGames();
+    }
 
-        if(games){
-            res.json({ games });
-        }
-        else {
-          res.status(404).json({ error: 'Game not found' });
-        }
+    if (games) {
+      res.json({ games });
     }
-    catch(error){
-        console.error('Error fetching games:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    else {
+      res.status(404).json({ error: 'Game not found' });
     }
+  }
+  catch (error) {
+    console.error('Error fetching games:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 
 });
 
@@ -592,6 +592,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
 
     // Get geo data (with automatic caching) and calculate franchise cost
     const geoData = await getGeoDataFromCoordinates(lat, long);
+    const {county, state, metroArea} = geoData || {};
     if (!geoData) {
       res.status(400).json({ error: 'Unable to determine location data for franchise placement' });
       return;
@@ -612,8 +613,9 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const franchisePlaced = await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime || 0, geoData.county, geoData.state, geoData.metroArea || undefined);
-    if (!franchisePlaced) {
+    const franchise =
+     await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime, county, state, metroArea);
+    if (!franchise) {
       // If franchise placement failed, refund the money
       const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
       await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
@@ -623,6 +625,8 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
 
     // Get the updated money amount after franchise placement
     const remainingMoney = await dbOperations.getUserGameMoney(userId, gameId);
+
+    io.of('/game').to(`game-${gameId}`).emit('franchise-added', franchise);
 
     // Emit money update to the specific user via socket
     const userSockets = Array.from(io.sockets.sockets.values()).filter(socket =>
