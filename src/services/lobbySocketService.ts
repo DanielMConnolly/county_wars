@@ -21,6 +21,8 @@ export class LobbySocketService {
       this.userId = userId;
       this.gameId = gameId;
 
+      console.log('Connecting to lobby server');
+
       this.socket = io('http://localhost:3001/lobby', {
         auth: {
           userId: userId,

@@ -22,36 +22,6 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
   const [_isConnected, setIsConnected] = useState<boolean>(false);
   const { showToast } = useToast();
 
-  // Fetch initial lobby state when component mounts
-  useEffect(() => {
-    const fetchInitialLobby = async () => {
-      if (!gameId || !user?.id) return;
-
-      console.log('🏟️ LOBBY: Fetching initial lobby state for game:', gameId, 'user:', user.id);
-      const result = await fetchLobbyState(gameId, user.id);
-
-      if (result.success && result.players) {
-
-        // Add safety check to remove any potential duplicates from initial fetch
-        const uniquePlayers = result.players.filter((player: LobbyPlayer, index: number, array: LobbyPlayer[]) =>
-          array.findIndex((p: LobbyPlayer) => p.userId === player.userId) === index
-        );
-
-        if (uniquePlayers.length !== result.players.length) {
-          console.warn('🚨 LOBBY: Removed duplicate players from initial fetch', {
-            original: result.players.length,
-            filtered: uniquePlayers.length
-          });
-        }
-
-        setPlayers(uniquePlayers);
-      } else {
-        console.warn('🏟️ LOBBY: Failed to fetch initial lobby state:', result.error);
-      }
-    };
-
-    fetchInitialLobby();
-  }, [gameId, user?.id]);
 
   // Socket connection setup
   useEffect(() => {
@@ -59,8 +29,6 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
 
     if (!userId || !gameId) return;
 
-    // Disconnect any existing connection
-    disconnectFromLobbySocket();
 
     const handleGameStarting = (data: { gameId: string; startedBy: string; players: LobbyPlayer[] }) => {
       console.log('🚀 LOBBY: Game starting, navigating to game...');
@@ -76,9 +44,6 @@ export const GameLobbyStateProvider: React.FC<GameLobbyStateProviderProps> = ({
       showToast
     });
 
-    return () => {
-      disconnectFromLobbySocket();
-    };
   }, [user?.id, gameId]); // Removed showToast and navigate from dependencies to prevent re-runs
 
   // Socket event handling is now managed in connectToLobbySocket
