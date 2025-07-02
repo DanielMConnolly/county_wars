@@ -1,9 +1,3 @@
-export type County = {
-    name: string,
-    stateFP: string,
-    countyFP: string,
-}
-
 export type GameTime = {
     isPaused: boolean;
     gameDurationHours: number; // How long the full timeline takes in real hours
@@ -19,20 +13,19 @@ export type Franchise = {
     placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
-    county?: string;
-    state?: string;
-    metroArea?: string;
+    county: string | null;
+    state: string | null;
+    metroArea: string | null;
 }
 
 export type GameState = {
     money: number, // Changed from resources to money (USD)
     selectedFranchise: Franchise | null,
     mapStyle: string
-    highlightColor: string,
     gameTime: GameTime,
-    currentGameId: string | null,
     clickedLocation: { lat: number, lng: number } | null,
     franchises: Franchise[],
+    userColors: Map<string, string>, // Maps userId to assigned color
 }
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
@@ -61,6 +54,12 @@ export interface LobbyPlayer {
     isReady?: boolean;
 }
 
+export type GamePlayer =  {
+    userId: string;
+    username: string;
+    money: number;
+}
+
 export interface ServerGameState {
     elapsedTime: number;
     isGamePaused: boolean;
@@ -73,4 +72,10 @@ export interface ClickedLocationData {
     county: string;
     franchisePlacementCost: number;
     population: number;
+}
+
+export interface GameUpdate {
+    name?: string;
+    duration?: number;
+    status?: 'DRAFT' | 'LIVE' | 'FINISHED';
 }

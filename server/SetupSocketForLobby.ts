@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { dbOperations } from './database.js';
-import type { ServerGameState } from '../src/types/GameTypes.js';
+import type { ServerGameState, GameUpdate } from '../src/types/GameTypes.js';
 
 // Extend Socket.IO socket to include custom userId property
 declare module 'socket.io' {
@@ -82,15 +82,20 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
     addUserToLobby();
 
     // Handle game start event (only host can start)
-    socket.on('start-game', async (data) => {
+    socket.on('start-game', async (data: GameUpdate) => {
       const gameState = lobbyStates.get(socket.gameId);
       const user = gameState?.lobbyPlayers.find(p => p.userId === socket.userId);
 
       if (user?.isHost) {
-        console.log(`Host ${socket.userId} starting game ${socket.gameId}`);
+        console.log(`Host ${socket.userId} starting game ${socket.gameId} with settings:`, data);
 
-        // Update game status in database
-        await dbOperations.updateGameStatus(socket.gameId, 'LIVE');
+        // Update game with settings and status in database
+        const gameUpdate: GameUpdate = {
+          status: 'LIVE',
+          ...data // This will include name and duration if provided
+        };
+
+        await dbOperations.updateGame(socket.gameId, gameUpdate);
 
         // Add all lobby players to the GameUser table
         if (gameState?.lobbyPlayers && gameState.lobbyPlayers.length > 0) {
@@ -108,10 +113,11 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
         lobbyNamespace.to(`lobby-${socket.gameId}`).emit('game-starting', {
           gameId: socket.gameId,
           startedBy: socket.userId,
-          players: gameState?.lobbyPlayers || []
+          players: gameState?.lobbyPlayers || [],
+          gameSettings: data // Include game settings in the broadcast
         });
 
-        console.log(`Game ${socket.gameId} started by host ${socket.userId}`);
+        console.log(`Game ${socket.gameId} started by host ${socket.userId} with settings:`, gameUpdate);
       } else {
         console.log(`Non-host user ${socket.userId} attempted to start game ${socket.gameId}`);
         socket.emit('error', { message: 'Only the host can start the game' });

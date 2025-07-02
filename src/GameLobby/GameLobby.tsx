@@ -1,11 +1,10 @@
-import React, { useEffect } from 'react';
-import { Users, Play, Crown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Users, Play, Crown, Settings } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import UserMenu from '../auth/UserMenu';
 import { useAuth } from '../auth/AuthContext';
 import { User } from '../types/GameTypes';
 import { lobbySocketService } from '../services/lobbySocketService';
-import { startGame } from '../api_calls/HTTPRequests';
 import { GameLobbyStateProvider } from './GameLobbyStateProvider';
 import { useGameLobby } from './GameLobbyContext';
 
@@ -58,14 +57,17 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
 }) => {
   const { players, isHost } = useGameLobby();
   const localNavigate = useNavigate();
+  const [gameName, setGameName] = useState('New Game');
+  const [gameDuration, setGameDuration] = useState(30);
 
   const handleStartGame = () => {
     if (!gameId) return;
+    console.log('Starting game:', gameName, gameDuration);
 
     try {
-      // Use lobby socket service to start the game
-      lobbySocketService.startGame();
-      console.log('Start game request sent via socket');
+      // Use lobby socket service to start the game with settings
+      lobbySocketService.startGame({ name: gameName, duration: gameDuration });
+      console.log('Start game request sent via socket with settings:', { name: gameName, duration: gameDuration });
     } catch (error) {
       console.error('Error starting game:', error);
       alert('Failed to start game. Please try again.');
@@ -97,6 +99,51 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
             <h1 className="text-3xl font-bold text-white mb-2">Game Lobby</h1>
             <p className="text-gray-300">Waiting for players to join...</p>
           </div>
+
+          {/* Game Settings - Only show for host */}
+          {isHost(user.id) && (
+            <div className="mb-8 bg-white/5 rounded-lg p-6 border border-white/10">
+              <div className="flex items-center gap-2 mb-4">
+                <Settings className="w-5 h-5 text-blue-400" />
+                <h2 className="text-xl font-semibold text-white">Game Settings</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Game Name
+                  </label>
+                  <input
+                    type="text"
+                    value={gameName}
+                    onChange={(e) => setGameName(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg
+                     text-white placeholder-gray-400 focus:outline-none focus:ring-2
+                     focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter game name"
+                    maxLength={50}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Game Duration
+                  </label>
+                  <select
+                    value={gameDuration}
+                    onChange={(e) => setGameDuration(Number(e.target.value))}
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg
+                     text-white focus:outline-none focus:ring-2 focus:ring-blue-500
+                     focus:border-transparent"
+                  >
+                    <option value={15} className="bg-gray-800">15 minutes</option>
+                    <option value={30} className="bg-gray-800">30 minutes</option>
+                    <option value={60} className="bg-gray-800">1 hour</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">

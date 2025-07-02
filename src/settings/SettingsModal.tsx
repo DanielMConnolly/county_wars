@@ -1,13 +1,10 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { X, Settings, Users, RotateCcw } from 'lucide-react';
+import React, { useContext, useState } from 'react';
+import { X, Settings, RotateCcw } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { GameSettingsPanel } from './GameSettingsPanel';
-import { fetchAllGames } from '../api_calls/HTTPRequests';
-import { useAuth } from '../auth/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { DataTestIDs } from '../DataTestIDs';
 
-type ModalView = 'main' | 'gameSettings' | 'joinGame';
+type ModalView = 'main' | 'gameSettings';
 
 export default function SettingsModal({
   isOpen,
@@ -17,36 +14,9 @@ export default function SettingsModal({
   onClose: () => void;
 }) {
   const { gameState, setGameDuration, resetGame } = useContext(GameStateContext);
-  const { user } = useAuth();
   const [currentView, setCurrentView] = useState<ModalView>('main');
   const [selectedDuration, setSelectedDuration] = React.useState(gameState.gameTime.gameDurationHours);
-  const [allGames, setAllGames] = useState<any[]>([]);
-  const [isLoadingGames, setIsLoadingGames] = useState(false);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (currentView === 'joinGame') {
-      loadAllGames();
-    }
-  }, [currentView]);
-
-  const loadAllGames = async () => {
-    setIsLoadingGames(true);
-    try {
-      const result = await fetchAllGames();
-      if (result.success && result.games) {
-        setAllGames(result.games);
-      } else {
-        console.error('Failed to fetch all games:', result.error);
-        setAllGames([]);
-      }
-    } catch (error) {
-      console.error('Error fetching all games:', error);
-      setAllGames([]);
-    } finally {
-      setIsLoadingGames(false);
-    }
-  };
 
   const handleModalClose = () => {
     setCurrentView('main');
@@ -56,7 +26,6 @@ export default function SettingsModal({
   const getModalTitle = () => {
     switch (currentView) {
       case 'gameSettings': return 'Game Settings';
-      case 'joinGame': return 'Join Game';
       default: return 'Menu';
     }
   };
@@ -104,17 +73,6 @@ export default function SettingsModal({
                 </div>
               </button>
 
-              <button
-                onClick={() => setCurrentView('joinGame')}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200
-                 rounded-lg hover:bg-gray-50 transition-colors text-left"
-              >
-                <Users size={20} className="text-purple-600" />
-                <div>
-                  <h3 className="font-medium text-gray-800">Join Game</h3>
-                  <p className="text-sm text-gray-600">Browse and join existing games</p>
-                </div>
-              </button>
 
               <button
                 onClick={() => {
@@ -147,56 +105,6 @@ export default function SettingsModal({
             />
           )}
 
-          {currentView === 'joinGame' && (
-            <div>
-              <p className="text-sm text-gray-600 mb-4">
-                Browse and join any existing game.
-              </p>
-
-              {isLoadingGames ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2
-                   border-purple-600 mx-auto"></div>
-                  <p className="text-sm text-gray-600 mt-2">Loading games...</p>
-                </div>
-              ) : allGames.length > 0 ? (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {allGames.map((game) => (
-                    <button
-                      key={game.id}
-                      onClick={() => {
-                        navigate(`/game/${game.id}`);
-                        handleModalClose();
-                      }}
-                      className="w-full p-3 text-left border border-gray-200
-                       rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="font-medium text-gray-800">{game.name}</div>
-                      <div className="text-sm text-gray-600">
-                        Created: {new Date(game.created_at).toLocaleDateString()} by {game.created_by_username || 'Unknown'}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users size={48} className="text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600">No games found</p>
-                  <p className="text-sm text-gray-500 mt-1">Create a new game to get started</p>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
-                <button
-                  onClick={() => setCurrentView('main')}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700
-                   rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Back
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { GameUpdate } from '../types/GameTypes';
 
 export class LobbySocketService {
   private socket: Socket | null = null;
@@ -69,9 +70,9 @@ export class LobbySocketService {
   }
 
   // Lobby-specific methods
-  startGame() {
+  startGame(settings?: GameUpdate) {
     if (this.socket) {
-      this.socket.emit('start-game', {});
+      this.socket.emit('start-game', settings || {});
     }
   }
 

@@ -5,7 +5,7 @@ import puppeteer, { Browser, Page } from "puppeteer";
 import { DataTestIDs } from '../src/DataTestIDs';
 import { createNewGame, setupNewUser } from "./SetupUtils";
 import { placeFranchise } from "./TestUtils";
-import { COLOR_OPTIONS } from "../src/constants/GAMEDEFAULTS";
+import { COLOR_OPTIONS } from "../src/constants/gameDefaults";
 
 
 let testPage: Page;

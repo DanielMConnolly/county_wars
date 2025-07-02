@@ -1,6 +1,3 @@
-import { useContext } from "react";
-import { GameStateContext } from "../GameStateContext";
-import { County } from "../types/GameTypes";
 
 type DifficultyType = 'Easy' | 'Medium' | 'Hard';
 

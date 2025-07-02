@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { Palette, Map } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
-import { COLOR_OPTIONS } from '../constants/GAMEDEFAULTS';
+import { COLOR_OPTIONS } from '../constants/gameDefaults';
 import { GameDurationSettings } from './GameDurationSettings';
 import { mapStyles } from '../data/mapStyles';
 import { MapStyle } from '../types/GameTypes';
@@ -26,10 +26,12 @@ export function GameSettingsPanel({
     label: color.name,
   }));
 
-  const { gameState, setHighlightColor, setMapStyle } = useContext(GameStateContext);
+  const { gameState, assignUserColors, setMapStyle, getUserSelectedColor} = useContext(GameStateContext);
 
-  const [selectedColor, setSelectedColor] = useState<string>(gameState.highlightColor);
-  const [selectedMapStyle, setSelectedMapStyle] = useState<MapStyle>(gameState.mapStyle as MapStyle);
+  const {mapStyle} = gameState;
+
+  const [selectedColor, setSelectedColor] = useState<string>(getUserSelectedColor());
+  const [selectedMapStyle, setSelectedMapStyle] = useState<MapStyle>(mapStyle as MapStyle);
 
   const mapStyleOptions: DropdownOption[] = Object.keys(mapStyles).map(style => ({
     value: style,
@@ -119,7 +121,7 @@ export function GameSettingsPanel({
           onClick={
             () => {
               onSave();
-              setHighlightColor(selectedColor);
+              assignUserColors(selectedColor);
               setMapStyle(selectedMapStyle);
             }}
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg

@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { User, Game, PlacedFranchise } from '@prisma/client';
+import { User, Game } from '@prisma/client';
+import { Franchise, GamePlayer, GameUpdate } from '../src/types/GameTypes';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,7 @@ export const initDatabase = async () => {
   try {
     await prisma.$connect();
     console.log('Connected to database using Prisma');
-    
+
     // Test database connection with a simple query
     const userCount = await prisma.user.count();
     console.log(`Database connection verified. User count: ${userCount}`);
@@ -91,15 +92,28 @@ export const dbOperations = {
     }
   },
 
-  updateGameStatus: async (gameId: string, status: 'DRAFT' | 'LIVE' | 'FINISHED'): Promise<boolean> => {
+  updateGame: async (gameId: string, updates: GameUpdate): Promise<boolean> => {
     try {
+      const updateData: GameUpdate = {};
+
+      // Add fields if provided
+      if (updates.name !== undefined) {
+        updateData.name = updates.name;
+      }
+      if (updates.duration !== undefined) {
+        updateData.duration = updates.duration;
+      }
+      if (updates.status !== undefined) {
+        updateData.status = updates.status;
+      }
+
       await prisma.game.update({
         where: { id: gameId },
-        data: { status }
+        data: updateData
       });
       return true;
     } catch (error) {
-      console.error('Error updating game status:', error);
+      console.error('Error updating game:', error);
       return false;
     }
   },
@@ -285,9 +299,11 @@ export const dbOperations = {
   },
 
   // Franchise operations
-  placeFranchise: async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
+  placeFranchise:
+   async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string |null): Promise<Franchise | null> => {
     try {
-      await prisma.placedFranchise.create({
+      const userData = await dbOperations.getUserById(userId)
+      const result = await prisma.placedFranchise.create({
         data: {
           userId,
           gameId,
@@ -300,10 +316,14 @@ export const dbOperations = {
           metroArea,
         },
       });
-      return true;
-    } catch (error) {
-      console.error('Error placing franchise:', error);
-      return false;
+      return {
+        ...result,
+        placedAt: elapsedTime,
+        username: userData?.username??'Unknown',
+        id: result.id.toString(),
+      }
+    } catch (_error) {
+      return null;
     }
   },
 
@@ -321,7 +341,7 @@ export const dbOperations = {
         },
         orderBy: { timePlaced: 'desc' },
       });
-      
+
       // Transform to match client-side Franchise type
       return franchises.map(franchise => ({
         id: franchise.id.toString(),
@@ -366,7 +386,7 @@ export const dbOperations = {
         console.error('Invalid franchise ID:', franchiseId);
         return false;
       }
-      
+
       const result = await prisma.placedFranchise.deleteMany({
         where: {
           id: franchiseIdNum,
@@ -489,7 +509,7 @@ export const dbOperations = {
     try {
       // Use a transaction to ensure all users are added atomically
       await prisma.$transaction(
-        userIds.map(userId => 
+        userIds.map(userId =>
           prisma.gameUser.upsert({
             where: {
               userId_gameId: {
@@ -516,7 +536,7 @@ export const dbOperations = {
   },
 
   // Get all players in a game with their money
-  getGamePlayersWithMoney: async (gameId: string): Promise<any[]> => {
+  getGamePlayersWithMoney: async (gameId: string): Promise<GamePlayer[]> => {
     try {
       const gameUsers = await prisma.gameUser.findMany({
         where: { gameId },
@@ -538,9 +558,7 @@ export const dbOperations = {
           return {
             userId: gameUser.user.id,
             username: gameUser.user.username || gameUser.user.id,
-            highlightColor: gameUser.user.highlightColor,
             money: money,
-            joinedAt: gameUser.joinedAt
           };
         })
       );

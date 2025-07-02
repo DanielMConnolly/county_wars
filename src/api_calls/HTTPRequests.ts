@@ -1,4 +1,4 @@
-import { Franchise, LobbyPlayer, User, ClickedLocationData } from '../types/GameTypes';
+import { Franchise, LobbyPlayer, User, ClickedLocationData, GamePlayer } from '../types/GameTypes';
 import {Game} from '@prisma/client';
 
 const API_BASE_URL = '';  // Use Vite proxy for local development
@@ -286,22 +286,6 @@ export async function fetchUserGames(userId: string)
   }
 }
 
-export async function fetchAllGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/games`);
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, games: data.games };
-    } else {
-      return { success: false, error: data.error || 'Failed to fetch games' };
-    }
-  } catch (error) {
-    console.error('Fetch all games request failed:', error);
-    return { success: false, error: 'Network error. Please try again.' };
-  }
-}
-
 export async function fetchDraftGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games?status=DRAFT`);
@@ -353,36 +337,17 @@ export async function deleteGame(gameId: string): Promise<{ success: boolean; er
   }
 }
 
-export async function startGame(gameId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true };
-    } else {
-      return { success: false, error: data.error || 'Failed to start game' };
-    }
-  } catch (error) {
-    console.error('Start game request failed:', error);
-    return { success: false, error: 'Network error. Please try again.' };
-  }
-}
 
 export async function fetchGameState(gameId: string): Promise<{
   success: boolean;
   gameState?: { elapsedTime: number; isPaused: boolean };
+  players?: string[];
   error?: string
 }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/state`);
     const data = await response.json();
+    console.log("DATA: ", data);
 
     if (response.ok) {
       return {
@@ -390,7 +355,8 @@ export async function fetchGameState(gameId: string): Promise<{
         gameState: {
           elapsedTime: data.elapsedTime,
           isPaused: data.isPaused
-        }
+        },
+        players: data.players
       };
     } else {
       return { success: false, error: data.error || 'Failed to fetch game state' };
@@ -499,6 +465,23 @@ export async function removeFranchise(
     }
   } catch (error) {
     console.error('Remove franchise request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchGamePlayers(gameId: string): Promise<{ success: boolean; players?: GamePlayer[]; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/players`);
+    const data = await response.json();
+    console.log("DATA: ", data );
+
+    if (response.ok) {
+      return { success: true, players: data };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch game players' };
+    }
+  } catch (error) {
+    console.error('Fetch game players request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
