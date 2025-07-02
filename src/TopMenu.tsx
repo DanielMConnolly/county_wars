@@ -2,7 +2,7 @@ import React, { ReactNode, useContext, useState } from "react";
 import { Settings, UtensilsCrossed, Coins, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SettingsModal from "./settings/SettingsModal";
-import GameInformation from "./GameInformation.react";
+import GameInformationPanel from "./game_information/GameInformationPanel";
 import { GameStateContext } from "./GameStateContext";
 import UserMenu from "./auth/UserMenu";
 import { useAuth } from "./auth/AuthContext";
@@ -84,7 +84,7 @@ const TopMenu = () => {
           isOpen={isSettingsOpen}
         />
 
-        <GameInformation
+        <GameInformationPanel
           onClose={() => setIsGameInfoOpen(false)}
           isOpen={isGameInfoOpen}
         />

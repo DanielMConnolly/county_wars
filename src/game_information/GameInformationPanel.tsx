@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { X, Coins, UtensilsCrossed, Trophy } from 'lucide-react';
-import { GameStateContext } from './GameStateContext';
-import { useAuth } from './auth/AuthContext';
-import { DataTestIDs } from './DataTestIDs';
-import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
-import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
+import { GameStateContext } from '../GameStateContext';
+import { useAuth } from '../auth/AuthContext';
+import { DataTestIDs } from '../DataTestIDs';
+import { elapsedTimeToGameDate } from '../utils/elapsedTimeToGameDate';
+import { getCountyNameFromCoordinates } from '../utils/reverseGeocode';
 
 type TabType = 'income' | 'franchises' | 'standings';
 
@@ -21,7 +21,7 @@ interface GamePlayer {
   joinedAt: string;
 }
 
-export default function GameInformation({ isOpen, onClose }: GameInformationProps) {
+export default function GameInformationPanel({ isOpen, onClose }: GameInformationProps) {
   const [activeTab, setActiveTab] = useState<TabType>('income');
   const [gamePlayers, setGamePlayers] = useState<GamePlayer[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
