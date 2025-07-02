@@ -1,9 +1,8 @@
 import React, { useContext, useState } from 'react';
-import { Building, X, Trash2, Settings, DollarSign, AlertTriangle } from 'lucide-react';
+import { Building, X, Settings, DollarSign } from 'lucide-react';
 import { GameStateContext } from './GameStateContext';
 import { Franchise } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
-import { removeFranchise } from './api_calls/HTTPRequests';
 import { DataTestIDs } from './DataTestIDs';
 import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
 import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
@@ -15,36 +14,12 @@ interface FranchiseInfoCardProps {
 }
 
 const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClose }) => {
-  const { gameState, setGameState } = useContext(GameStateContext);
+  const { gameState } = useContext(GameStateContext);
   const { user } = useAuth();
-  const [isRemoving, setIsRemoving] = useState(false);
   const [showOptionsPanel, setShowOptionsPanel] = useState(false);
 
   const isOwnedByUser = franchise.userId === user?.id;
 
-  const handleRemoveFranchise = async () => {
-    if (!user?.id || !isOwnedByUser || isRemoving) return;
-
-    setIsRemoving(true);
-    try {
-      const result = await removeFranchise(franchise.id, user.id);
-      if (result.success) {
-        // Remove franchise from local state
-        setGameState(prevState => ({
-          ...prevState,
-          franchises: prevState.franchises.filter(f => f.id !== franchise.id)
-        }));
-        onClose();
-      } else {
-        alert(result.error || 'Failed to remove franchise');
-      }
-    } catch (error) {
-      console.error('Error removing franchise:', error);
-      alert('Failed to remove franchise. Please try again.');
-    } finally {
-      setIsRemoving(false);
-    }
-  };
 
   return (
     <div
@@ -137,28 +112,6 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
             Sell Franchise
           </button>
           
-          <button
-            onClick={handleRemoveFranchise}
-            disabled={isRemoving || gameState.gameTime?.isPaused}
-            className="w-full px-4 py-3 rounded-lg font-bold
-              bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600
-              text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-              flex items-center justify-center gap-2"
-            data-testid={DataTestIDs.REMOVE_FRANCHISE_BUTTON}
-          >
-            {isRemoving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Abandoning...
-              </>
-            ) : (
-              <>
-                <AlertTriangle className="w-4 h-4" />
-                Abandon Franchise
-              </>
-            )}
-          </button>
           
           <button
             onClick={() => setShowOptionsPanel(false)}
