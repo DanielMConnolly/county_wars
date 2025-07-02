@@ -127,7 +127,7 @@ const InfoCard = () => {
             />
             <InfoRow
               label="Cost:"
-              value={`$${locationData?.franchisePlacementCost}`}
+              value={`$${locationData?.franchisePlacementCost?.toLocaleString()}`}
               className="text-yellow-400"
             />
           </>

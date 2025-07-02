@@ -1,5 +1,5 @@
 import { GameState } from '../types/GameTypes';
-import { GAME_DEFAULTS } from '../constants/GAMEDEFAULTS';
+import { GAME_DEFAULTS } from '../constants/gameDefaults';
 
 export const getDefaultState = (): GameState => {
   return {

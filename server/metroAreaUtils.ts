@@ -2,12 +2,14 @@
  * Utility functions for getting metro area information from coordinates
  */
 
+import { calculateFranchiseCost } from './calculateCosts';
+
 interface CachedGeoData {
   metroArea: string | null;
   state: string;
   county: string;
   population?: number;
-  cost?: number;
+  cost?: number | null;
 }
 
 interface CacheEntry {
@@ -43,9 +45,9 @@ const isCacheEntryValid = (entry: CacheEntry): boolean => {
  * Get population data around a point using Overpass API and calculate franchise cost
  * @param lat - Latitude
  * @param lng - Longitude
- * @returns Object with population and franchise placement cost
+ * @returns Object with population and franchise placement cost (cost can be null if error occurs)
  */
-export const getPopulationCost = async (lat: number, lng: number): Promise<{ population: number; cost: number }> => {
+export const getPopulationCost = async (lat: number, lng: number): Promise<{ population: number; cost: number | null }> => {
   const cacheKey = generateCacheKey(lat, lng);
 
   // Check if we have cached population data
@@ -82,23 +84,23 @@ export const getPopulationCost = async (lat: number, lng: number): Promise<{ pop
     const data = await response.json();
 
     // Find the largest population value from nearby places
-    let maxPopulation = 0;
+    let largestPopulation = 0;
     if (data.elements && data.elements.length > 0) {
       for (const element of data.elements) {
         if (element.tags && element.tags.population) {
           const pop = parseInt(element.tags.population, 10);
-          if (!isNaN(pop) && pop > maxPopulation) {
-            maxPopulation = pop;
+          if (!isNaN(pop) && pop > largestPopulation) {
+            largestPopulation = pop;
           }
         }
       }
     }
 
     // If no population data found, use a default
-    const population = maxPopulation > 0 ? maxPopulation : 10000;
+    const population = largestPopulation > 0 ? largestPopulation : 1;
 
-    // Calculate cost based on population
-    const cost = Math.max(10000, Math.floor(population * 0.1));
+    // Calculate franchise placement cost based on population
+    const cost = calculateFranchiseCost(population);
 
     // Update or create cache entry with population data
     const existingEntry = geoDataCache.get(cacheKey);
@@ -123,27 +125,9 @@ export const getPopulationCost = async (lat: number, lng: number): Promise<{ pop
     return { population, cost };
   } catch (error) {
     console.error('Error fetching population data:', error);
-    // Fallback to default values
-    const population = 10000;
-    const cost = Math.max(10000, Math.floor(population * 0.1));
-
-    // Cache fallback values to avoid repeated failures
-    const existingEntry = geoDataCache.get(cacheKey);
-    if (existingEntry && isCacheEntryValid(existingEntry)) {
-      existingEntry.data.population = population;
-      existingEntry.data.cost = cost;
-    } else {
-      geoDataCache.set(cacheKey, {
-        data: {
-          metroArea: null,
-          state: '',
-          county: '',
-          population,
-          cost
-        },
-        timestamp: Date.now()
-      });
-    }
+    // Return null cost when there's an error - no fallback calculation needed
+    const population = 0;
+    const cost = null;
 
     return { population, cost };
   }
