@@ -293,10 +293,11 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
   try {
     // Get current game state from socket server
     const gameState = gameStates.get(gameId);
+    const players = await dbOperations.getGamePlayersWithMoney(gameId);
 
     if (gameState) {
       res.json({
-        gameId,
+        players: players.map(player => player.userId),
         elapsedTime: gameState.elapsedTime,
         isPaused: gameState.isGamePaused
       });
@@ -650,7 +651,7 @@ app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Pr
 
   try {
     const franchises = await dbOperations.getGameFranchises(gameId);
-    
+
     // Backfill location data for franchises that don't have it
     for (const franchise of franchises) {
       if (!franchise.county && !franchise.state && !franchise.metroArea) {
@@ -658,9 +659,9 @@ app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Pr
           const geoData = await getGeoDataFromCoordinates(franchise.lat, franchise.long);
           if (geoData) {
             const updated = await dbOperations.updateFranchiseLocation(
-              parseInt(franchise.id), 
-              geoData.county || undefined, 
-              geoData.state || undefined, 
+              parseInt(franchise.id),
+              geoData.county || undefined,
+              geoData.state || undefined,
               geoData.metroArea || undefined
             );
             if (updated) {
@@ -675,7 +676,7 @@ app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Pr
         }
       }
     }
-    
+
     res.json({ franchises });
   } catch (error) {
     console.error('Error fetching game franchises:', error);

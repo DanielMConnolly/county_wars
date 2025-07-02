@@ -10,12 +10,13 @@ export interface GameStateContextType {
   // Helper functions
   selectFranchise: (_franchise: Franchise | null)=> void;
   setMapStyle: (_style: string) => void;
-  setHighlightColor: (_color: string) => void;
   resetGame: () => void;
   // Time management functions
   pauseTime: () => void;
   resumeTime: () => void;
   setGameDuration: (_hours: number) => void;
+  assignUserColors: (_color: string) => void;
+  getUserSelectedColor: () => string;
   // Game management functions
   setCurrentGame: (_gameId: string | null) => void;
   // Location tracking

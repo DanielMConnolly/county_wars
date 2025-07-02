@@ -2,8 +2,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { mapStyles, getAttribution } from "./data/mapStyles";
 import {
   map,
-  Polyline,
-  Layer,
   marker,
 } from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -26,8 +24,10 @@ import { loadCounties, loadStates } from "./GameMapHelper";
 
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-  const { gameState,selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
+  const { gameState, selectFranchise, setClickedLocation, setGameState } = useContext(GameStateContext);
   const { user } = useAuth();
+
+  const {userColors, franchises} = gameState;
 
   const { showToast } = useToast();
   const gameID = getCurrentGameId();
@@ -100,7 +100,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
         // Check if point is within the bounding box of any county
         if (layer.getBounds && layer.getBounds().contains(point)) {
-          isInUSA= true;
+          isInUSA = true;
         }
       }
     });
@@ -108,16 +108,16 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
   };
 
   useEffect(() => {
-    if(!mapRef.current || mapInstance.current) return;
-      mapInstance.current = map(mapRef.current, {
-        minZoom: 4,
-        maxZoom: 18,
-        maxBounds: [
-          [20, -130], // Southwest corner (south of US, west of US)
-          [50, -60]   // Northeast corner (north of US, east of US)
-        ],
-        maxBoundsViscosity: 1.0
-      }).setView([39.8283, -98.5795], 4);
+    if (!mapRef.current || mapInstance.current) return;
+    mapInstance.current = map(mapRef.current, {
+      minZoom: 4,
+      maxZoom: 18,
+      maxBounds: [
+        [20, -130], // Southwest corner (south of US, west of US)
+        [50, -60]   // Northeast corner (north of US, east of US)
+      ],
+      maxBoundsViscosity: 1.0
+    }).setView([39.8283, -98.5795], 4);
 
     mapInstance.current.on('click', (e) => {
       // Check if the click is within any county boundary
@@ -172,7 +172,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     // Load initial boundary type (counties by default)
     if (boundaryType === 'counties') {
       console.log('Loading counties');
-       loadCountiesWrapper();
+      loadCountiesWrapper();
     } else {
       loadStatesWrapper();
     }
@@ -190,6 +190,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
   // Update franchise markers when franchises change
   useEffect(() => {
+    console.log('Updating franchise markers');
     if (!mapInstance.current) return;
 
     // Clear existing franchise markers
@@ -199,12 +200,11 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       }
     });
     franchiseMarkersRef.current = [];
-
     // Add new franchise markers
-    gameState.franchises.forEach(franchise => {
+    franchises.forEach(franchise => {
       if (!user) return; // Skip if no user is available
 
-      const franchiseColor = getFranchiseColor(franchise, user.id, gameState.highlightColor, gameState.franchises);
+      const franchiseColor = getFranchiseColor(franchise, userColors);
       const franchiseIcon = createFranchiseIcon(franchiseColor);
 
       const franchiseMarker = marker([franchise.lat, franchise.long], {
@@ -220,7 +220,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     });
 
     console.log(`Updated ${gameState.franchises.length} franchise markers`);
-  }, [gameState.franchises, gameState.highlightColor, user]);
+  }, [franchises,userColors, user]);
 
   useEffect(() => {
 

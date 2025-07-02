@@ -1,6 +1,6 @@
-import React, { useState, ReactNode, useEffect} from "react";
+import React, { useState, ReactNode, useEffect } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
-import { County, GameState, Franchise } from "./types/GameTypes";
+import { GameState, Franchise } from "./types/GameTypes";
 import { gameSocketService } from "./services/gameSocketService";
 import { connectToGameSocket, disconnectFromGameSocket } from "./services/connectToGameSocket";
 import {
@@ -17,6 +17,7 @@ import useInterval from "./utils/useInterval";
 import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
 import { useToast } from "./Toast/ToastContext";
+import { getUserColorUnique } from "./utils/colorUtils";
 
 interface GameStateProviderProps {
   children: ReactNode;
@@ -27,21 +28,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
   const [gameId, setGameId] = useState<string | null>(getCurrentGameId());
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
   const { showToast } = useToast();
 
   const userId = user?.id;
-
-
-  // Helper function to select a county
-  const selectCounty = (countyInfo: County | null) => {
-    setGameState((prevState) => ({
-      ...prevState,
-      selectedCounty: countyInfo,
-      selectedFranchise: null // Clear franchise selection when selecting county
-    }));
-  };
 
   // Helper function to select a franchise
   const selectFranchise = (franchise: Franchise | null) => {
@@ -63,18 +54,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const resetGame = () => {
     if (window.confirm("Are you sure you want to reset the game?")) {
       setGameState(getDefaultState());
-    }
-  };
-
-  const setHighlightColor = async (color: string) => {
-    if (userId == null) return;
-    setGameState((prevState) => ({
-      ...prevState,
-      highlightColor: color,
-    }));
-    const successfullyUpdated = await updateUserHighlightColor(userId, color);
-    if (!successfullyUpdated) {
-      alert('Failed to update highlight color. Please try again.');
     }
   };
 
@@ -134,7 +113,32 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       clickedLocation: location,
       selectedFranchise: null,
     }));
-  };
+  }
+
+
+  const assignUserColors = async (newHighlightColor: string) => {
+    if (userId == null) return;
+    await updateUserHighlightColor(userId, newHighlightColor);
+    const newUserColors = new Map(gameState.userColors);
+    let existingUserWithNewColor = null;
+    gameState.userColors.forEach(
+      (color, user) => {
+        if (user != userId && color === newHighlightColor) {
+          existingUserWithNewColor = user;
+        }
+      }
+    );
+    newUserColors.set(userId, newHighlightColor)
+    if (existingUserWithNewColor) {
+      const uniqueColor = getUserColorUnique(existingUserWithNewColor, new Set(gameState.userColors.values()));
+      newUserColors.set(existingUserWithNewColor, uniqueColor);
+    }
+
+    setGameState((prevState) => ({
+      ...prevState,
+      userColors: newUserColors,
+    }));
+  }
 
   const placeFranchise = async (name: string) => {
     if (userId == null || gameId == null) return;
@@ -151,7 +155,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       name: name,
       placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
-      username: user?.username?? "UNKNOWN",
+      username: user?.username ?? "UNKNOWN",
       county: undefined,
       state: undefined,
       metroArea: undefined
@@ -167,7 +171,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     );
 
     if (result.success) {
-      const cost = result.cost?? 0;
+      const cost = result.cost ?? 0;
       setGameState((prevState) => ({
         ...prevState,
         franchises: [...prevState.franchises, newFranchise],
@@ -180,7 +184,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       // Emit socket event to notify other players
       gameSocketService.placeFranchise(newFranchise);
 
-      console.log('Franchise placed:', newFranchise, 'Cost:', result.cost );
+      console.log('Franchise placed:', newFranchise, 'Cost:', result.cost);
       // Note: Server will also emit money-update event to keep all clients synchronized
     } else {
       console.error('Failed to place franchise:', result.error);
@@ -204,22 +208,37 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       }));
 
       // Fetch initial game state for current game
-      if (gameId && gameId !== 'default-game') {
+      if (gameId && userId) {
         console.log('Fetching initial game state for:', gameId);
         const gameStateResult = await fetchGameState(gameId);
-        if (gameStateResult.success && gameStateResult.gameState) {
-          console.log('Initial game state fetched:', gameStateResult.gameState);
-          setGameState(prevState => ({
-            ...prevState,
-            gameTime: {
-              ...prevState.gameTime,
-              elapsedTime: gameStateResult.gameState!.elapsedTime,
-              isPaused: gameStateResult.gameState!.isPaused
-            }
-          }));
-        } else {
-          console.warn('Failed to fetch initial game state:', gameStateResult.error);
-        }
+        const { success, gameState, players } = gameStateResult;
+        if (!success || !players || !gameState) return;
+
+        const userColors = new Map<string, string>();
+        const usedColors = new Set<string>();
+
+        userColors.set(userId, savedColor);
+        usedColors.add(savedColor);
+
+        // Assign colors to other players
+        players.forEach(playerId => {
+          if (playerId !== userId) {
+            // Try their default color first
+            // Find an available color
+            const availableColor = getUserColorUnique(playerId, usedColors);
+            userColors.set(playerId, availableColor);
+            usedColors.add(availableColor);
+          }
+        });
+        setGameState(prevState => ({
+          ...prevState,
+          gameTime: {
+            ...prevState.gameTime,
+            elapsedTime: gameState!.elapsedTime,
+            isPaused: gameState!.isPaused
+          },
+          userColors: userColors,
+        }));
       }
     };
     fetchInitialData();
@@ -280,12 +299,18 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     });
   }, GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN);
 
+  const getUserSelectedColor = () => {
+    if (userId == null) return '#000000';
+    return gameState.userColors.get(userId) ?? '#000000';
+  }
+
   const contextValue: GameStateContextType = {
     gameState,
     setGameState,
     selectFranchise,
     setMapStyle,
-    setHighlightColor,
+    assignUserColors,
+    getUserSelectedColor,
     resetGame,
     pauseTime,
     resumeTime,

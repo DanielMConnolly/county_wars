@@ -1,9 +1,3 @@
-export type County = {
-    name: string,
-    stateFP: string,
-    countyFP: string,
-}
-
 export type GameTime = {
     isPaused: boolean;
     gameDurationHours: number; // How long the full timeline takes in real hours
@@ -28,11 +22,11 @@ export type GameState = {
     money: number, // Changed from resources to money (USD)
     selectedFranchise: Franchise | null,
     mapStyle: string
-    highlightColor: string,
     gameTime: GameTime,
     currentGameId: string | null,
     clickedLocation: { lat: number, lng: number } | null,
     franchises: Franchise[],
+    userColors: Map<string, string>, // Maps userId to assigned color
 }
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';

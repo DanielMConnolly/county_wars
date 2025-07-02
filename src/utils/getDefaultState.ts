@@ -6,10 +6,10 @@ export const getDefaultState = (): GameState => {
     money: GAME_DEFAULTS.STARTING_MONEY,
     selectedFranchise: null,
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
-    highlightColor: GAME_DEFAULTS.HIGHLIGHT_COLOR,
     currentGameId: null,
     clickedLocation: null,
     franchises: [],
+    userColors: new Map<string, string>(),
     gameTime: {
       isPaused: false,
       gameDurationHours: GAME_DEFAULTS.GAME_DURATION_HOURS,

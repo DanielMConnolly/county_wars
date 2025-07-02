@@ -378,11 +378,13 @@ export async function startGame(gameId: string): Promise<{ success: boolean; err
 export async function fetchGameState(gameId: string): Promise<{
   success: boolean;
   gameState?: { elapsedTime: number; isPaused: boolean };
+  players?: string[];
   error?: string
 }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/state`);
     const data = await response.json();
+    console.log("DATA: ", data);
 
     if (response.ok) {
       return {
@@ -390,7 +392,8 @@ export async function fetchGameState(gameId: string): Promise<{
         gameState: {
           elapsedTime: data.elapsedTime,
           isPaused: data.isPaused
-        }
+        },
+        players: data.players
       };
     } else {
       return { success: false, error: data.error || 'Failed to fetch game state' };

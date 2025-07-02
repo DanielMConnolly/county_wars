@@ -36,35 +36,7 @@ export function getUserColorUnique(userId: string, usedColors: Set<string>): str
 // Get franchise color based on ownership and user settings
 export function getFranchiseColor(
   franchise: Franchise,
-  currentUserId: string,
-  userHighlightColor: string,
-  allFranchises?: Franchise[]
+  userColors: Map<string, string>,
 ): string {
-  if (franchise.userId === currentUserId) {
-    // User's own franchise - use their selected highlight color
-    return userHighlightColor;
-  } else {
-    // For other users, ensure unique colors across all players
-    if (allFranchises) {
-      // Collect all colors already in use by other players
-      const usedColors = new Set<string>();
-      usedColors.add(userHighlightColor); // Current user's color is also reserved
-
-      const uniqueUserIds = new Set<string>();
-      allFranchises.forEach(f => {
-        if (f.userId !== currentUserId && f.userId !== franchise.userId) {
-          uniqueUserIds.add(f.userId);
-        }
-      });
-
-      uniqueUserIds.forEach(uid => {
-        usedColors.add(getUserColor(uid));
-      });
-
-      return getUserColorUnique(franchise.userId, usedColors);
-    } else {
-      // Fallback to original behavior if allFranchises not provided
-      return getUserColor(franchise.userId);
-    }
-  }
+  return userColors.get(franchise.userId)?? '';
 }
