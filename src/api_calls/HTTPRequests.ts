@@ -286,22 +286,6 @@ export async function fetchUserGames(userId: string)
   }
 }
 
-export async function fetchAllGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/games`);
-    const data = await response.json();
-
-    if (response.ok) {
-      return { success: true, games: data.games };
-    } else {
-      return { success: false, error: data.error || 'Failed to fetch games' };
-    }
-  } catch (error) {
-    console.error('Fetch all games request failed:', error);
-    return { success: false, error: 'Network error. Please try again.' };
-  }
-}
-
 export async function fetchDraftGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games?status=DRAFT`);
