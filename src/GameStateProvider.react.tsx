@@ -312,7 +312,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     pauseTime,
     resumeTime,
     setGameDuration,
-    setCurrentGame,
     setClickedLocation,
     placeFranchise,
   };

@@ -17,13 +17,10 @@ export default function GameStandings({ isVisible }: GameStandingsProps) {
   const { user } = useAuth();
 
   const loadGamePlayers = async () => {
-    console.log('Loading game players...', gameState);
-
     setLoadingPlayers(true);
     try {
       const gameId = getCurrentGameId();
       const result = await fetchGamePlayers(gameId!);
-      console.log('Game players:', result);
       if (result.success && result.players) {
         setGamePlayers(result.players);
       } else {
@@ -42,7 +39,7 @@ export default function GameStandings({ isVisible }: GameStandingsProps) {
     if (isVisible) {
       loadGamePlayers();
     }
-  }, [isVisible, gameState.currentGameId]);
+  }, [isVisible]);
 
   return (
     <div className="space-y-4">

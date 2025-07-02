@@ -23,7 +23,6 @@ export type GameState = {
     selectedFranchise: Franchise | null,
     mapStyle: string
     gameTime: GameTime,
-    currentGameId: string | null,
     clickedLocation: { lat: number, lng: number } | null,
     franchises: Franchise[],
     userColors: Map<string, string>, // Maps userId to assigned color

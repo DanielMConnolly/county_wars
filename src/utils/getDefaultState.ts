@@ -6,7 +6,6 @@ export const getDefaultState = (): GameState => {
     money: GAME_DEFAULTS.STARTING_MONEY,
     selectedFranchise: null,
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
-    currentGameId: null,
     clickedLocation: null,
     franchises: [],
     userColors: new Map<string, string>(),

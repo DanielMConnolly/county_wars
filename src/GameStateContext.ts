@@ -17,8 +17,6 @@ export interface GameStateContextType {
   setGameDuration: (_hours: number) => void;
   assignUserColors: (_color: string) => void;
   getUserSelectedColor: () => string;
-  // Game management functions
-  setCurrentGame: (_gameId: string | null) => void;
   // Location tracking
   setClickedLocation: (_location: { lat: number, lng: number } | null) => void;
   // Franchise management
