@@ -74,10 +74,6 @@ export class GameSocketService {
       this.emit('money-update', data);
     });
 
-    this.socket.on('player-county-selected', (data) => {
-      this.emit('player-county-selected', data);
-    });
-
     this.socket.on('game-chat-message', (data) => {
       this.emit('game-chat-message', data);
     });
@@ -111,12 +107,6 @@ export class GameSocketService {
   resumeGame() {
     if (this.socket) {
       this.socket.emit('game-resumed', {});
-    }
-  }
-
-  selectCounty(county: any) {
-    if (this.socket) {
-      this.socket.emit('county-selected', { county });
     }
   }
 

@@ -99,11 +99,6 @@ export const connectToGameSocket = async ({
       }
     });
 
-    gameSocketService.on('player-county-selected', (data: { userId: string; county: any }) => {
-      console.log('🗺️ GAME: Player selected county:', data);
-      // Handle other players' county selections for multiplayer awareness
-    });
-
     gameSocketService.on('game-chat-message', (data: { userId: string; message: string; timestamp: number }) => {
       console.log('💬 GAME: Chat message:', data);
       // Handle game chat messages (could emit to a chat state or context)
