@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { Game } from '../types/GameTypes';
+import { getServerURL } from '../utils/serverUtils';
 
 export class WelcomeSocketService {
   private socket: Socket | null = null;
@@ -17,9 +18,7 @@ export class WelcomeSocketService {
       // Disconnect any existing connection first
       this.disconnect();
 
-      this.socket = io(process.env.NODE_ENV === 'production' 
-        ? `${window.location.protocol}//${window.location.host}`
-        : 'http://localhost:3001', {
+      this.socket = io(getServerURL(), {
         autoConnect: true,
         reconnection: false, // Disable automatic reconnection to prevent loops
         timeout: 5000

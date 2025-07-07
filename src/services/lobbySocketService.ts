@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { GameUpdate } from '../types/GameTypes';
+import { getServerURL } from '../utils/serverUtils';
 
 export class LobbySocketService {
   private socket: Socket | null = null;
@@ -24,9 +25,7 @@ export class LobbySocketService {
 
       console.log('Connecting to lobby server');
 
-      this.socket = io(process.env.NODE_ENV === 'production' 
-        ? `${window.location.protocol}//${window.location.host}/lobby`
-        : 'http://localhost:3001/lobby', {
+      this.socket = io(getServerURL('/lobby'), {
         auth: {
           userId: userId,
           gameId: gameId
