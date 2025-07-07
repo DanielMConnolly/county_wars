@@ -203,16 +203,6 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
       });
     });
 
-    // Handle player actions (county selection, etc.)
-    socket.on('county-selected', (data) => {
-      console.log(`User ${socket.userId} selected county in game ${socket.gameId}:`, data);
-
-      // Broadcast county selection to other players
-      socket.to(`game-${socket.gameId}`).emit('player-county-selected', {
-        userId: socket.userId,
-        county: data.county
-      });
-    });
 
     // Handle player chat in game
     socket.on('game-chat', (data) => {
