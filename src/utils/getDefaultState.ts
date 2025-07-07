@@ -4,10 +4,10 @@ import { GAME_DEFAULTS } from '../constants/gameDefaults';
 export const getDefaultState = (): GameState => {
   return {
     money: GAME_DEFAULTS.STARTING_MONEY,
-    selectedFranchise: null,
+    selectedLocation: null,
     mapStyle: GAME_DEFAULTS.MAP_STYLE,
     clickedLocation: null,
-    franchises: [],
+    locations: [],
     userColors: new Map<string, string>(),
     gameTime: {
       isPaused: false,

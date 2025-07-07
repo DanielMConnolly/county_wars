@@ -1,7 +1,7 @@
 import React from 'react';
 import { Users, Play } from 'lucide-react';
 import { DataTestIDs } from './DataTestIDs';
-import {Game} from '@prisma/client';
+import {Game} from './types/GameTypes';
 
 
 interface ExistingGamesListProps {

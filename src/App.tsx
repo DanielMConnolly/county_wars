@@ -2,9 +2,10 @@ import { useContext } from 'react';
 import useMapControls from './useMapControls';
 import GameMap from './GameMap.react';
 import InfoCard from './InfoCard';
-import FranchiseInfoCard from './FranchiseInfoCard.react';
+import LocationInfoCard from './LocationInfoCard.react';
 import TopMenu from './TopMenu';
 import MapControls from './MapControls';
+import PlacementModeToggle from './components/PlacementModeToggle';
 import { Timeline } from './Timeline';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
@@ -57,8 +58,8 @@ const App = () => {
 };
 
 const AppContent = () => {
-  const { gameState, selectFranchise } = useContext(GameStateContext);
-  const { clickedLocation, selectedFranchise } = gameState;
+  const { gameState, selectLocation } = useContext(GameStateContext);
+  const { clickedLocation, selectedLocation} = gameState;
   const { user, loading } = useAuth();
 
   const {
@@ -67,6 +68,7 @@ const AppContent = () => {
     updateZoom,
     changeBoundaryType,
   } = useMapControls();
+
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -106,15 +108,17 @@ const AppContent = () => {
         onChangeBoundaryType={changeBoundaryType}
       />
 
+      <PlacementModeToggle />
+
       <GameMap
        mapControls={mapControls}
       />
 
       {clickedLocation && <InfoCard />}
-      {selectedFranchise && (
-        <FranchiseInfoCard
-          franchise={selectedFranchise}
-          onClose={() => selectFranchise(null)}
+      {selectedLocation && (
+        <LocationInfoCard
+          location={selectedLocation}
+          onClose={() => selectLocation(null)}
         />
       )}
       {/* Timeline at bottom of screen */}

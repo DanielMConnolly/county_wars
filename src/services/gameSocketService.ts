@@ -1,5 +1,4 @@
 import { io, Socket } from 'socket.io-client';
-import { Franchise } from '../types/GameTypes';
 
 export class GameSocketService {
   private socket: Socket | null = null;
@@ -50,8 +49,8 @@ export class GameSocketService {
   private setupEventListeners() {
     if (!this.socket) return;
 
-    this.socket.on('franchise-added', (data) => {
-      this.emit('franchise-added', data);
+    this.socket.on('location-added', (data) => {
+      this.emit('location-added', data);
     });
 
     this.socket.on('franchise-removed', (data) => {

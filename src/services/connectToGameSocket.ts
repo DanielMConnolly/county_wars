@@ -20,14 +20,14 @@ export const connectToGameSocket = async ({
     await gameSocketService.connect(userId, gameId);
     setIsConnected(true);
 
-    gameSocketService.on('franchise-added', (franchiseData: Franchise) => {
-      console.log('🎯 GAME: Received franchise-added event:', franchiseData);
+    gameSocketService.on('location-added', (locationData: Franchise) => {
+      console.log('🎯 GAME: Received location-added event:', locationData);
       setGameState((prevState) => {
         const newState = {
           ...prevState,
-          franchises: [...prevState.franchises, franchiseData]
+          locations: [...prevState.locations, locationData]
         };
-        console.log('🎯 GAME: New franchise count:', newState.franchises.length);
+        console.log('🎯 GAME: New location count:', newState.locations.length);
         return newState;
       });
     });
@@ -36,7 +36,7 @@ export const connectToGameSocket = async ({
       console.log('🗑️ GAME: Received franchise-removed event:', franchiseData);
       setGameState((prevState) => ({
         ...prevState,
-        franchises: prevState.franchises.filter(f => f.id !== franchiseData.id)
+        locations: prevState.locations.filter(f => f.id !== franchiseData.id)
       }));
     });
 

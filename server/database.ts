@@ -109,7 +109,7 @@ export const dbOperations = {
 
       await prisma.game.update({
         where: { id: gameId },
-        data: updateData
+        data: updateData,
       });
       return true;
     } catch (error) {
@@ -197,7 +197,7 @@ export const dbOperations = {
   deleteGame: async (gameId: string): Promise<boolean> => {
     try {
       // Delete related records first
-      await prisma.placedFranchise.deleteMany({
+      await prisma.placedLocation.deleteMany({
         where: { gameId },
       });
       await prisma.userGameMoney.deleteMany({
@@ -223,6 +223,19 @@ export const dbOperations = {
     } catch (error) {
       console.error('Error getting game elapsed time:', error);
       return 0;
+    }
+  },
+
+  getGameDuration: async (gameId: string): Promise<number | null> => {
+    try {
+      const game = await prisma.game.findUnique({
+        where: { id: gameId },
+        select: { duration: true },
+      });
+      return game?.duration || null;
+    } catch (error) {
+      console.error('Error getting game duration:', error);
+      return null;
     }
   },
 
@@ -299,17 +312,29 @@ export const dbOperations = {
   },
 
   // Franchise operations
-  placeFranchise:
-   async (userId: string, gameId: string, lat: number, long: number, name: string, elapsedTime: number, county?: string, state?: string, metroArea?: string |null): Promise<Franchise | null> => {
+  placeFranchise: async (
+    userId: string,
+    gameId: string,
+    lat: number,
+    long: number,
+    name: string,
+    elapsedTime: number,
+    county?: string,
+    state?: string,
+    metroArea?: string | null,
+    locationType: 'franchise' | 'distributionCenter' = 'franchise'
+  ): Promise<Franchise | null> => {
     try {
-      const userData = await dbOperations.getUserById(userId)
-      const result = await prisma.placedFranchise.create({
+      console.log('🔧 Database placeFranchise called with locationType:', locationType);
+      const userData = await dbOperations.getUserById(userId);
+      const result = await prisma.placedLocation.create({
         data: {
           userId,
           gameId,
           lat,
           long,
           name,
+          locationType: locationType,
           timePlaced: new Date(elapsedTime),
           county,
           state,
@@ -319,25 +344,27 @@ export const dbOperations = {
       return {
         ...result,
         placedAt: elapsedTime,
-        username: userData?.username??'Unknown',
+        username: userData?.username ?? 'Unknown',
         id: result.id.toString(),
-      }
-    } catch (_error) {
-      return null;
+        locationType:
+          result.locationType === 'distributionCenter' ? 'distribution-center' : 'franchise',
+      };
+    } catch (error) {
+      console.error('❌ Database error in placeFranchise:', error);
+      throw error; // Re-throw the error so the server can handle it
     }
   },
 
-
   getGameFranchises: async (gameId: string): Promise<any[]> => {
     try {
-      const franchises = await prisma.placedFranchise.findMany({
+      const franchises = await prisma.placedLocation.findMany({
         where: { gameId },
         include: {
           user: {
             select: {
-              username: true
-            }
-          }
+              username: true,
+            },
+          },
         },
         orderBy: { timePlaced: 'desc' },
       });
@@ -353,7 +380,9 @@ export const dbOperations = {
         username: franchise.user.username || 'Unknown',
         county: franchise.county,
         state: franchise.state,
-        metroArea: franchise.metroArea
+        metroArea: franchise.metroArea,
+        locationType:
+          franchise.locationType === 'distributionCenter' ? 'distribution-center' : 'franchise',
       }));
     } catch (error) {
       console.error('Error getting game franchises:', error);
@@ -361,16 +390,60 @@ export const dbOperations = {
     }
   },
 
-  // Update existing franchises with location data
-  updateFranchiseLocation: async (franchiseId: number, county?: string, state?: string, metroArea?: string): Promise<boolean> => {
+  getUserGameFranchises: async (userId: string, gameId: string): Promise<Franchise[]> => {
     try {
-      await prisma.placedFranchise.update({
+      const franchises = await prisma.placedLocation.findMany({
+        where: {
+          gameId,
+          userId,
+          locationType: 'franchise',
+        },
+        include: {
+          user: {
+            select: {
+              username: true,
+            },
+          },
+        },
+        orderBy: { timePlaced: 'desc' },
+      });
+
+      // Transform to match client-side Franchise type
+      return franchises.map(franchise => ({
+        id: franchise.id.toString(),
+        lat: franchise.lat,
+        long: franchise.long,
+        name: franchise.name,
+        placedAt: franchise.timePlaced.getTime(),
+        userId: franchise.userId,
+        username: franchise.user.username || 'Unknown',
+        county: franchise.county,
+        state: franchise.state,
+        metroArea: franchise.metroArea,
+        locationType:
+          franchise.locationType === 'distributionCenter' ? 'distribution-center' : 'franchise',
+      }));
+    } catch (error) {
+      console.error('Error getting user game franchises:', error);
+      return [];
+    }
+  },
+
+  // Update existing franchises with location data
+  updateFranchiseLocation: async (
+    franchiseId: number,
+    county?: string,
+    state?: string,
+    metroArea?: string
+  ): Promise<boolean> => {
+    try {
+      await prisma.placedLocation.update({
         where: { id: franchiseId },
         data: {
           county,
           state,
-          metroArea
-        }
+          metroArea,
+        },
       });
       return true;
     } catch (error) {
@@ -387,7 +460,7 @@ export const dbOperations = {
         return false;
       }
 
-      const result = await prisma.placedFranchise.deleteMany({
+      const result = await prisma.placedLocation.deleteMany({
         where: {
           id: franchiseIdNum,
           userId,
@@ -400,84 +473,91 @@ export const dbOperations = {
     }
   },
 
-    // Auth operations
-    getUserById: async (userId: string): Promise<User | null> => {
-      try {
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-        });
-        return user;
-      } catch (error) {
-        console.error('Error getting user by ID:', error);
-        return null;
-      }
-    },
+  // Auth operations
+  getUserById: async (userId: string): Promise<User | null> => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      return user;
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      return null;
+    }
+  },
 
-    getUserByUsername: async (username: string): Promise<User | null> => {
-      try {
-        const user = await prisma.user.findUnique({
-          where: { username },
-        });
-        return user;
-      } catch (error) {
-        console.error('Error getting user by username:', error);
-        return null;
-      }
-    },
+  getUserByUsername: async (username: string): Promise<User | null> => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { username },
+      });
+      return user;
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      return null;
+    }
+  },
 
-    getUserByEmail: async (email: string): Promise<User | null> => {
-      try {
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-        return user;
-      } catch (error) {
-        console.error('Error getting user by email:', error);
-        return null;
-      }
-    },
+  getUserByEmail: async (email: string): Promise<User | null> => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      return user;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
+    }
+  },
 
-    createUserWithAuth: async (userId: string, username: string, email: string, passwordHash: string): Promise<User | null> => {
-      try {
-        console.log(`Creating user with auth: userId=${userId}, username=${username}, email=${email}`);
-        const user = await prisma.user.create({
-          data: {
-            id: userId,
-            username,
-            email,
-            passwordHash,
-            highlightColor: 'red',
-            money: 1000,
-            createdAt: new Date(),
-            lastActive: new Date(),
-          },
-        });
-        console.log(`Successfully created user: ${user.id}`);
-        return user;
-      } catch (error: any) {
-        console.error('Error creating user with auth:', error);
-        console.error('Error details:', {
-          name: error?.name,
-          message: error?.message,
-          code: error?.code,
-          meta: error?.meta
-        });
-        return null;
-      }
-    },
+  createUserWithAuth: async (
+    userId: string,
+    username: string,
+    email: string,
+    passwordHash: string
+  ): Promise<User | null> => {
+    try {
+      console.log(
+        `Creating user with auth: userId=${userId}, username=${username}, email=${email}`
+      );
+      const user = await prisma.user.create({
+        data: {
+          id: userId,
+          username,
+          email,
+          passwordHash,
+          highlightColor: 'red',
+          money: 1000,
+          createdAt: new Date(),
+          lastActive: new Date(),
+        },
+      });
+      console.log(`Successfully created user: ${user.id}`);
+      return user;
+    } catch (error: any) {
+      console.error('Error creating user with auth:', error);
+      console.error('Error details:', {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+      });
+      return null;
+    }
+  },
 
-    updateUserActivity: async (userId: string): Promise<boolean> => {
-      try {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { lastActive: new Date() },
-        });
-        return true;
-      } catch (error) {
-        console.error('Error updating user activity:', error);
-        return false;
-      }
-    },
+  updateUserActivity: async (userId: string): Promise<boolean> => {
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { lastActive: new Date() },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error updating user activity:', error);
+      return false;
+    }
+  },
 
   // GameUser operations
   addUserToGame: async (userId: string, gameId: string): Promise<boolean> => {
@@ -545,15 +625,15 @@ export const dbOperations = {
             select: {
               id: true,
               username: true,
-              highlightColor: true
-            }
-          }
+              highlightColor: true,
+            },
+          },
         },
-        orderBy: { joinedAt: 'asc' }
+        orderBy: { joinedAt: 'asc' },
       });
 
       const playersWithMoney = await Promise.all(
-        gameUsers.map(async (gameUser) => {
+        gameUsers.map(async gameUser => {
           const money = await dbOperations.getUserGameMoney(gameUser.userId, gameId);
           return {
             userId: gameUser.user.id,
@@ -577,7 +657,7 @@ export const dbOperations = {
       const [userCount, gameCount, franchiseCount] = await Promise.all([
         prisma.user.count(),
         prisma.game.count(),
-        prisma.placedFranchise.count(),
+        prisma.placedLocation.count(),
       ]);
 
       return {
@@ -596,8 +676,7 @@ export const dbOperations = {
   },
 };
 
-// Initialize database on import
-initDatabase().catch(console.error);
+// Note: Database initialization should be called explicitly from server.ts
 
 // Graceful shutdown
 process.on('beforeExit', () => {

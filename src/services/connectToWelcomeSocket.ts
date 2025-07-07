@@ -1,5 +1,5 @@
 import { welcomeSocketService } from "./welcomeSocketService";
-import { Game } from '@prisma/client';
+import { Game } from '../types/GameTypes';
 
 interface ConnectToWelcomeSocketParams {
   onGameCreated?: (game: Game) => void;

@@ -3,50 +3,95 @@ import { Zap, X } from 'lucide-react';
 import {
   getDifficultyDisplayName,
   getDifficultyColor as getNewDifficultyColor,
-  calculateDistanceMiles,
+  validateLocationPlacement,
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { DataTestIDs } from './DataTestIDs';
-import { fetchClickedLocationData } from './api_calls/HTTPRequests';
+import { fetchClickedLocationData, fetchDistributionCenterCost } from './api_calls/HTTPRequests';
 import { ClickedLocationData } from './types/GameTypes';
+import { getCurrentGameId } from './utils/gameUrl';
 import InfoRow from './components/InfoRow';
+import { useAuth } from './auth/AuthContext';
 
 const InfoCard = () => {
-  const { gameState, placeFranchise, setClickedLocation} = useContext(GameStateContext);
+  const { gameState, placeFranchise, setClickedLocation, placementMode} = useContext(GameStateContext);
+  const { user } = useAuth();
   const {  clickedLocation } = gameState;
 
   if (!clickedLocation) {
     throw new Error('InfoCard should only be rendered when a location is clicked');
   }
   const [locationData, setLocationData] = useState<ClickedLocationData | null>(null);
+  const [distributionCenterCost, setDistributionCenterCost] = useState<{
+    cost: number;
+    isFirstDistributionCenter: boolean;
+    existingDistributionCenters: number;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const isLocationTooCloseToFranchise = (lat: number, lng: number): boolean => {
-    return gameState.franchises.some(franchise => {
-      const distance = calculateDistanceMiles(lat, lng, franchise.lat, franchise.long);
-      return distance < 5;
-    });
+  const getLocationValidation = (lat: number, lng: number) => {
+    if (!user?.id) return { isValid: false, errorMessage: 'User not authenticated' };
+
+    return validateLocationPlacement(
+      lat,
+      lng,
+      user.id,
+      placementMode,
+      gameState.locations
+    );
   };
 
   const canAffordFranchise = (): boolean => {
-    if (!locationData) return false;
-    return gameState.money >= locationData?.franchisePlacementCost;
+    if (placementMode === 'distribution-center') {
+      if (!distributionCenterCost) return false;
+      return gameState.money >= distributionCenterCost.cost;
+    } else {
+      if (!locationData) return false;
+      return gameState.money >= locationData?.franchisePlacementCost;
+    }
+  };
+
+  const getCurrentCost = (): number => {
+    if (placementMode === 'distribution-center') {
+      return distributionCenterCost?.cost ?? 0;
+    } else {
+      return locationData?.franchisePlacementCost ?? 0;
+    }
+  };
+
+  const getCostDisplay = (): string => {
+    const cost = getCurrentCost();
+    if (placementMode === 'distribution-center' && distributionCenterCost?.isFirstDistributionCenter) {
+      return `$${cost.toLocaleString()} (FREE!)`;
+    }
+    return `$${cost.toLocaleString()}`;
   };
 
   useEffect(() => {
     const fetchLocationInformation = async () => {
       setLocationData(null);
+      setDistributionCenterCost(null);
       setLoading(true);
+
       const locationData = await fetchClickedLocationData(clickedLocation.lat, clickedLocation.lng);
       if (locationData == null){
         throw new Error('Failed to fetch location information');
       }
-
       setLocationData(locationData);
+
+      // Also fetch distribution center cost if in distribution center mode
+      if (placementMode === 'distribution-center' && user?.id) {
+        const gameId = getCurrentGameId();
+        if (gameId) {
+          const distributionCenterCostData = await fetchDistributionCenterCost(gameId, user.id);
+          setDistributionCenterCost(distributionCenterCostData);
+        }
+      }
+
       setLoading(false);
     };
     fetchLocationInformation();
-  }, [clickedLocation]);
+  }, [clickedLocation, placementMode, user?.id]);
 
 
   const getLocationLabel = (): string => {
@@ -62,9 +107,10 @@ const InfoCard = () => {
   const isPlaceFranchiseButtonEnabled = (): boolean => {
     if (!clickedLocation) return false;
     if (gameState.gameTime?.isPaused) return false;
-    if(isLocationTooCloseToFranchise(clickedLocation.lat, clickedLocation.lng)){
-      return false;
-    }
+
+    const validation = getLocationValidation(clickedLocation.lat, clickedLocation.lng);
+    if (!validation.isValid) return false;
+
     return canAffordFranchise();
   }
 
@@ -72,13 +118,26 @@ const InfoCard = () => {
     if (!clickedLocation) {
       return 'Click Map to Place';
     }
-    if (isLocationTooCloseToFranchise(clickedLocation.lat, clickedLocation.lng)) {
-      return 'Too Close to Existing Franchise';
+
+    const validation = getLocationValidation(clickedLocation.lat, clickedLocation.lng);
+    if (!validation.isValid) {
+      // Show specific error message with distance info when available
+      if (validation.distance && validation.nearestLocation) {
+        if (validation.errorMessage === 'Too close to existing franchise') {
+          return `Too close to franchise (${validation.distance} mi)`;
+        } else if (validation.errorMessage === 'Too far from distribution center') {
+          return `Too far from distribution center (${validation.distance} mi)`;
+        }
+      }
+      return validation.errorMessage || 'Cannot place here';
     }
+
     if (!canAffordFranchise()) {
       return 'Insufficient Funds';
     }
-    return 'Place Franchise';
+
+    const locationTypeText = placementMode === 'distribution-center' ? 'Distribution Center' : 'Franchise';
+    return `Place ${locationTypeText}`;
   };
 
 
@@ -127,7 +186,7 @@ const InfoCard = () => {
             />
             <InfoRow
               label="Cost:"
-              value={`$${locationData?.franchisePlacementCost?.toLocaleString()}`}
+              value={getCostDisplay()}
               className="text-yellow-400"
             />
           </>
@@ -136,7 +195,8 @@ const InfoCard = () => {
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={async () => {
-            await placeFranchise(`${getLocationLabel()} Franchise`);
+            const locationType = placementMode === 'distribution-center' ? 'Distribution Center' : 'Franchise';
+            await placeFranchise(`${getLocationLabel()} ${locationType}`);
         }}
         disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold

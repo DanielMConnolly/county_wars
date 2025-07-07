@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { Game } from '@prisma/client';
+import { Game } from '../types/GameTypes';
 
 export class WelcomeSocketService {
   private socket: Socket | null = null;

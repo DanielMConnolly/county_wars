@@ -24,7 +24,7 @@ model User {
   // Relationships
   createdGames     Game[]               @relation("GameCreator")
   userGameMoney    UserGameMoney[]
-  placedFranchises PlacedFranchise[]
+  placedLocations  PlacedLocation[]
   gameUsers        GameUser[]
 
   @@map("users")
@@ -34,6 +34,11 @@ enum GameStatus {
   DRAFT
   LIVE
   FINISHED
+}
+
+enum LocationType {
+  franchise
+  distributionCenter
 }
 
 model Game {
@@ -49,7 +54,7 @@ model Game {
   // Relationships
   creator          User                @relation("GameCreator", fields: [createdBy], references: [id])
   userGameMoney    UserGameMoney[]
-  placedFranchises PlacedFranchise[]
+  placedLocations  PlacedLocation[]
   gameUsers        GameUser[]
 
   @@map("games")
@@ -71,23 +76,24 @@ model UserGameMoney {
   @@map("user_game_money")
 }
 
-model PlacedFranchise {
-  id         Int      @id @default(autoincrement())
-  userId     String   @map("user_id")
-  gameId     String   @map("game_id")
-  lat        Float
-  long       Float
-  name       String
-  timePlaced DateTime @default(now()) @map("time_placed")
-  county     String?
-  state      String?
-  metroArea  String?  @map("metro_area")
+model PlacedLocation {
+  id           Int          @id @default(autoincrement())
+  userId       String       @map("user_id")
+  gameId       String       @map("game_id")
+  lat          Float
+  long         Float
+  name         String
+  locationType LocationType @map("location_type") @default(franchise)
+  timePlaced   DateTime     @default(now()) @map("time_placed")
+  county       String?
+  state        String?
+  metroArea    String?      @map("metro_area")
 
   // Relationships
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
 
-  @@map("placed_franchises")
+  @@map("placed_locations")
 }
 
 model GameUser {
@@ -102,4 +108,14 @@ model GameUser {
 
   @@unique([userId, gameId])
   @@map("game_users")
+}
+
+model PopulationPoint {
+  id          Int     @id @default(autoincrement())
+  latitude    Float
+  longitude   Float
+  population  Int
+
+  @@index([latitude, longitude])
+  @@map("population_points")
 }

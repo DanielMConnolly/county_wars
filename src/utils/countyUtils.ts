@@ -73,6 +73,91 @@ export function calculateDistanceMiles(lat1: number, lng1: number, lat2: number,
   return R * c;
 }
 
+// Import the Franchise type for validation functions
+import { Franchise, PlacementMode } from '../types/GameTypes';
+
+/**
+ * Validate if a franchise can be placed at the given location
+ * @param lat Latitude of the location to check
+ * @param lng Longitude of the location to check
+ * @param userId User ID who wants to place the franchise
+ * @param placementMode Current placement mode
+ * @param existingLocations Array of all existing locations
+ * @returns Validation result with success status and error message
+ */
+export function validateLocationPlacement(
+  lat: number, 
+  lng: number, 
+  userId: string, 
+  placementMode: PlacementMode,
+  existingLocations: Franchise[]
+): {
+  isValid: boolean;
+  errorMessage?: string;
+  nearestLocation?: Franchise;
+  distance?: number;
+} {
+  // Distribution centers can be placed anywhere (no restrictions for now)
+  if (placementMode === 'distribution-center') {
+    return { isValid: true };
+  }
+
+  // For franchises, check both proximity to other franchises and distribution center requirement
+  if (placementMode === 'franchise') {
+    // Check if too close to existing franchises (5-mile rule)
+    for (const location of existingLocations) {
+      if (location.locationType === 'franchise') {
+        const distance = calculateDistanceMiles(lat, lng, location.lat, location.long);
+        if (distance < 5) {
+          return {
+            isValid: false,
+            errorMessage: 'Too close to existing franchise',
+            nearestLocation: location,
+            distance: Math.round(distance * 10) / 10 // Round to 1 decimal place
+          };
+        }
+      }
+    }
+
+    // Check if within 500 miles of a distribution center owned by the same user
+    const userDistributionCenters = existingLocations.filter(
+      location => location.locationType === 'distribution-center' && location.userId === userId
+    );
+
+    if (userDistributionCenters.length === 0) {
+      return {
+        isValid: false,
+        errorMessage: 'Must build a distribution center first'
+      };
+    }
+
+    let nearestDistributionCenter: Franchise | undefined;
+    let shortestDistance = Infinity;
+
+    for (const distributionCenter of userDistributionCenters) {
+      const distance = calculateDistanceMiles(lat, lng, distributionCenter.lat, distributionCenter.long);
+      
+      if (distance <= 500) {
+        return { isValid: true };
+      }
+
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestDistributionCenter = distributionCenter;
+      }
+    }
+
+    return {
+      isValid: false,
+      errorMessage: 'Too far from distribution center',
+      nearestLocation: nearestDistributionCenter,
+      distance: Math.round(shortestDistance)
+    };
+  }
+
+  return { isValid: true };
+}
+
 // Convert state FIPS code to state name
 export function getStateName(stateFP: string): string {
   const stateMap: { [key: string]: string } = {

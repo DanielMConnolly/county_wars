@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { dbOperations } from './database.js';
+import { dbOperations, initDatabase } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
@@ -19,13 +19,15 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' ? false : true,
-    methods: ["GET", "POST"]
-  }
+    methods: ['GET', 'POST'],
+  },
 });
 
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? false : true
-}));
+app.use(
+  cors({
+    origin: process.env.NODE_ENV === 'production' ? false : true,
+  })
+);
 app.use(express.json());
 
 // Serve static files in production
@@ -42,7 +44,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     // Log the response for debugging
     console.log(`📤 Response [${req.method} ${req.path}]:`, {
       statusCode: res.statusCode,
-      body: typeof body === 'string' ? parseJsonSafely(body) : body
+      body: typeof body === 'string' ? parseJsonSafely(body) : body,
     });
 
     // Parse JSON strings in response body recursively
@@ -86,9 +88,6 @@ function parseResponseBody(obj: any): any {
   return obj;
 }
 
-// Database is initialized automatically when imported
-console.log('Using SQLite database for data persistence');
-
 // Setup socket connections and handlers
 // Setup both lobby and game socket namespaces
 setupSocketForLobby(io, '/lobby');
@@ -96,7 +95,7 @@ setupSocketForGame(io, '/game');
 
 // Setup general welcome screen socket for real-time game updates
 const welcomeNamespace = io.of('/');
-welcomeNamespace.on('connection', (socket) => {
+welcomeNamespace.on('connection', socket => {
   console.log('Client connected to welcome socket');
 
   socket.on('disconnect', () => {
@@ -119,44 +118,57 @@ app.get('/api/stats', (_, res) => {
 });
 
 // Update user highlight color
-app.put('/api/users/:userId/highlight-color', async function (req: Request, res: Response): Promise<void> {
-  const { userId } = req.params;
-  const { color } = req.body;
+app.put(
+  '/api/users/:userId/highlight-color',
+  async function (req: Request, res: Response): Promise<void> {
+    const { userId } = req.params;
+    const { color } = req.body;
 
-  if (!color) {
-    res.status(400).json({ error: 'Color is required' });
-    return;
-  }
-
-  // Validate color format (hex color or predefined color names)
-  const validColors = [
-    'red', 'blue', 'green', 'purple', 'orange', 'pink', 'yellow',
-    'teal', 'indigo', 'lime', 'cyan', 'rose'
-  ];
-  const hexColorRegex = /^#[0-9A-F]{6}$/i;
-
-  if (!validColors.includes(color) && !hexColorRegex.test(color)) {
-    res.status(400).json({ error: 'Invalid color format' });
-    return;
-  }
-
-  try {
-    // Ensure user exists in database
-    await dbOperations.createUser(userId);
-
-    // Update the highlight color
-    const success = await dbOperations.updateUserHighlightColor(userId, color);
-
-    if (success) {
-      res.json({ message: 'Highlight color updated successfully', color });
-    } else {
-      res.status(500).json({ error: 'Failed to update highlight color' });
+    if (!color) {
+      res.status(400).json({ error: 'Color is required' });
+      return;
     }
-  } catch (error) {
-    console.error('Error updating highlight color:', error);
-    res.status(500).json({ error: 'Internal server error' });
+
+    // Validate color format (hex color or predefined color names)
+    const validColors = [
+      'red',
+      'blue',
+      'green',
+      'purple',
+      'orange',
+      'pink',
+      'yellow',
+      'teal',
+      'indigo',
+      'lime',
+      'cyan',
+      'rose',
+    ];
+    const hexColorRegex = /^#[0-9A-F]{6}$/i;
+
+    if (!validColors.includes(color) && !hexColorRegex.test(color)) {
+      res.status(400).json({ error: 'Invalid color format' });
+      return;
+    }
+
+    try {
+      // Ensure user exists in database
+      await dbOperations.createUser(userId);
+
+      // Update the highlight color
+      const success = await dbOperations.updateUserHighlightColor(userId, color);
+
+      if (success) {
+        res.json({ message: 'Highlight color updated successfully', color });
+      } else {
+        res.status(500).json({ error: 'Failed to update highlight color' });
+      }
+    } catch (error) {
+      console.error('Error updating highlight color:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-});
+);
 
 // Get user highlight color
 app.get('/api/users/:userId/highlight-color', async (req, res) => {
@@ -174,61 +186,55 @@ app.get('/api/users/:userId/highlight-color', async (req, res) => {
   }
 });
 
-// Get user game time
-app.get('/api/games/:gameID/game-time', async (req, res) => {
-  const { gameID } = req.params;
-  try {
-    const gameTime = await dbOperations.getGameElapsedTime(gameID);
-    res.json({ gameTime });
-  } catch (error) {
-    console.error('Error fetching game time:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Get user money for a specific game
-app.get('/api/users/:userId/games/:gameId/money', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId } = req.params;
+app.get(
+  '/api/users/:userId/games/:gameId/money',
+  async (req: Request, res: Response): Promise<void> => {
+    const { userId, gameId } = req.params;
 
-  try {
-    // Ensure user exists in database
-    await dbOperations.createUser(userId);
+    try {
+      // Ensure user exists in database
+      await dbOperations.createUser(userId);
 
-    const money = await dbOperations.getUserGameMoney(userId, gameId);
-    res.json({ money });
-  } catch (error) {
-    console.error('Error fetching user game money:', error);
-    res.status(500).json({ error: 'Internal server error' });
+      const money = await dbOperations.getUserGameMoney(userId, gameId);
+      res.json({ money });
+    } catch (error) {
+      console.error('Error fetching user game money:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-});
+);
 
 // Update user money for a specific game
-app.put('/api/users/:userId/games/:gameId/money', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId } = req.params;
-  const { amount } = req.body;
+app.put(
+  '/api/users/:userId/games/:gameId/money',
+  async (req: Request, res: Response): Promise<void> => {
+    const { userId, gameId } = req.params;
+    const { amount } = req.body;
 
-  if (typeof amount !== 'number') {
-    res.status(400).json({ error: 'Amount must be a number' });
-    return;
-  }
-
-  try {
-    // Ensure user exists in database
-    await dbOperations.createUser(userId);
-
-    // Update the money
-    const success = await dbOperations.updateUserGameMoney(userId, gameId, amount);
-
-    if (success) {
-      res.json({ message: 'Money updated successfully', money: amount });
-    } else {
-      res.status(500).json({ error: 'Failed to update money' });
+    if (typeof amount !== 'number') {
+      res.status(400).json({ error: 'Amount must be a number' });
+      return;
     }
-  } catch (error) {
-    console.error('Error updating money:', error);
-    res.status(500).json({ error: 'Internal server error' });
+
+    try {
+      // Ensure user exists in database
+      await dbOperations.createUser(userId);
+
+      // Update the money
+      const success = await dbOperations.updateUserGameMoney(userId, gameId, amount);
+
+      if (success) {
+        res.json({ message: 'Money updated successfully', money: amount });
+      } else {
+        res.status(500).json({ error: 'Failed to update money' });
+      }
+    } catch (error) {
+      console.error('Error updating money:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-});
+);
 
 // Game management endpoints
 app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
@@ -263,7 +269,6 @@ app.post('/api/games', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-
 app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
 
@@ -276,14 +281,14 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
       res.json({
         players: players.map(player => player.userId),
         elapsedTime: gameState.elapsedTime,
-        isPaused: gameState.isGamePaused
+        isPaused: gameState.isGamePaused,
       });
     } else {
       // No game state exists yet, return defaults
       res.json({
         gameId,
         elapsedTime: 0,
-        isPaused: false
+        isPaused: false,
       });
     }
   } catch (error) {
@@ -292,20 +297,19 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
   }
 });
 
-app.get("/api/clicked-location-data", async (req: Request, res: Response): Promise<void> => {
+app.get('/api/clicked-location-data', async (req: Request, res: Response): Promise<void> => {
   const lat = req.query.lat as unknown as number;
   const lon = req.query.lng as unknown as number;
 
   if (!lat || !lon) {
-    res.status(400).json({ error: "lat and lng are required query parameters." });
+    res.status(400).json({ error: 'lat and lng are required query parameters.' });
     return;
   }
 
   try {
     const locationData = await getGeoDataFromCoordinates(lat, lon);
-    console.log(locationData);
     if (!locationData) {
-      res.status(404).json({ error: "Location data not found" });
+      res.status(404).json({ error: 'Location data not found' });
       return;
     }
 
@@ -321,15 +325,43 @@ app.get("/api/clicked-location-data", async (req: Request, res: Response): Promi
       metroAreaName: metroArea,
       state: state,
       population: population,
-      franchisePlacementCost: franchisePlacementCost
-    })
+      franchisePlacementCost: franchisePlacementCost,
+    });
   } catch (error) {
     console.error('Error fetching clicked location data:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Get distribution center cost for a specific user and game
+app.get('/api/games/:gameId/distribution-center-cost', async (req: Request, res: Response): Promise<void> => {
+  const { gameId } = req.params;
+  const { userId } = req.query;
 
+  if (!userId || typeof userId !== 'string') {
+    res.status(400).json({ error: 'userId query parameter is required' });
+    return;
+  }
+
+  try {
+    // Check if this would be the user's first distribution center
+    const existingLocations = await dbOperations.getGameFranchises(gameId);
+    const userDistributionCenters = existingLocations.filter(
+      location => location.locationType === 'distribution-center' && location.userId === userId
+    );
+    const isFirstDistributionCenter = userDistributionCenters.length === 0;
+    const cost = isFirstDistributionCenter ? 0 : 10000;
+
+    res.json({
+      cost,
+      isFirstDistributionCenter,
+      existingDistributionCenters: userDistributionCenters.length
+    });
+  } catch (error) {
+    console.error('Error fetching distribution center cost:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
@@ -358,11 +390,13 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
       gameState = {
         elapsedTime: 0,
         isGamePaused: false,
-        lobbyPlayers: [{
-          userId: userId,
-          username: user.username || userId,
-          isHost: isUserHost // Check if user is the game creator
-        }]
+        lobbyPlayers: [
+          {
+            userId: userId,
+            username: user.username || userId,
+            isHost: isUserHost, // Check if user is the game creator
+          },
+        ],
       };
 
       lobbyStates.set(gameId, gameState);
@@ -370,7 +404,7 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
 
       // Broadcast lobby update to all players in the lobby room
       io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
-        players: gameState.lobbyPlayers
+        players: gameState.lobbyPlayers,
       });
       console.log(`Broadcasted initial lobby state for game ${gameId}`);
     } else {
@@ -383,15 +417,17 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
         gameState.lobbyPlayers.push({
           userId: userId,
           username: user.username || userId,
-          isHost: isUserHost // Check if user is the game creator
+          isHost: isUserHost, // Check if user is the game creator
         });
 
         lobbyStates.set(gameId, gameState);
-        console.log(`Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`);
+        console.log(
+          `Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`
+        );
 
         // Broadcast lobby update to all players in the lobby room
         io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
-          players: gameState.lobbyPlayers
+          players: gameState.lobbyPlayers,
         });
         console.log(`Broadcasted lobby update for new player in game ${gameId}`);
       }
@@ -399,7 +435,7 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
 
     res.json({
       gameId,
-      players: gameState.lobbyPlayers
+      players: gameState.lobbyPlayers,
     });
   } catch (error) {
     console.error('Error fetching/initializing lobby state:', error);
@@ -420,6 +456,43 @@ app.get('/api/games/:gameId/players', async (req: Request, res: Response): Promi
   }
 });
 
+// Get franchise income information for a user in a game
+app.get('/api/games/:gameId/users/:userId/franchise-income', async (req: Request, res: Response): Promise<void> => {
+  const { gameId, userId } = req.params;
+
+  try {
+    const franchises = await dbOperations.getUserGameFranchises(userId, gameId);
+
+    const franchiseIncome = franchises.map(franchise => ({
+      id: franchise.id,
+      name: franchise.name,
+      income: calculateIncomeForFranchise(franchise)
+    }));
+
+    const totalIncome = franchiseIncome.reduce((sum, f) => sum + f.income, 0);
+
+    res.json({
+      franchises: franchiseIncome,
+      totalIncome
+    });
+  } catch (error) {
+    console.error('Error fetching franchise income:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Helper function for calculating franchise income (moved from incomeUtils to avoid client-side imports)
+function calculateIncomeForFranchise(franchise: any): number {
+  const population = franchise.populaton || 0;
+  const maxPopulation = 250000;
+  const maxIncome = 1000;
+
+  // Calculate income as a linear proportion of population
+  const income = Math.min((population / maxPopulation) * maxIncome, maxIncome);
+
+  return Math.round(income);
+}
+
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
   const { status } = req.query;
 
@@ -433,16 +506,13 @@ app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
 
     if (games) {
       res.json({ games });
-    }
-    else {
+    } else {
       res.status(404).json({ error: 'Game not found' });
     }
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Error fetching games:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
-
 });
 
 app.get('/api/games/:gameId', async (req: Request, res: Response): Promise<void> => {
@@ -509,16 +579,16 @@ app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<vo
 
 // County cost calculation (duplicated from client-side utils)
 const COUNTY_COSTS = {
-  'EASY': 100,
-  'MEDIUM': 200,
-  'HARD': 300
+  EASY: 100,
+  MEDIUM: 200,
+  HARD: 300,
 };
 
 function calculateCountyDifficulty(countyName: string): 'EASY' | 'MEDIUM' | 'HARD' {
   let hash = 0;
   for (let i = 0; i < countyName.length; i++) {
     const char = countyName.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
 
@@ -526,16 +596,15 @@ function calculateCountyDifficulty(countyName: string): 'EASY' | 'MEDIUM' | 'HAR
   const remainder = absHash % 3;
 
   switch (remainder) {
-    case 0: return 'EASY';
-    case 1: return 'MEDIUM';
-    case 2: return 'HARD';
-    default: return 'MEDIUM';
+    case 0:
+      return 'EASY';
+    case 1:
+      return 'MEDIUM';
+    case 2:
+      return 'HARD';
+    default:
+      return 'MEDIUM';
   }
-}
-
-function getCountyCost(countyName: string): number {
-  const difficulty = calculateCountyDifficulty(countyName);
-  return COUNTY_COSTS[difficulty];
 }
 
 function getMetroAreaCost(metroAreaName: string | null): number {
@@ -545,9 +614,19 @@ function getMetroAreaCost(metroAreaName: string | null): number {
   return COUNTY_COSTS[difficulty];
 }
 
-// Franchise management endpoints
+// Location management endpoints (franchises and distribution centers)
 app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, elapsedTime } = req.body;
+  const { userId, gameId, lat, long, name, elapsedTime, locationType = 'franchise' } = req.body;
+
+  console.log('📍 Place location request:', {
+    userId,
+    gameId,
+    lat,
+    long,
+    name,
+    elapsedTime,
+    locationType,
+  });
 
   if (!userId || !gameId || lat === undefined || long === undefined || !name) {
     res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
@@ -563,15 +642,15 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     // Check if game is paused
     const gameState = gameStates.get(gameId);
     if (gameState && gameState.isGamePaused) {
-      res.status(400).json({ error: 'Cannot place franchise while game is paused' });
+      res.status(400).json({ error: 'Cannot place location while game is paused' });
       return;
     }
 
     // Get geo data (with automatic caching) and calculate franchise cost
     const geoData = await getGeoDataFromCoordinates(lat, long);
-    const {county, state, metroArea} = geoData || {};
+    const { county, state, metroArea } = geoData || {};
     if (!geoData) {
-      res.status(400).json({ error: 'Unable to determine location data for franchise placement' });
+      res.status(400).json({ error: 'Unable to determine location data for placement' });
       return;
     }
     const franchiseCost = getMetroAreaCost(geoData.metroArea);
@@ -579,7 +658,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     // Check if user has enough money in this game
     const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
     if (userMoney < franchiseCost) {
-      res.status(400).json({ error: 'Insufficient funds to place franchise' });
+      res.status(400).json({ error: 'Insufficient funds to place location' });
       return;
     }
 
@@ -590,24 +669,71 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const franchise =
-     await dbOperations.placeFranchise(userId, gameId, lat, long, name, elapsedTime, county, state, metroArea);
+    // Validate franchise placement rules (only for franchises, not distribution centers)
+    if (locationType === 'franchise') {
+      try {
+        // Get all existing locations for this game
+        const existingLocations = await dbOperations.getGameFranchises(gameId);
+
+        // Check distribution center requirement (500-mile rule)
+        const userDistributionCenters = existingLocations.filter(
+          location => location.locationType === 'distribution-center' && location.userId === userId
+        );
+
+        if (userDistributionCenters.length === 0) {
+          res
+            .status(400)
+            .json({ error: 'Must build a distribution center before placing franchises' });
+          return;
+        }
+      } catch (validationError) {
+        console.error('❌ Validation error:', validationError);
+        res.status(500).json({ error: 'Failed to validate franchise placement' });
+        return;
+      }
+    }
+
+    let franchise;
+    try {
+      console.log('🔄 Calling placeFranchise with locationType:', locationType);
+      franchise = await dbOperations.placeFranchise(
+        userId,
+        gameId,
+        lat,
+        long,
+        name,
+        elapsedTime,
+        county,
+        state,
+        metroArea,
+        locationType
+      );
+      console.log('✅ placeFranchise result:', franchise);
+    } catch (error) {
+      console.error('❌ Error in placeFranchise:', error);
+      // If franchise placement failed, refund the money
+      const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
+      await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
+      res.status(500).json({ error: 'Database error: ' + (error as Error).message });
+      return;
+    }
+
     if (!franchise) {
       // If franchise placement failed, refund the money
       const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
       await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
-      res.status(500).json({ error: 'Failed to place franchise' });
+      res.status(500).json({ error: 'Failed to place location' });
       return;
     }
 
     // Get the updated money amount after franchise placement
     const remainingMoney = await dbOperations.getUserGameMoney(userId, gameId);
 
-    io.of('/game').to(`game-${gameId}`).emit('franchise-added', franchise);
+    io.of('/game').to(`game-${gameId}`).emit('location-added', franchise);
 
     // Emit money update to the specific user via socket
-    const userSockets = Array.from(io.sockets.sockets.values()).filter(socket =>
-      socket.userId === userId && socket.gameId === gameId
+    const userSockets = Array.from(io.sockets.sockets.values()).filter(
+      socket => socket.userId === userId && socket.gameId === gameId
     );
 
     userSockets.forEach(socket => {
@@ -618,14 +744,13 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     res.json({
       message: 'Franchise placed successfully',
       cost: franchiseCost,
-      remainingMoney
+      remainingMoney,
     });
   } catch (error) {
     console.error('Error placing franchise:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
@@ -688,6 +813,132 @@ app.delete('/api/franchises/:franchiseId', async (req: Request, res: Response): 
   }
 });
 
+// Distribution center placement endpoint
+app.post('/api/distribution-centers', async (req: Request, res: Response): Promise<void> => {
+  const { userId, gameId, lat, long, name, elapsedTime } = req.body;
+
+  if (!userId || !gameId || lat === undefined || long === undefined || !name) {
+    res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
+    return;
+  }
+
+  if (typeof lat !== 'number' || typeof long !== 'number') {
+    res.status(400).json({ error: 'lat and long must be numbers' });
+    return;
+  }
+
+  try {
+    // Check if game is paused
+    const gameState = gameStates.get(gameId);
+    if (gameState && gameState.isGamePaused) {
+      res.status(400).json({ error: 'Cannot place distribution center while game is paused' });
+      return;
+    }
+
+    // Get geo data and calculate cost
+    const geoData = await getGeoDataFromCoordinates(lat, long);
+    const { county, state, metroArea } = geoData || {};
+    if (!geoData) {
+      res.status(400).json({ error: 'Unable to determine location data for placement' });
+      return;
+    }
+
+    // Check if this is the user's first distribution center (first one is free)
+    const existingLocations = await dbOperations.getGameFranchises(gameId);
+    const userDistributionCenters = existingLocations.filter(
+      location => location.locationType === 'distribution-center' && location.userId === userId
+    );
+    const isFirstDistributionCenter = userDistributionCenters.length === 0;
+    const distributionCenterCost = isFirstDistributionCenter ? 0 : 10000;
+
+    console.log(`📊 Distribution center cost calculation for user ${userId}:`, {
+      existingDistributionCenters: userDistributionCenters.length,
+      isFirstDistributionCenter,
+      cost: distributionCenterCost
+    });
+
+    // Check if user has enough money in this game
+    const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
+    if (userMoney < distributionCenterCost) {
+      res.status(400).json({ error: 'Insufficient funds to place distribution center' });
+      return;
+    }
+
+    // Deduct money first (only if cost is greater than 0)
+    let moneyDeducted = true;
+    if (distributionCenterCost > 0) {
+      moneyDeducted = await dbOperations.deductUserGameMoney(userId, gameId, distributionCenterCost);
+      if (!moneyDeducted) {
+        res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
+        return;
+      }
+    }
+
+    let distributionCenter;
+    try {
+      console.log('🔄 Calling placeFranchise with locationType: distributionCenter');
+      distributionCenter = await dbOperations.placeFranchise(
+        userId,
+        gameId,
+        lat,
+        long,
+        name,
+        elapsedTime,
+        county,
+        state,
+        metroArea,
+        'distributionCenter'
+      );
+      console.log('✅ placeFranchise result:', distributionCenter);
+    } catch (error) {
+      console.error('❌ Error in placeFranchise:', error);
+      // If placement failed, refund the money (only if money was deducted)
+      if (distributionCenterCost > 0) {
+        const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
+        await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + distributionCenterCost);
+      }
+      res.status(500).json({ error: 'Database error: ' + (error as Error).message });
+      return;
+    }
+
+    if (!distributionCenter) {
+      // If placement failed, refund the money (only if money was deducted)
+      if (distributionCenterCost > 0) {
+        const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
+        await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + distributionCenterCost);
+      }
+      res.status(500).json({ error: 'Failed to place distribution center' });
+      return;
+    }
+
+    // Get the updated money amount after placement
+    const remainingMoney = await dbOperations.getUserGameMoney(userId, gameId);
+
+    io.of('/game').to(`game-${gameId}`).emit('location-added', distributionCenter);
+
+    // Emit money update to the specific user via socket
+    const userSockets = Array.from(io.sockets.sockets.values()).filter(
+      socket => socket.userId === userId && socket.gameId === gameId
+    );
+
+    userSockets.forEach(socket => {
+      socket.emit('money-update', { userId, newMoney: remainingMoney });
+      console.log(`Emitted money update to user ${userId}: $${remainingMoney}`);
+    });
+
+    res.json({
+      message: isFirstDistributionCenter
+        ? 'First distribution center placed successfully (FREE!)'
+        : 'Distribution center placed successfully',
+      cost: distributionCenterCost,
+      remainingMoney,
+    });
+  } catch (error) {
+    console.error('Error placing distribution center:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Catch-all handler for React Router in production
 if (process.env.NODE_ENV === 'production') {
   app.get(/.*/, (req, res) => {
@@ -696,7 +947,16 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+
+// Initialize database before starting server
+initDatabase()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  })
+  .catch(error => {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  });
