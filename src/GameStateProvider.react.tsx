@@ -1,13 +1,13 @@
 import React, { useState, ReactNode, useEffect } from "react";
 import { GameStateContext, GameStateContextType } from "./GameStateContext";
-import { GameState, Franchise } from "./types/GameTypes";
+import { GameState, Franchise, PlacementMode, PlacedLocation } from "./types/GameTypes";
 import { gameSocketService } from "./services/gameSocketService";
 import { connectToGameSocket, disconnectFromGameSocket } from "./services/connectToGameSocket";
 import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
   fetchUserGameMoney,
-  placeFranchise as placeFranchiseAPI,
+  placeLocation,
   fetchGameState,
 } from "./api_calls/HTTPRequests";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
@@ -28,6 +28,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
   const [gameId, setGameId] = useState<string | null>(getCurrentGameId());
+  const [placementMode, setPlacementMode] = useState<PlacementMode>('franchise');
   const { user } = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
   const { showToast } = useToast();
@@ -35,11 +36,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const userId = user?.id;
 
   // Helper function to select a franchise
-  const selectFranchise = (franchise: Franchise | null) => {
+  const selectLocation = (location: PlacedLocation| null) => {
     setGameState((prevState) => ({
       ...prevState,
-      selectedFranchise: franchise,
-      selectedCounty: null // Clear county selection when selecting franchise
+      selectedLocation: location,
+      clickedLocation: null,
     }));
   };
 
@@ -111,9 +112,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     setGameState((prevState) => ({
       ...prevState,
       clickedLocation: location,
-      selectedFranchise: null,
+      selectedLocation: null,
     }));
   }
+
+  const onPlacementModeChange = (mode: PlacementMode) => {
+    setPlacementMode(mode);
+  };
 
 
   const assignUserColors = async (newHighlightColor: string) => {
@@ -140,16 +145,15 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }));
   }
 
+
   const placeFranchise = async (name: string) => {
     if (userId == null || gameId == null) return;
     if (!gameState.clickedLocation) {
-      console.error('No clicked location available for franchise placement');
+      console.error('No clicked location available for placement');
       return;
     }
-
-
-    const newFranchise: Franchise = {
-      id: `franchise_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    const newFranchise: PlacedLocation = {
+      id: `${placementMode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       lat: gameState.clickedLocation.lat,
       long: gameState.clickedLocation.lng,
       name: name,
@@ -159,25 +163,26 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       county: null,
       state: null,
       metroArea: null,
+      locationType: placementMode,
     };
 
-    const result = await placeFranchiseAPI(
+    const result = await placeLocation(
       userId,
       gameId,
       gameState.clickedLocation.lat,
       gameState.clickedLocation.lng,
       name,
       gameState.gameTime.elapsedTime || 0,
+      placementMode
     );
 
     if (result.success) {
       const cost = result.cost ?? 0;
       setGameState((prevState) => ({
         ...prevState,
-        franchises: [...prevState.franchises, newFranchise],
+        locations: [...prevState.locations, newFranchise],
         money: result.remainingMoney ?? prevState.money - cost,
-        selectedFranchise: newFranchise, // Automatically select the newly placed franchise
-        selectedCounty: null, // Clear county selection to hide InfoCard
+        selectedLocation: newFranchise, // Automatically select the newly placed franchise
         clickedLocation: null, // Clear clicked location
       }));
 
@@ -304,7 +309,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const contextValue: GameStateContextType = {
     gameState,
     setGameState,
-    selectFranchise,
+    selectLocation,
     setMapStyle,
     assignUserColors,
     getUserSelectedColor,
@@ -314,6 +319,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     setGameDuration,
     setClickedLocation,
     placeFranchise,
+    placementMode,
+    onPlacementModeChange,
   };
 
   return (

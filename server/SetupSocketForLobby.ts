@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { dbOperations } from './database.js';
 import type { ServerGameState, GameUpdate } from '../src/types/GameTypes.js';
+import { gameStates } from './SetupSocketForGame.js';
 
 // Extend Socket.IO socket to include custom userId property
 declare module 'socket.io' {

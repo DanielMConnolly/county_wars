@@ -16,9 +16,9 @@ const TopMenu = () => {
   const {gameState} = useContext(GameStateContext);
   const { user } = useAuth();
 
-  // Filter franchises to show only the current user's franchises
-  const userFranchises = gameState.franchises.filter(franchise => 
-    user && franchise.userId === user.id
+  // Filter locations to show only the current user's locations
+  const userFranchises = gameState.locations.filter(location =>
+    user && location.userId === user.id
   );
 
   const handleSettings = () => {
@@ -40,8 +40,6 @@ const TopMenu = () => {
       >
         Franchise Wars
       </button>
-
-      {/* Stats */}
       <div className="flex gap-8">
         <div          data-testid={DataTestIDs.FRANCHISE_COUNT}>
         <StatItem
@@ -58,8 +56,6 @@ const TopMenu = () => {
           color="text-yellow-400"
         />
       </div>
-
-      {/* Menu Buttons */}
       <div className="flex gap-3 items-center">
         <MenuButton
           dataTestID={DataTestIDs.GAME_INFO_BUTTON}
@@ -75,15 +71,11 @@ const TopMenu = () => {
           text="Settings"
           className="from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-600"
         />
-
-        {/* User Menu - always show since user is authenticated to reach this point */}
         <UserMenu />
-
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           isOpen={isSettingsOpen}
         />
-
         <GameInformationPanel
           onClose={() => setIsGameInfoOpen(false)}
           isOpen={isGameInfoOpen}
@@ -100,7 +92,7 @@ const StatItem = ({
   color,
 }: {
   color: string;
-  icon: any;
+  icon: ReactNode;
   value: string | number;
   label: string;
 }) => (

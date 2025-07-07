@@ -46,3 +46,9 @@ coverage/
 .heroku/
 
 /src/generated/prisma
+
+# Population and GIS files
+population_import_helpers/population_xyz_output_*.xyz
+population_import_helpers/temp_wgs84_*.tif
+*.xyz
+*.tif

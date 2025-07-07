@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, Trash2 } from 'lucide-react';
 import { DataTestIDs } from './DataTestIDs';
 import { deleteGame } from './api_calls/HTTPRequests';
-import {Game} from '@prisma/client';
+import {Game} from './types/GameTypes';
 
 
 interface GamesToJoinProps {

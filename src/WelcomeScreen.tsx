@@ -9,7 +9,7 @@ import GamesToJoin from './GamesToJoin';
 import { DataTestIDs } from './DataTestIDs';
 import { useToast } from './Toast/ToastContext';
 import { connectToWelcomeSocket, disconnectFromWelcomeSocket } from './services/connectToWelcomeSocket';
-import {Game} from '@prisma/client';
+import {Game} from './types/GameTypes';
 
 type TabType = 'myGames' | 'joinGames';
 

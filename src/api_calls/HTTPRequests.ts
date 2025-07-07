@@ -1,7 +1,14 @@
-import { Franchise, LobbyPlayer, User, ClickedLocationData, GamePlayer } from '../types/GameTypes';
-import {Game} from '@prisma/client';
+import {
+  Franchise,
+  LobbyPlayer,
+  User,
+  ClickedLocationData,
+  GamePlayer,
+  PlacementMode,
+  Game,
+} from '../types/GameTypes';
 
-const API_BASE_URL = '';  // Use Vite proxy for local development
+const API_BASE_URL = ''; // Use Vite proxy for local development
 
 interface AuthResponse {
   user: User;
@@ -52,57 +59,64 @@ export async function updateUserHighlightColor(userId: string, color: string): P
 }
 
 export async function fetchMetroAreaName(lat: number, lng: number): Promise<string> {
-   try{
-     console.log('Fetching metro area name for lat:', lat, 'lng:', lng);
-     const response = await fetch(`${API_BASE_URL}/api/metro-area?lat=${lat}&lng=${lng}`);
-     console.log("RESPONSE: ", response);
-     if(response.ok){
-       const data = await response.json();
-       console.log('Fetched metro area name:', data);
-       return data.metro_area ?? 'Unknown';
-     }
-     return 'Unknown';
-   }
-   catch(error){
-     console.error('Failed to fetch metro area name:', error);
-     return 'Unknown';
-   }
+  try {
+    console.log('Fetching metro area name for lat:', lat, 'lng:', lng);
+    const response = await fetch(`${API_BASE_URL}/api/metro-area?lat=${lat}&lng=${lng}`);
+    console.log('RESPONSE: ', response);
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Fetched metro area name:', data);
+      return data.metro_area ?? 'Unknown';
+    }
+    return 'Unknown';
+  } catch (error) {
+    console.error('Failed to fetch metro area name:', error);
+    return 'Unknown';
+  }
 }
 
-export async function fetchClickedLocationData(lat: number, lng: number): Promise<ClickedLocationData | null> {
+export async function fetchClickedLocationData(
+  lat: number,
+  lng: number
+): Promise<ClickedLocationData | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/clicked-location-data?lat=${lat}&lng=${lng}`);
-     if (!response.ok) return null;
-      const data = await response.json();
-      return {
-        metroAreaName: data.metroAreaName,
-        franchisePlacementCost: data.franchisePlacementCost ?? 100,
-        population: data.population ?? 0,
-        state: data.state,
-        county: data.county ,
-      };
+    if (!response.ok) return null;
+    const data = await response.json();
+    return {
+      metroAreaName: data.metroAreaName,
+      franchisePlacementCost: data.franchisePlacementCost ?? 100,
+      population: data.population ?? 0,
+      state: data.state,
+      county: data.county,
+    };
   } catch (error) {
     console.error('Failed to fetch clicked location data:', error);
     return null;
   }
 }
 
-export async function fetchGameTime(gameID: string): Promise<number | null> {
+export async function fetchDistributionCenterCost(
+  gameId: string,
+  userId: string
+): Promise<{
+  cost: number;
+  isFirstDistributionCenter: boolean;
+  existingDistributionCenters: number;
+} | null> {
   try {
-    console.log('Fetching game time for game id: ', gameID);
-    const response = await fetch(`${API_BASE_URL}/api/games/${gameID}/game-time`);
-    console.log('Game time HTTP response status:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Fetched saved game time:', data.gameTime);
-      return data.gameTime;
-    } else {
-      console.error('Game time HTTP request failed with status:', response.status);
-      return null; // No saved game time
-    }
+    const response = await fetch(
+      `${API_BASE_URL}/api/games/${gameId}/distribution-center-cost?userId=${encodeURIComponent(userId)}`
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return {
+      cost: data.cost,
+      isFirstDistributionCenter: data.isFirstDistributionCenter,
+      existingDistributionCenters: data.existingDistributionCenters,
+    };
   } catch (error) {
-    console.error('Failed to fetch game time:', error);
+    console.error('Failed to fetch distribution center cost:', error);
     return null;
   }
 }
@@ -229,8 +243,9 @@ export async function getUserProfile(
 }
 
 // Game management functions
-export async function createGame(createdBy: string):
-  Promise<{ success: boolean; gameId?: string; error?: string }> {
+export async function createGame(
+  createdBy: string
+): Promise<{ success: boolean; gameId?: string; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games`, {
       method: 'POST',
@@ -253,7 +268,9 @@ export async function createGame(createdBy: string):
   }
 }
 
-export async function fetchGame(gameId: string): Promise<{ success: boolean; game?: Game; error?: string }> {
+export async function fetchGame(
+  gameId: string
+): Promise<{ success: boolean; game?: Game; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`);
     const data = await response.json();
@@ -269,8 +286,9 @@ export async function fetchGame(gameId: string): Promise<{ success: boolean; gam
   }
 }
 
-export async function fetchUserGames(userId: string)
-  : Promise<{ success: boolean; games?: Game[]; error?: string }> {
+export async function fetchUserGames(
+  userId: string
+): Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games`);
     const data = await response.json();
@@ -286,7 +304,11 @@ export async function fetchUserGames(userId: string)
   }
 }
 
-export async function fetchDraftGames(): Promise<{ success: boolean; games?: Game[]; error?: string }> {
+export async function fetchDraftGames(): Promise<{
+  success: boolean;
+  games?: Game[];
+  error?: string;
+}> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games?status=DRAFT`);
     const data = await response.json();
@@ -302,7 +324,9 @@ export async function fetchDraftGames(): Promise<{ success: boolean; games?: Gam
   }
 }
 
-export async function fetchUserLiveGames(userId: string): Promise<{ success: boolean; games?: Game[]; error?: string }> {
+export async function fetchUserLiveGames(
+  userId: string
+): Promise<{ success: boolean; games?: Game[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}/live-games`);
     const data = await response.json();
@@ -337,26 +361,25 @@ export async function deleteGame(gameId: string): Promise<{ success: boolean; er
   }
 }
 
-
 export async function fetchGameState(gameId: string): Promise<{
   success: boolean;
   gameState?: { elapsedTime: number; isPaused: boolean };
   players?: string[];
-  error?: string
+  error?: string;
 }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/state`);
     const data = await response.json();
-    console.log("DATA: ", data);
+    console.log('DATA: ', data);
 
     if (response.ok) {
       return {
         success: true,
         gameState: {
           elapsedTime: data.elapsedTime,
-          isPaused: data.isPaused
+          isPaused: data.isPaused,
         },
-        players: data.players
+        players: data.players,
       };
     } else {
       return { success: false, error: data.error || 'Failed to fetch game state' };
@@ -367,19 +390,24 @@ export async function fetchGameState(gameId: string): Promise<{
   }
 }
 
-export async function fetchLobbyState(gameId: string, userId: string): Promise<{
+export async function fetchLobbyState(
+  gameId: string,
+  userId: string
+): Promise<{
   success: boolean;
   players?: LobbyPlayer[];
-  error?: string
+  error?: string;
 }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/lobby?userId=${encodeURIComponent(userId)}`);
+    const response = await fetch(
+      `${API_BASE_URL}/api/games/${gameId}/lobby?userId=${encodeURIComponent(userId)}`
+    );
     const data = await response.json();
 
     if (response.ok) {
       return {
         success: true,
-        players: data.players
+        players: data.players,
       };
     } else {
       return { success: false, error: data.error || 'Failed to fetch lobby state' };
@@ -390,14 +418,14 @@ export async function fetchLobbyState(gameId: string, userId: string): Promise<{
   }
 }
 
-// Franchise management functions
-export async function placeFranchise(
+export async function placeLocation(
   userId: string,
   gameId: string,
   lat: number,
   long: number,
   name: string,
-  elapsedTime?: number
+  elapsedTime?: number,
+  locationType: PlacementMode = 'franchise'
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/franchises`, {
@@ -405,7 +433,15 @@ export async function placeFranchise(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ userId, gameId, lat, long, name, elapsedTime }),
+      body: JSON.stringify({
+        userId,
+        gameId,
+        lat,
+        long,
+        name,
+        elapsedTime,
+        locationType: locationType === 'distribution-center' ? 'distributionCenter' : 'franchise',
+      }),
     });
 
     const data = await response.json();
@@ -414,7 +450,7 @@ export async function placeFranchise(
       return {
         success: true,
         cost: data.cost,
-        remainingMoney: data.remainingMoney
+        remainingMoney: data.remainingMoney,
       };
     } else {
       return { success: false, error: data.error || 'Failed to place franchise' };
@@ -425,6 +461,46 @@ export async function placeFranchise(
   }
 }
 
+export async function placeDistributionCenter(
+  userId: string,
+  gameId: string,
+  lat: number,
+  long: number,
+  name: string,
+  elapsedTime?: number
+): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/distribution-centers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        gameId,
+        lat,
+        long,
+        name,
+        elapsedTime,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        cost: data.cost,
+        remainingMoney: data.remainingMoney,
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to place distribution center' };
+    }
+  } catch (error) {
+    console.error('Place distribution center request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
 
 export async function getGameFranchises(
   gameId: string
@@ -433,7 +509,7 @@ export async function getGameFranchises(
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/franchises`);
     const data = await response.json();
     if (response.ok) {
-      return { success: true, franchises: data.franchises};
+      return { success: true, franchises: data.franchises };
     } else {
       return { success: false, error: data.error || 'Failed to fetch game franchises' };
     }
@@ -469,11 +545,13 @@ export async function removeFranchise(
   }
 }
 
-export async function fetchGamePlayers(gameId: string): Promise<{ success: boolean; players?: GamePlayer[]; error?: string }> {
+export async function fetchGamePlayers(
+  gameId: string
+): Promise<{ success: boolean; players?: GamePlayer[]; error?: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/players`);
     const data = await response.json();
-    console.log("DATA: ", data );
+    console.log('DATA: ', data);
 
     if (response.ok) {
       return { success: true, players: data };
@@ -482,6 +560,36 @@ export async function fetchGamePlayers(gameId: string): Promise<{ success: boole
     }
   } catch (error) {
     console.error('Fetch game players request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchFranchiseIncome(
+  gameId: string,
+  userId: string
+): Promise<{
+  success: boolean;
+  franchises?: Array<{ id: string; name: string; income: number }>;
+  totalIncome?: number;
+  error?: string;
+}> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/games/${gameId}/users/${userId}/franchise-income`
+    );
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        franchises: data.franchises,
+        totalIncome: data.totalIncome,
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch franchise income' };
+    }
+  } catch (error) {
+    console.error('Fetch franchise income request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

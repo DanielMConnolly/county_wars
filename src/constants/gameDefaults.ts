@@ -8,6 +8,7 @@ export const GAME_DEFAULTS= {
   START_MONTH: 1,
   NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN: 1000, // Game updates every 1000ms (1 second)
   ANNUAL_INCOME: 1000, // $1000 per year
+  DEFAULT_RADIUS_METERS: 8047, // 5 miles in meters (1 mile = 1609.34 meters)
 } as const;
 
 // County conquest costs (based on difficulty)
@@ -16,6 +17,7 @@ export const COUNTY_COSTS = {
   MEDIUM: 100, // $100 to conquer a medium county
   HARD: 200,   // $200 to conquer a hard county
 } as const;
+
 
 export const COLOR_OPTIONS = [
   { name: 'Red', value: '#EF4444', class: 'bg-red-500' },
