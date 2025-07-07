@@ -21,7 +21,9 @@ export class GameSocketService {
       this.userId = userId;
       this.gameId = gameId;
 
-      this.socket = io('http://localhost:3001/game', {
+      this.socket = io(process.env.NODE_ENV === 'production' 
+        ? `${window.location.protocol}//${window.location.host}/game`
+        : 'http://localhost:3001/game', {
         auth: {
           userId: userId,
           gameId: gameId

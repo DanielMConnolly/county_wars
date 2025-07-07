@@ -24,7 +24,9 @@ export class LobbySocketService {
 
       console.log('Connecting to lobby server');
 
-      this.socket = io('http://localhost:3001/lobby', {
+      this.socket = io(process.env.NODE_ENV === 'production' 
+        ? `${window.location.protocol}//${window.location.host}/lobby`
+        : 'http://localhost:3001/lobby', {
         auth: {
           userId: userId,
           gameId: gameId
