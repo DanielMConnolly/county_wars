@@ -35,7 +35,7 @@ export async function setup(): Promise<void> {
       stdio: 'inherit'
     });
     
-    execSync('npx prisma db push', {
+    execSync('npx prisma db push --accept-data-loss', {
       env: {
         ...process.env,
         DATABASE_URL: 'postgresql://danconnolly@localhost:5432/county_wars_test?schema=public'

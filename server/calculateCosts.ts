@@ -1,5 +1,5 @@
 /**
- * Utility functions for calculating franchise placement costs
+ * Utility functions for calculating franchise and distribution center placement costs
  */
 
 /**
@@ -19,4 +19,14 @@ export const calculateFranchiseCost = (population: number): number => {
   const cost = Math.min((validPopulation / maxPopulation) * maxCost, maxCost);
   
   return Math.round(cost);
+};
+
+/**
+ * Calculate distribution center placement cost
+ * @param existingDistributionCenters - Number of distribution centers the user already has
+ * @returns Distribution center placement cost in dollars
+ */
+export const getDistributionCost = (existingDistributionCenters: number): number => {
+  // First distribution center is free, subsequent ones cost $10,000
+  return existingDistributionCenters === 0 ? 0 : 10000;
 };

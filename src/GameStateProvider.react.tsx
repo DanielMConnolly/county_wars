@@ -8,6 +8,7 @@ import {
   updateUserHighlightColor,
   fetchUserGameMoney,
   placeLocation,
+  placeDistributionCenter,
   fetchGameState,
 } from "./api_calls/HTTPRequests";
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
@@ -180,14 +181,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       const cost = result.cost ?? 0;
       setGameState((prevState) => ({
         ...prevState,
-        locations: [...prevState.locations, newFranchise],
         money: result.remainingMoney ?? prevState.money - cost,
         selectedLocation: newFranchise, // Automatically select the newly placed franchise
         clickedLocation: null, // Clear clicked location
       }));
 
       console.log('Franchise placed:', newFranchise, 'Cost:', result.cost);
-      // Note: Server will also emit money-update event to keep all clients synchronized
+      // Note: Server will emit location-added event and money-update event to keep all clients synchronized
     } else {
       console.error('Failed to place franchise:', result.error);
       alert(result.error || 'Failed to place franchise');

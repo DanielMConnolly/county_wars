@@ -1,4 +1,4 @@
-import { importPopulationData } from '../dist/server/populationUtils.js';
+import { importPopulationData, isFileAlreadyProcessed } from './populationUtils.js';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import readline from 'readline';
@@ -123,7 +123,7 @@ function convertToXYZ(inputFile) {
 }
 
 // Import XYZ data into database
-async function importXYZData(outputFile) {
+async function importXYZData(outputFile, sourceFileName) {
   console.log('Starting database import...');
 
   if (!fs.existsSync(outputFile)) {
@@ -189,14 +189,15 @@ async function importXYZData(outputFile) {
     populationPoints.push({
       latitude: latitude,
       longitude: longitude,
-      population: Math.round(population) // Round to integer
+      population: Math.round(population), // Round to integer
+      sourceFile: sourceFileName
     });
 
     validCount++;
 
     // Debug first few valid points
     if (validCount <= 5) {
-      console.log(`Added valid point ${validCount}: lat=${latitude}, lng=${longitude}, pop=${Math.round(population)}`);
+      console.log(`Added valid point ${validCount}: lat=${latitude}, lng=${longitude}, pop=${Math.round(population)}, source=${sourceFileName}`);
     }
 
     // Import in batches
@@ -229,16 +230,28 @@ async function importXYZData(outputFile) {
 // Process a single TIF file
 async function processTifFile(inputFile, fileIndex, totalFiles) {
   try {
-    console.log(`\n📁 Processing file ${fileIndex}/${totalFiles}: ${path.basename(inputFile)}`);
+    const fileName = path.basename(inputFile);
+    console.log(`\n📁 Processing file ${fileIndex}/${totalFiles}: ${fileName}`);
     console.log(`File size: ${(fs.statSync(inputFile).size / (1024 * 1024)).toFixed(2)} MB`);
+
+    // Check if this file has already been processed
+    console.log(`Checking if ${fileName} has already been processed...`);
+    const alreadyProcessed = await isFileAlreadyProcessed(fileName);
+    
+    if (alreadyProcessed) {
+      console.log(`⏭️  Skipping ${fileName} - already processed`);
+      return;
+    }
+
+    console.log(`✓ ${fileName} not found in database, proceeding with import...`);
 
     // Convert GeoTIFF to XYZ
     const outputFile = await convertToXYZ(inputFile);
 
     // Import into database
-    await importXYZData(outputFile);
+    await importXYZData(outputFile, fileName);
 
-    console.log(`✅ Successfully processed ${path.basename(inputFile)}`);
+    console.log(`✅ Successfully processed ${fileName}`);
 
   } catch (error) {
     console.error(`❌ Failed to process ${path.basename(inputFile)}:`, error.message);
@@ -249,6 +262,20 @@ async function processTifFile(inputFile, fileIndex, totalFiles) {
 // Main execution
 async function main() {
   try {
+    // Set up Heroku database URL if not already set
+    if (!process.env.DATABASE_URL) {
+      console.log('DATABASE_URL not set, attempting to get from Heroku...');
+      try {
+        const { execSync } = await import('child_process');
+        const databaseUrl = execSync('heroku config:get DATABASE_URL --app franchise-wars', { encoding: 'utf8' }).trim();
+        process.env.DATABASE_URL = databaseUrl;
+        console.log('✓ Database URL obtained from Heroku');
+      } catch (error) {
+        console.error('Failed to get database URL from Heroku. Please set DATABASE_URL environment variable.');
+        throw error;
+      }
+    }
+
     if (tifFiles.length === 0) {
       throw new Error('No .tif files found in the current directory');
     }
@@ -257,11 +284,13 @@ async function main() {
     await checkGDAL();
 
     let successCount = 0;
+    let skippedCount = 0;
     let failedFiles = [];
 
     // Process each TIF file
     for (let i = 0; i < tifFiles.length; i++) {
       const inputFile = tifFiles[i];
+      const fileName = path.basename(inputFile);
       
       try {
         // Check if input file exists
@@ -269,17 +298,26 @@ async function main() {
           throw new Error(`Input file ${inputFile} not found`);
         }
 
+        // Check if file was already processed (for summary reporting)
+        const alreadyProcessed = await isFileAlreadyProcessed(fileName);
+        
         await processTifFile(inputFile, i + 1, tifFiles.length);
-        successCount++;
+        
+        if (alreadyProcessed) {
+          skippedCount++;
+        } else {
+          successCount++;
+        }
       } catch (error) {
-        console.error(`Failed to process ${path.basename(inputFile)}:`, error.message);
-        failedFiles.push(path.basename(inputFile));
+        console.error(`Failed to process ${fileName}:`, error.message);
+        failedFiles.push(fileName);
         // Continue with next file instead of exiting
       }
     }
 
     console.log('\n🎉 Batch import completed!');
     console.log(`Successfully processed: ${successCount}/${tifFiles.length} files`);
+    console.log(`Skipped (already processed): ${skippedCount}/${tifFiles.length} files`);
     
     if (failedFiles.length > 0) {
       console.log(`Failed files: ${failedFiles.join(', ')}`);
@@ -290,6 +328,10 @@ async function main() {
   } catch (error) {
     console.error('\n❌ Import failed:', error.message);
     process.exit(1);
+  } finally {
+    // Clean up database connection
+    const { closeConnection } = await import('./populationUtils.js');
+    await closeConnection();
   }
 }
 

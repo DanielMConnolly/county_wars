@@ -138,8 +138,6 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
           lobbyNamespace.to(`lobby-${socket.gameId}`).emit('lobby-updated', {
             players: gameState.lobbyPlayers
           });
-
-          console.log(`Player ${socket.userId} is now ${data.isReady ? 'ready' : 'not ready'} in game ${socket.gameId}`);
         }
       }
     });

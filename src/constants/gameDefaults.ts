@@ -9,15 +9,8 @@ export const GAME_DEFAULTS= {
   NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN: 1000, // Game updates every 1000ms (1 second)
   ANNUAL_INCOME: 1000, // $1000 per year
   DEFAULT_RADIUS_METERS: 8047, // 5 miles in meters (1 mile = 1609.34 meters)
+  LOCALHOST_URL: 'http://localhost:3001', // Development server URL
 } as const;
-
-// County conquest costs (based on difficulty)
-export const COUNTY_COSTS = {
-  EASY: 50,    // $50 to conquer an easy county
-  MEDIUM: 100, // $100 to conquer a medium county
-  HARD: 200,   // $200 to conquer a hard county
-} as const;
-
 
 export const COLOR_OPTIONS = [
   { name: 'Red', value: '#EF4444', class: 'bg-red-500' },
@@ -33,3 +26,6 @@ export const COLOR_OPTIONS = [
   { name: 'Cyan', value: '#06B6D4', class: 'bg-cyan-500' },
   { name: 'Rose', value: '#F43F5E', class: 'bg-rose-500' }
 ] as const;
+
+// Extract valid color names for server-side validation
+export const VALID_COLOR_NAMES = COLOR_OPTIONS.map(option => option.name.toLowerCase()) as readonly string[];

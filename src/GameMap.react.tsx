@@ -208,7 +208,19 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
   useEffect(() => {
     const clickedLocation = gameState.clickedLocation;
-    if (!clickedLocation || !mapInstance.current) return;
+    if (!mapInstance.current) return;
+
+    // Clean up existing markers and circles
+    clickRef.current?.removeFrom(mapInstance.current);
+    clickRef.current = null;
+    
+    if (locationCircleRef.current) {
+      mapInstance.current.removeLayer(locationCircleRef.current);
+      locationCircleRef.current = null;
+    }
+
+    // If no clicked location, we're done (cleanup only)
+    if (!clickedLocation) return;
 
     const franchiseIcon = createFranchiseIcon(undefined, placementMode);
 
@@ -216,15 +228,8 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       icon: franchiseIcon,
     });
 
-    clickRef.current?.removeFrom(mapInstance.current);
     franchiseMarker.addTo(mapInstance.current);
     clickRef.current = franchiseMarker;
-
-    // Remove existing circle if any
-    if (locationCircleRef.current) {
-      mapInstance.current.removeLayer(locationCircleRef.current);
-      locationCircleRef.current = null;
-    }
 
     // Set radius based on location type
     let radiusInMeters;
@@ -235,7 +240,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       // Use default radius for franchise (5 miles = 8047 meters)
       radiusInMeters = GAME_DEFAULTS.DEFAULT_RADIUS_METERS;
     }
-
 
     // Create preview circle with a slightly different style to indicate it's a preview
     const previewCircle = circle([clickedLocation.lat, clickedLocation.lng], {

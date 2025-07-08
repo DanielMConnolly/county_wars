@@ -31,7 +31,26 @@ awk '$3 > 0' output_population.xyz > filtered_population.xyz
 
 ### Database Import
 
-#### Using Node.js Script
+#### Local Development Database
+```bash
+# Set local database URL
+export DATABASE_URL="postgresql://danconnolly@localhost:5432/county_wars?schema=public"
+
+# Run import script
+node import-population-data.js ./filtered_population.xyz
+```
+
+#### Heroku Production Database (postgresql-flat-75749)
+```bash
+# Use the provided script that automatically gets Heroku database URL
+./import-to-heroku.sh ./filtered_population.xyz
+
+# Or manually set the database URL and run import
+export DATABASE_URL=$(heroku config:get DATABASE_URL --app franchise-wars)
+node import-population-data.js ./filtered_population.xyz
+```
+
+#### Using Node.js Script (Legacy)
 Create a script to import the data:
 
 ```javascript
