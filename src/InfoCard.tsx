@@ -1,8 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap, X } from 'lucide-react';
 import {
-  getDifficultyDisplayName,
-  getDifficultyColor as getNewDifficultyColor,
   validateLocationPlacement,
 } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
@@ -178,11 +176,6 @@ const InfoCard = () => {
               label="Population:"
               value={`${locationData?.population?.toLocaleString()}`}
               className="text-blue-300"
-            />
-            <InfoRow
-              label="Difficulty:"
-              value={getDifficultyDisplayName('EASY')}
-              className={getNewDifficultyColor('EASY')}
             />
             <InfoRow
               label="Cost:"

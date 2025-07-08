@@ -1,66 +1,6 @@
-import { COUNTY_COSTS } from '../constants/gameDefaults';
 
-export type CountyDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
-
-// Calculate county difficulty based on population or other factors
-// For now, using a simple hash-based approach for consistency
-export function calculateCountyDifficulty(countyName: string): CountyDifficulty {
-  // Use a simple hash of the county name for consistent difficulty
-  let hash = 0;
-  for (let i = 0; i < countyName.length; i++) {
-    const char = countyName.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  
-  const absHash = Math.abs(hash);
-  const remainder = absHash % 3;
-  
-  switch (remainder) {
-    case 0:
-      return 'EASY';
-    case 1:
-      return 'MEDIUM';
-    case 2:
-      return 'HARD';
-    default:
-      return 'MEDIUM';
-  }
-}
-
-// Get the cost to conquer a county based on its difficulty
-export function getCountyCost(countyName: string): number {
-  const difficulty = calculateCountyDifficulty(countyName);
-  return COUNTY_COSTS[difficulty];
-}
-
-// Get difficulty display name
-export function getDifficultyDisplayName(difficulty: CountyDifficulty): string {
-  switch (difficulty) {
-    case 'EASY':
-      return 'Easy';
-    case 'MEDIUM':
-      return 'Medium';
-    case 'HARD':
-      return 'Hard';
-    default:
-      return 'Medium';
-  }
-}
-
-// Get difficulty color for UI
-export function getDifficultyColor(difficulty: CountyDifficulty): string {
-  switch (difficulty) {
-    case 'EASY':
-      return 'text-green-400';
-    case 'MEDIUM':
-      return 'text-yellow-400';
-    case 'HARD':
-      return 'text-red-400';
-    default:
-      return 'text-yellow-400';
-  }
-}
+// Import the Franchise type for validation functions
+import { Franchise, PlacementMode } from '../types/GameTypes';
 
 export function calculateDistanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 3959; // Earth's radius in miles
@@ -73,9 +13,6 @@ export function calculateDistanceMiles(lat1: number, lng1: number, lat2: number,
   return R * c;
 }
 
-// Import the Franchise type for validation functions
-import { Franchise, PlacementMode } from '../types/GameTypes';
-
 /**
  * Validate if a franchise can be placed at the given location
  * @param lat Latitude of the location to check
@@ -86,9 +23,9 @@ import { Franchise, PlacementMode } from '../types/GameTypes';
  * @returns Validation result with success status and error message
  */
 export function validateLocationPlacement(
-  lat: number, 
-  lng: number, 
-  userId: string, 
+  lat: number,
+  lng: number,
+  userId: string,
   placementMode: PlacementMode,
   existingLocations: Franchise[]
 ): {
@@ -136,7 +73,7 @@ export function validateLocationPlacement(
 
     for (const distributionCenter of userDistributionCenters) {
       const distance = calculateDistanceMiles(lat, lng, distributionCenter.lat, distributionCenter.long);
-      
+
       if (distance <= 500) {
         return { isValid: true };
       }
@@ -173,6 +110,6 @@ export function getStateName(stateFP: string): string {
     '46': 'South Dakota', '47': 'Tennessee', '48': 'Texas', '49': 'Utah', '50': 'Vermont',
     '51': 'Virginia', '53': 'Washington', '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming'
   };
-  
+
   return stateMap[stateFP] || 'Unknown';
 }

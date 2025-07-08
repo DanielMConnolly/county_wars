@@ -9,6 +9,8 @@ import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
 import { getGeoDataFromCoordinates, getPopulationCost } from './metroAreaUtils';
+import { getDistributionCost } from './calculateCosts.js';
+import { VALID_COLOR_NAMES } from '../src/constants/gameDefaults.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -132,23 +134,9 @@ app.put(
     }
 
     // Validate color format (hex color or predefined color names)
-    const validColors = [
-      'red',
-      'blue',
-      'green',
-      'purple',
-      'orange',
-      'pink',
-      'yellow',
-      'teal',
-      'indigo',
-      'lime',
-      'cyan',
-      'rose',
-    ];
     const hexColorRegex = /^#[0-9A-F]{6}$/i;
 
-    if (!validColors.includes(color) && !hexColorRegex.test(color)) {
+    if (!VALID_COLOR_NAMES.includes(color.toLowerCase()) && !hexColorRegex.test(color)) {
       res.status(400).json({ error: 'Invalid color format' });
       return;
     }
@@ -648,27 +636,41 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Get geo data (with automatic caching) and calculate franchise cost
+    // Get geo data (with automatic caching) and calculate cost
     const geoData = await getGeoDataFromCoordinates(lat, long);
     const { county, state, metroArea } = geoData || {};
     if (!geoData) {
       res.status(400).json({ error: 'Unable to determine location data for placement' });
       return;
     }
-    const franchiseCost = getMetroAreaCost(geoData.metroArea);
+
+    let placementCost: number;
+    if (locationType === 'distributionCenter') {
+      // Get all existing locations for this game to check distribution centers
+      const existingLocations = await dbOperations.getGameFranchises(gameId);
+      const userDistributionCenters = existingLocations.filter(
+        location => location.locationType === 'distribution-center' && location.userId === userId
+      );
+      placementCost = getDistributionCost(userDistributionCenters.length);
+    } else {
+      placementCost = getMetroAreaCost(geoData.metroArea);
+    }
 
     // Check if user has enough money in this game
     const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
-    if (userMoney < franchiseCost) {
+    if (userMoney < placementCost) {
       res.status(400).json({ error: 'Insufficient funds to place location' });
       return;
     }
 
-    // Deduct money and place franchise in a transaction-like manner
-    const moneyDeducted = await dbOperations.deductUserGameMoney(userId, gameId, franchiseCost);
-    if (!moneyDeducted) {
-      res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
-      return;
+    // Deduct money and place location in a transaction-like manner (only if cost > 0)
+    let moneyDeducted = true;
+    if (placementCost > 0) {
+      moneyDeducted = await dbOperations.deductUserGameMoney(userId, gameId, placementCost);
+      if (!moneyDeducted) {
+        res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
+        return;
+      }
     }
 
     // Validate franchise placement rules (only for franchises, not distribution centers)
@@ -713,17 +715,21 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       console.log('✅ placeFranchise result:', franchise);
     } catch (error) {
       console.error('❌ Error in placeFranchise:', error);
-      // If franchise placement failed, refund the money
-      const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
-      await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
+      // If location placement failed, refund the money (only if money was deducted)
+      if (placementCost > 0) {
+        const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
+        await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + placementCost);
+      }
       res.status(500).json({ error: 'Database error: ' + (error as Error).message });
       return;
     }
 
     if (!franchise) {
-      // If franchise placement failed, refund the money
-      const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
-      await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + franchiseCost);
+      // If location placement failed, refund the money (only if money was deducted)
+      if (placementCost > 0) {
+        const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
+        await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + placementCost);
+      }
       res.status(500).json({ error: 'Failed to place location' });
       return;
     }
@@ -744,8 +750,8 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     });
 
     res.json({
-      message: 'Franchise placed successfully',
-      cost: franchiseCost,
+      message: 'Location placed successfully',
+      cost: placementCost,
       remainingMoney,
     });
   } catch (error) {

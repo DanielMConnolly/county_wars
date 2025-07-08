@@ -1,6 +1,7 @@
-import { importPopulationData } from './populationUtils.js';
+import { importPopulationData, closeConnection } from './populationUtils.js';
 import fs from 'fs';
 import readline from 'readline';
+import path from 'path';
 
 // Convert Web Mercator (EPSG:3857) to WGS84 lat/lng (EPSG:4326)
 function webMercatorToLatLng(x, y) {
@@ -65,7 +66,8 @@ async function importXYZFile(filePath) {
     populationPoints.push({
       latitude: latitude,
       longitude: longitude,
-      population: population
+      population: population,
+      sourceFile: path.basename(filePath)
     });
 
     validCount++;
@@ -98,11 +100,13 @@ console.log(`File: ${filePath}`);
 console.log('');
 
 importXYZFile(filePath)
-  .then(() => {
+  .then(async () => {
     console.log('Import successful!');
+    await closeConnection();
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(async (error) => {
     console.error('Import failed:', error);
+    await closeConnection();
     process.exit(1);
   });

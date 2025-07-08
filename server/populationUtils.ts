@@ -73,15 +73,25 @@ export async function calculatePopulationInRadius(
   return totalPopulation;
 }
 
+// Check if a source file has already been processed
+export async function isFileAlreadyProcessed(sourceFile: string): Promise<boolean> {
+  const count = await prisma.populationPoint.count({
+    where: {
+      sourceFile: sourceFile
+    }
+  });
+  return count > 0;
+}
+
 // Bulk import population data (for initial data loading)
 export async function importPopulationData(populationData: Array<{
   latitude: number;
   longitude: number;
   population: number;
+  sourceFile: string;
 }>): Promise<void> {
   // Insert in batches to avoid memory issues
   const batchSize = 1000;
-  console.log(`[DEBUG] Importing ${populationData.length} population points in batches of ${batchSize}`);
 
   for (let i = 0; i < populationData.length; i += batchSize) {
     const batch = populationData.slice(i, i + batchSize);
