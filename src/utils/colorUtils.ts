@@ -1,5 +1,5 @@
-import { Franchise } from "../types/GameTypes";
 import { COLOR_OPTIONS } from "../constants/gameDefaults";
+import { PlacedLocation } from "../types/GameTypes";
 
 // Generate a consistent color for a user based on their userId using predefined colors
 export function getUserColor(userId: string): string {
@@ -35,7 +35,7 @@ export function getUserColorUnique(userId: string, usedColors: Set<string>): str
 
 // Get franchise color based on ownership and user settings
 export function getFranchiseColor(
-  franchise: Franchise,
+  franchise: PlacedLocation,
   userColors: Map<string, string>,
 ): string {
   return userColors.get(franchise.userId)?? '';

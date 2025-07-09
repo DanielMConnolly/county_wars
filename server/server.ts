@@ -606,7 +606,7 @@ function getMetroAreaCost(metroAreaName: string | null): number {
 
 // Location management endpoints (franchises and distribution centers)
 app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, elapsedTime, locationType = 'franchise' } = req.body;
+  const { userId, gameId, lat, long, name, elapsedTime, locationType = 'franchise', population } = req.body;
 
   console.log('📍 Place location request:', {
     userId,
@@ -616,6 +616,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
     name,
     elapsedTime,
     locationType,
+    population,
   });
 
   if (!userId || !gameId || lat === undefined || long === undefined || !name) {
@@ -705,7 +706,8 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
         county,
         state,
         metroArea,
-        locationType
+        locationType,
+        population
       );
       console.log('✅ placeFranchise result:', franchise);
     } catch (error) {

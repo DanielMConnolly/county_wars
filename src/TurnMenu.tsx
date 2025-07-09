@@ -39,15 +39,8 @@ export const TurnMenu: React.FC<TurnMenuProps> = ({ className = '' }) => {
   }, [gameId]);
 
   const handleEndTurn = () => {
-    // Find next player in rotation
-    const currentPlayerIndex = players.findIndex(p => p.userId === gameState.playerWhosTurnItIs);
-    const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    const nextPlayer = players[nextPlayerIndex];
-
-    if (nextPlayer) {
-      console.log('Advancing turn to:', nextPlayer.username);
-      gameSocketService.advanceTurn(nextPlayer.userId);
-    }
+    console.log('Advancing turn - server will determine next player');
+    gameSocketService.advanceTurn();
   };
 
   const isCurrentPlayersTurn = gameState.playerWhosTurnItIs === user?.id;

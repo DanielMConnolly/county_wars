@@ -15,7 +15,7 @@ interface FranchiseListProps {
   franchiseIncomeData?: FranchiseIncomeData[];
 }
 
-export default function FranchiseList({ userFranchises, gameState, franchiseIncomeData }: FranchiseListProps) {
+export default function FranchiseList({ userFranchises, franchiseIncomeData }: FranchiseListProps) {
   const [selectedState, setSelectedState] = useState<string>('all');
 
   // Get unique states for filtering
@@ -73,24 +73,20 @@ export default function FranchiseList({ userFranchises, gameState, franchiseInco
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800">{franchise.name}</h4>
                     <p className="text-sm text-gray-600 mt-1">
-                      Location:{' '}
-                      {getCountyNameFromCoordinates(franchise.lat, franchise.long)}
+                      Location: {getCountyNameFromCoordinates(franchise.lat, franchise.long)}
                     </p>
                     {franchise.state && (
                       <p className="text-xs text-gray-500 mt-1">State: {franchise.state}</p>
                     )}
-                    {franchise.populaton && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Population: {franchise.populaton.toLocaleString()}
-                      </p>
-                    )}
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      Population: {franchise.population.toLocaleString()}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-2 ml-4">
                     <div className="flex items-center gap-2">
                       <UtensilsCrossed className="w-5 h-5 text-orange-500" />
-                      <span className="text-sm font-medium text-gray-700">
-                        #{index + 1}
-                      </span>
+                      <span className="text-sm font-medium text-gray-700">#{index + 1}</span>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-green-600">${income}</p>
@@ -106,9 +102,7 @@ export default function FranchiseList({ userFranchises, gameState, franchiseInco
         <div className="text-center py-12">
           <UtensilsCrossed className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-medium text-gray-600 mb-2">No Franchises Yet</h4>
-          <p className="text-gray-500">
-            Click on the map to start placing your first franchise!
-          </p>
+          <p className="text-gray-500">Click on the map to start placing your first franchise!</p>
         </div>
       )}
     </div>

@@ -1,6 +1,4 @@
-
-// Import the Franchise type for validation functions
-import { Franchise, PlacementMode } from '../types/GameTypes';
+import { Franchise, PlacedLocation} from '../types/GameTypes';
 
 export function calculateDistanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 3959; // Earth's radius in miles
@@ -26,23 +24,17 @@ export function validateLocationPlacement(
   lat: number,
   lng: number,
   userId: string,
-  placementMode: PlacementMode,
-  existingLocations: Franchise[]
+  existingFranchises: Franchise[],
+  distributionCenters: PlacedLocation[]
 ): {
   isValid: boolean;
   errorMessage?: string;
-  nearestLocation?: Franchise;
+  nearestLocation?: PlacedLocation | null;
   distance?: number;
 } {
-  // Distribution centers can be placed anywhere (no restrictions for now)
-  if (placementMode === 'distribution-center') {
-    return { isValid: true };
-  }
 
-  // For franchises, check both proximity to other franchises and distribution center requirement
-  if (placementMode === 'franchise') {
     // Check if too close to existing franchises (5-mile rule)
-    for (const location of existingLocations) {
+    for (const location of existingFranchises) {
       if (location.locationType === 'franchise') {
         const distance = calculateDistanceMiles(lat, lng, location.lat, location.long);
         if (distance < 5) {
@@ -56,22 +48,18 @@ export function validateLocationPlacement(
       }
     }
 
-    // Check if within 500 miles of a distribution center owned by the same user
-    const userDistributionCenters = existingLocations.filter(
-      location => location.locationType === 'distribution-center' && location.userId === userId
-    );
 
-    if (userDistributionCenters.length === 0) {
+    if (distributionCenters.length === 0) {
       return {
         isValid: false,
         errorMessage: 'Must build a distribution center first'
       };
     }
 
-    let nearestDistributionCenter: Franchise | undefined;
+    let nearestDistributionCenter = null;
     let shortestDistance = Infinity;
 
-    for (const distributionCenter of userDistributionCenters) {
+    for (const distributionCenter of distributionCenters) {
       const distance = calculateDistanceMiles(lat, lng, distributionCenter.lat, distributionCenter.long);
 
       if (distance <= 500) {
@@ -90,9 +78,6 @@ export function validateLocationPlacement(
       nearestLocation: nearestDistributionCenter,
       distance: Math.round(shortestDistance)
     };
-  }
-
-  return { isValid: true };
 }
 
 // Convert state FIPS code to state name

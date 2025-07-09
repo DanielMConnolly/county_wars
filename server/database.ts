@@ -261,12 +261,12 @@ export const dbOperations = {
         where: { id: gameId },
         select: { turnNumber: true },
       });
-      
+
       if (!game) return false;
 
       await prisma.game.update({
         where: { id: gameId },
-        data: { 
+        data: {
           turnNumber: game.turnNumber + 1,
           playerWhosTurnItIs: nextPlayerId,
         },
@@ -348,10 +348,10 @@ export const dbOperations = {
     county?: string,
     state?: string,
     metroArea?: string | null,
-    locationType: 'franchise' | 'distributionCenter' = 'franchise'
+    locationType: 'franchise' | 'distributionCenter' = 'franchise',
+    population?: number
   ): Promise<Franchise | null> => {
     try {
-      console.log('🔧 Database placeFranchise called with locationType:', locationType);
       const userData = await dbOperations.getUserById(userId);
       const result = await prisma.placedLocation.create({
         data: {
@@ -364,11 +364,13 @@ export const dbOperations = {
           county,
           state,
           metroArea,
+          population,
         },
       });
       return {
         ...result,
         username: userData?.username ?? 'Unknown',
+        population: result.population ?? 100,
         id: result.id.toString(),
         locationType:
           result.locationType === 'distributionCenter' ? 'distribution-center' : 'franchise',
@@ -404,6 +406,7 @@ export const dbOperations = {
         county: franchise.county,
         state: franchise.state,
         metroArea: franchise.metroArea,
+        population: franchise.population,
         locationType:
           franchise.locationType === 'distributionCenter' ? 'distribution-center' : 'franchise',
       }));
@@ -437,6 +440,7 @@ export const dbOperations = {
         lat: franchise.lat,
         long: franchise.long,
         name: franchise.name,
+        population: franchise.population ?? 100,
         userId: franchise.userId,
         username: franchise.user.username || 'Unknown',
         county: franchise.county,

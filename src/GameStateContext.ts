@@ -1,6 +1,5 @@
-
 import { createContext, useContext } from 'react';
-import { GameState, Franchise, PlacementMode } from './types/GameTypes';
+import { GameState, PlacementMode, PlacedLocation } from './types/GameTypes';
 import React from 'react';
 
 // Define the context type
@@ -8,13 +7,13 @@ export interface GameStateContextType {
   gameState: GameState;
   setGameState: React.Dispatch<React.SetStateAction<GameState>>;
   // Helper functions
-  selectLocation: (_franchise: Franchise | null)=> void;
+  selectLocation: (_franchise: PlacedLocation | null) => void;
   setMapStyle: (_style: string) => void;
   resetGame: () => void;
   assignUserColors: (_color: string) => void;
   getUserSelectedColor: () => string;
   // Location tracking
-  setClickedLocation: (_location: { lat: number, lng: number } | null) => void;
+  setClickedLocation: (_location: { lat: number; lng: number } | null) => void;
   // Franchise management
   placeFranchise: (_name: string) => void;
   // Placement mode management

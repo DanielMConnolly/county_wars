@@ -112,9 +112,9 @@ export class GameSocketService {
     }
   }
 
-  advanceTurn(nextPlayerId: string) {
+  advanceTurn() {
     if (this.socket) {
-      this.socket.emit('advance-turn', { nextPlayerId });
+      this.socket.emit('advance-turn');
     }
   }
 

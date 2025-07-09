@@ -1,8 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap, X } from 'lucide-react';
-import {
-  validateLocationPlacement,
-} from './utils/countyUtils';
+import { validateLocationPlacement } from './utils/countyUtils';
 import { GameStateContext } from './GameStateContext';
 import { DataTestIDs } from './DataTestIDs';
 import { fetchClickedLocationData, fetchDistributionCenterCost } from './api_calls/HTTPRequests';
@@ -10,11 +8,13 @@ import { ClickedLocationData } from './types/GameTypes';
 import { getCurrentGameId } from './utils/gameUrl';
 import InfoRow from './components/InfoRow';
 import { useAuth } from './auth/AuthContext';
+import { useGetUserFranchises } from './utils/gameUtils';
 
 const InfoCard = () => {
-  const { gameState, placeFranchise, setClickedLocation, placementMode} = useContext(GameStateContext);
+  const { gameState, placeFranchise, setClickedLocation, placementMode } =
+    useContext(GameStateContext);
   const { user } = useAuth();
-  const {  clickedLocation } = gameState;
+  const { clickedLocation } = gameState;
 
   if (!clickedLocation) {
     throw new Error('InfoCard should only be rendered when a location is clicked');
@@ -27,16 +27,21 @@ const InfoCard = () => {
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const userFranchises = useGetUserFranchises();
+  const distributionCenters = gameState.locations.filter(
+    location => location.locationType === 'distribution-center' && location.userId === user?.id
+  );
+
   const getLocationValidation = (lat: number, lng: number) => {
     if (!user?.id) return { isValid: false, errorMessage: 'User not authenticated' };
 
-    return validateLocationPlacement(
-      lat,
-      lng,
-      user.id,
-      placementMode,
-      gameState.locations
-    );
+    if (placementMode === 'distribution-center') {
+      return {
+        isValid: false,
+      };
+    }
+
+    return validateLocationPlacement(lat, lng, user.id, userFranchises, distributionCenters);
   };
 
   const canAffordFranchise = (): boolean => {
@@ -49,6 +54,10 @@ const InfoCard = () => {
     }
   };
 
+  const isCurrentPlayerTurn = (): boolean => {
+    return gameState.playerWhosTurnItIs === user?.id;
+  };
+
   const getCurrentCost = (): number => {
     if (placementMode === 'distribution-center') {
       return distributionCenterCost?.cost ?? 0;
@@ -59,7 +68,10 @@ const InfoCard = () => {
 
   const getCostDisplay = (): string => {
     const cost = getCurrentCost();
-    if (placementMode === 'distribution-center' && distributionCenterCost?.isFirstDistributionCenter) {
+    if (
+      placementMode === 'distribution-center' &&
+      distributionCenterCost?.isFirstDistributionCenter
+    ) {
       return `$${cost.toLocaleString()} (FREE!)`;
     }
     return `$${cost.toLocaleString()}`;
@@ -72,7 +84,7 @@ const InfoCard = () => {
       setLoading(true);
 
       const locationData = await fetchClickedLocationData(clickedLocation.lat, clickedLocation.lng);
-      if (locationData == null){
+      if (locationData == null) {
         throw new Error('Failed to fetch location information');
       }
       setLocationData(locationData);
@@ -91,29 +103,34 @@ const InfoCard = () => {
     fetchLocationInformation();
   }, [clickedLocation, placementMode, user?.id]);
 
-
   const getLocationLabel = (): string => {
-      if (locationData?.metroAreaName) {
-        return `${locationData?.metroAreaName}, ${locationData?.state}`;
-      }
-      else{
-        return `${locationData?.county}, ${locationData?.state}`
-      }
-  }
-
+    if (locationData?.metroAreaName) {
+      return `${locationData?.metroAreaName}, ${locationData?.state}`;
+    } else {
+      return `${locationData?.county}, ${locationData?.state}`;
+    }
+  };
 
   const isPlaceFranchiseButtonEnabled = (): boolean => {
     if (!clickedLocation) return false;
+
+    // Check if it's the current player's turn
+    if (!isCurrentPlayerTurn()) return false;
 
     const validation = getLocationValidation(clickedLocation.lat, clickedLocation.lng);
     if (!validation.isValid) return false;
 
     return canAffordFranchise();
-  }
+  };
 
   const placeFranchiseButtonText = (): string => {
     if (!clickedLocation) {
       return 'Click Map to Place';
+    }
+
+    // Check if it's the current player's turn first
+    if (!isCurrentPlayerTurn()) {
+      return 'Not Your Turn';
     }
 
     const validation = getLocationValidation(clickedLocation.lat, clickedLocation.lng);
@@ -133,10 +150,10 @@ const InfoCard = () => {
       return 'Insufficient Funds';
     }
 
-    const locationTypeText = placementMode === 'distribution-center' ? 'Distribution Center' : 'Franchise';
+    const locationTypeText =
+      placementMode === 'distribution-center' ? 'Distribution Center' : 'Franchise';
     return `Place ${locationTypeText}`;
   };
-
 
   return (
     <div
@@ -166,44 +183,36 @@ const InfoCard = () => {
           </div>
         ) : (
           <>
-            <InfoRow
-              label="Location:"
-              value={getLocationLabel()}
-              className="text-white ml-2"
-            />
+            <InfoRow label="Location:" value={getLocationLabel()} className="text-white ml-2" />
             <InfoRow
               label="Population:"
               value={`${locationData?.population?.toLocaleString()}`}
               className="text-blue-300"
             />
-            <InfoRow
-              label="Cost:"
-              value={getCostDisplay()}
-              className="text-yellow-400"
-            />
+            <InfoRow label="Cost:" value={getCostDisplay()} className="text-yellow-400" />
           </>
         )}
       </div>
       <button
         data-testid={DataTestIDs.PLACE_FRANCHISE_BUTTON}
         onClick={async () => {
-            const locationType = placementMode === 'distribution-center' ? 'Distribution Center' : 'Franchise';
-            await placeFranchise(`${getLocationLabel()} ${locationType}`);
+          const locationType =
+            placementMode === 'distribution-center' ? 'Distribution Center' : 'Franchise';
+          await placeFranchise(`${getLocationLabel()} ${locationType}`);
         }}
         disabled={!isPlaceFranchiseButtonEnabled()}
         className={`w-full mt-6 px-4 py-3 rounded-lg font-bold
-           transition-all duration-300 ${!isPlaceFranchiseButtonEnabled()
-            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-            : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 ' +
-            'text-white hover:scale-105 hover:shadow-lg'
-          }`}
+           transition-all duration-300 ${
+             !isPlaceFranchiseButtonEnabled()
+               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+               : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 ' +
+                 'text-white hover:scale-105 hover:shadow-lg'
+           }`}
       >
         {placeFranchiseButtonText()}
       </button>
     </div>
   );
 };
-
-
 
 export default InfoCard;

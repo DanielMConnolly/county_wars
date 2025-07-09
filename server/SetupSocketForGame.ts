@@ -68,7 +68,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
     });
 
     // Handle turn advancement
-    socket.on('advance-turn', async (data) => {
+    socket.on('advance-turn', async () => {
       const gameState = gameStates.get(socket.gameId);
       if (!gameState) return;
 
@@ -78,13 +78,19 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
         return;
       }
 
-      const nextPlayerId = data.nextPlayerId;
-      if (!nextPlayerId) {
-        socket.emit('turn-error', { message: 'Next player ID required' });
-        return;
-      }
-
       try {
+        // Get all players in the game to determine next player
+        const players = await dbOperations.getGamePlayersWithMoney(socket.gameId);
+        if (players.length === 0) {
+          socket.emit('turn-error', { message: 'No players in game' });
+          return;
+        }
+
+        // Find current player index and calculate next player
+        const currentPlayerIndex = players.findIndex(p => p.userId === gameState.playerWhosTurnItIs);
+        const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        const nextPlayerId = players[nextPlayerIndex].userId;
+
         // Update database
         const success = await dbOperations.advanceGameTurn(socket.gameId, nextPlayerId);
         if (success) {

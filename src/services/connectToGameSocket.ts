@@ -59,6 +59,35 @@ export const connectToGameSocket = async ({
     });
 
 
+    gameSocketService.on('turn-update', (data: { turnNumber: number; playerWhosTurnItIs: string }) => {
+      console.log('🔄 GAME: Turn update received:', data);
+      setGameState((prevState) => ({
+        ...prevState,
+        turnNumber: data.turnNumber,
+        playerWhosTurnItIs: data.playerWhosTurnItIs
+      }));
+      
+      if (showToast) {
+        showToast(`Turn ${data.turnNumber} has started`, 'info', 3000);
+      }
+    });
+
+    gameSocketService.on('turn-error', (data: { message: string }) => {
+      console.error('Turn error:', data.message);
+      if (showToast) {
+        showToast(`Turn error: ${data.message}`, 'error', 5000);
+      }
+    });
+
+    gameSocketService.on('game-state-sync', (data: { turnNumber: number; playerWhosTurnItIs: string }) => {
+      console.log('🔄 GAME: Game state sync received:', data);
+      setGameState((prevState) => ({
+        ...prevState,
+        turnNumber: data.turnNumber,
+        playerWhosTurnItIs: data.playerWhosTurnItIs
+      }));
+    });
+
     gameSocketService.on('player-left', (data: { userId: string }) => {
       console.log('👋 GAME: Player left:', data.userId);
       if (showToast) {
