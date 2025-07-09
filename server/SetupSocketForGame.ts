@@ -108,6 +108,9 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
               const newMoney = currentMoney + incomeAmount;
               await dbOperations.updateUserGameMoney(nextPlayerId, socket.gameId, newMoney);
 
+              // Record income in IncomeAtTurn table
+              await dbOperations.createIncomeAtTurn(nextPlayerId, socket.gameId, gameState.turnNumber, incomeAmount);
+
               // Emit money update to the next player
               gameNamespace.to(`game-${socket.gameId}`).emit('money-update', {
                 userId: nextPlayerId,

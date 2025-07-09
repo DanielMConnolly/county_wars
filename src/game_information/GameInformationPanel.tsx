@@ -184,7 +184,6 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
                   <li>• Each franchise generates income based on its population</li>
                   <li>• Higher population areas generate more income (up to $1,000)</li>
                   <li>• Income is calculated proportionally from population data</li>
-                  <li>• Franchise placement costs vary by county difficulty</li>
                 </ul>
               </div>
             </div>

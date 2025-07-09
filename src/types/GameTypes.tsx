@@ -37,7 +37,6 @@ export type GameState = {
     playerWhosTurnItIs: string | null,
 }
 
-export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
 export type MapStyle = 'terrain' | 'satellite' | 'dark' | 'street';
 export type BoundaryType = 'counties' | 'states';
 export type PlacementMode = 'franchise' | 'distribution-center';

@@ -343,6 +343,29 @@ export const dbOperations = {
     }
   },
 
+  // Income operations
+  createIncomeAtTurn: async (
+    userId: string,
+    gameId: string,
+    turn: number,
+    incomeAmount: number
+  ): Promise<boolean> => {
+    try {
+      await prisma.incomeAtTurn.create({
+        data: {
+          userId,
+          gameId,
+          turn,
+          incomeAmount
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error creating income at turn:', error);
+      return false;
+    }
+  },
+
   // Franchise operations
   placeFranchise: async (
     userId: string,
