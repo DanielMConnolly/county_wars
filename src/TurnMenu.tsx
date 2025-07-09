@@ -6,6 +6,7 @@ import { GamePlayer } from './types/GameTypes';
 import { fetchGamePlayers } from './api_calls/HTTPRequests';
 import { getCurrentGameId } from './utils/gameUrl';
 import { gameSocketService } from './services/gameSocketService';
+import { useAuth } from './auth/AuthContext';
 
 interface TurnMenuProps {
   className?: string;
@@ -16,7 +17,7 @@ export const TurnMenu: React.FC<TurnMenuProps> = ({ className = '' }) => {
   const [players, setPlayers] = useState<GamePlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const gameId = getCurrentGameId()!;
-  const currentUserId = localStorage.getItem('userId');
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -42,14 +43,14 @@ export const TurnMenu: React.FC<TurnMenuProps> = ({ className = '' }) => {
     const currentPlayerIndex = players.findIndex(p => p.userId === gameState.playerWhosTurnItIs);
     const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
     const nextPlayer = players[nextPlayerIndex];
-    
+
     if (nextPlayer) {
       console.log('Advancing turn to:', nextPlayer.username);
       gameSocketService.advanceTurn(nextPlayer.userId);
     }
   };
 
-  const isCurrentPlayersTurn = gameState.playerWhosTurnItIs === currentUserId;
+  const isCurrentPlayersTurn = gameState.playerWhosTurnItIs === user?.id;
 
   if (loading) {
     return (
@@ -67,9 +68,37 @@ export const TurnMenu: React.FC<TurnMenuProps> = ({ className = '' }) => {
           <Users className="w-4 h-4" />
           <span className="turn-label">Turn {gameState.turnNumber}</span>
         </div>
-        
+      </div>
+
+      <div className="players-and-actions">
+        <div className="players-list">
+          {players.map(player => {
+            const isCurrentPlayer = player.userId === gameState.playerWhosTurnItIs;
+            const isCurrentUser = player.userId === user?.id;
+
+            return (
+              <div
+                key={player.userId}
+                className={`player-card ${isCurrentPlayer ? 'current-turn' : ''} ${isCurrentUser ? 'current-user' : ''}`}
+                data-testid={`${DataTestIDs.PLAYER_CARD}_${player.userId}`}
+              >
+                <div className="player-name">
+                  {player.username}
+                  {isCurrentUser && <span className="you-label">(You)</span>}
+                </div>
+
+                {isCurrentPlayer && (
+                  <div className="turn-indicator">
+                    <Crown className="w-3 h-3" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
         {isCurrentPlayersTurn && (
-          <button 
+          <button
             onClick={handleEndTurn}
             className="end-turn-button"
             data-testid={DataTestIDs.END_TURN_BUTTON}
@@ -78,32 +107,6 @@ export const TurnMenu: React.FC<TurnMenuProps> = ({ className = '' }) => {
             End Turn
           </button>
         )}
-      </div>
-
-      <div className="players-list">
-        {players.map((player) => {
-          const isCurrentPlayer = player.userId === gameState.playerWhosTurnItIs;
-          const isCurrentUser = player.userId === currentUserId;
-          
-          return (
-            <div
-              key={player.userId}
-              className={`player-card ${isCurrentPlayer ? 'current-turn' : ''} ${isCurrentUser ? 'current-user' : ''}`}
-              data-testid={`${DataTestIDs.PLAYER_CARD}_${player.userId}`}
-            >
-              <div className="player-name">
-                {player.username}
-                {isCurrentUser && <span className="you-label">(You)</span>}
-              </div>
-              
-              {isCurrentPlayer && (
-                <div className="turn-indicator">
-                  <Crown className="w-3 h-3" />
-                </div>
-              )}
-            </div>
-          );
-        })}
       </div>
 
       <style>{containerStyles}</style>
@@ -136,7 +139,7 @@ const containerStyles = `
 
   .turn-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     margin-bottom: 12px;
   }
@@ -153,6 +156,19 @@ const containerStyles = `
     color: #fff;
   }
 
+  .players-and-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .players-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
   .end-turn-button {
     display: flex;
     align-items: center;
@@ -166,6 +182,7 @@ const containerStyles = `
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex-shrink: 0;
   }
 
   .end-turn-button:hover {
@@ -176,12 +193,6 @@ const containerStyles = `
 
   .end-turn-button:active {
     transform: translateY(0);
-  }
-
-  .players-list {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
   }
 
   .player-card {

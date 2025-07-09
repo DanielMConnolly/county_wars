@@ -2,11 +2,6 @@ export const GAME_DEFAULTS= {
   HIGHLIGHT_COLOR: '#EF4444', // Red
   STARTING_MONEY: 1000, // Players start with $1000 USD
   MAP_STYLE: 'terrain',
-  GAME_DURATION_HOURS: 1,
-  START_YEAR: 1945,
-  END_YEAR: 2025,
-  START_MONTH: 1,
-  NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN: 1000, // Game updates every 1000ms (1 second)
   ANNUAL_INCOME: 1000, // $1000 per year
   DEFAULT_RADIUS_METERS: 8047, // 5 miles in meters (1 mile = 1609.34 meters)
   LOCALHOST_URL: 'http://localhost:3001', // Development server URL

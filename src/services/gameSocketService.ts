@@ -62,13 +62,6 @@ export class GameSocketService {
       this.emit('time-update', data);
     });
 
-    this.socket.on('game-paused', (data) => {
-      this.emit('game-paused', data);
-    });
-
-    this.socket.on('game-resumed', (data) => {
-      this.emit('game-resumed', data);
-    });
 
     this.socket.on('money-update', (data) => {
       this.emit('money-update', data);
@@ -106,17 +99,6 @@ export class GameSocketService {
     }
   }
 
-  pauseGame() {
-    if (this.socket) {
-      this.socket.emit('game-paused', {});
-    }
-  }
-
-  resumeGame() {
-    if (this.socket) {
-      this.socket.emit('game-resumed', {});
-    }
-  }
 
   sendChatMessage(message: string) {
     if (this.socket) {

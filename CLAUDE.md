@@ -15,16 +15,6 @@ tsc --build
 
 This ensures TypeScript compilation is up to date and catches any type errors before proceeding.
 
-## Testing
-**IMPORTANT**: After making any code changes, always run the test suite to ensure you haven't broken existing functionality:
-```bash
-npm run test:frontend
-```
-
-- Frontend tests run with Puppeteer and Jest
-- Tests automatically set up isolated test database and servers
-- Server runs on port 3001, Vite dev server on port 5173 during tests
-- Test database is automatically cleaned up after each test run
 
 ## Database Setup
 - The project uses Prisma for database operations

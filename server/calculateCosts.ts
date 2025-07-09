@@ -8,9 +8,10 @@
  * @returns Franchise placement cost in dollars
  */
 export const calculateFranchiseCost = (population: number): number => {
-  // Linear scaling: 0 population = $0, 250,000 population = $10,000
+  // Linear scaling: 0 population = $100, 250,000 population = $10,000
   const maxPopulation = 250000;
   const maxCost = 10000;
+  const minCost = 100;
   
   // Ensure population is not negative
   const validPopulation = Math.max(0, population);
@@ -18,7 +19,8 @@ export const calculateFranchiseCost = (population: number): number => {
   // Calculate cost as linear proportion of population
   const cost = Math.min((validPopulation / maxPopulation) * maxCost, maxCost);
   
-  return Math.round(cost);
+  // Ensure minimum cost of $100
+  return Math.round(Math.max(cost, minCost));
 };
 
 /**

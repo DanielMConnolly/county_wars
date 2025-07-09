@@ -1,9 +1,3 @@
-export type GameTime = {
-    isPaused: boolean;
-    gameDurationHours: number; // How long the full timeline takes in real hours
-    startTime: number; // Timestamp when game started
-    elapsedTime?: number; // How much time has elapsed (for save/restore)
-}
 
 export type PlacedLocation = {
     id: string;
@@ -36,7 +30,6 @@ export type GameState = {
     money: number, // Changed from resources to money (USD)
     selectedLocation: PlacedLocation | null,
     mapStyle: string
-    gameTime: GameTime,
     clickedLocation: { lat: number, lng: number } | null,
     locations: PlacedLocation[],
     userColors: Map<string, string>, // Maps userId to assigned color

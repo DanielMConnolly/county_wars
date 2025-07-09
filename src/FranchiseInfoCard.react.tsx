@@ -4,7 +4,6 @@ import { GameStateContext } from './GameStateContext';
 import { Franchise } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
 import { DataTestIDs } from './DataTestIDs';
-import { elapsedTimeToGameDate } from './utils/elapsedTimeToGameDate';
 import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
 import InfoRow from './components/InfoRow';
 
@@ -76,7 +75,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
       {isOwnedByUser && !showOptionsPanel && (
         <button
           onClick={() => setShowOptionsPanel(true)}
-          disabled={gameState.gameTime?.isPaused}
+          disabled={false}
           className="w-full mt-6 px-4 py-3 rounded-lg font-bold
             bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600
             text-white transition-all duration-300 hover:scale-105 hover:shadow-lg
@@ -101,7 +100,7 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
               // TODO: Implement sell franchise functionality
               alert('Sell functionality coming soon!');
             }}
-            disabled={gameState.gameTime?.isPaused}
+            disabled={false}
             className="w-full px-4 py-3 rounded-lg font-bold
               bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600
               text-white transition-all duration-300 hover:scale-105 hover:shadow-lg

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { UtensilsCrossed, Filter } from 'lucide-react';
 import { GameState, Franchise } from '../types/GameTypes';
-import { elapsedTimeToGameDate } from '../utils/elapsedTimeToGameDate';
 import { getCountyNameFromCoordinates } from '../utils/reverseGeocode';
 
 interface FranchiseIncomeData {

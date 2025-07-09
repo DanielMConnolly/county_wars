@@ -8,15 +8,11 @@ import { Dropdown, DropdownOption } from '../components/Dropdown';
 import { DataTestIDs } from '../DataTestIDs';
 
 interface GameSettingsPanelProps {
-  selectedDuration: number;
-  setSelectedDuration: (duration: number) => void;
   onBack: () => void;
   onSave: () => void;
 }
 
 export function GameSettingsPanel({
-  selectedDuration,
-  setSelectedDuration,
   onBack,
   onSave,
 }: GameSettingsPanelProps) {
