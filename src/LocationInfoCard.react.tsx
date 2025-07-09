@@ -1,6 +1,5 @@
-import React, { useContext, useState } from 'react';
+import React, {useState } from 'react';
 import { Building, Truck, X, Settings, DollarSign } from 'lucide-react';
-import { GameStateContext } from './GameStateContext';
 import { PlacedLocation } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
 import { DataTestIDs } from './DataTestIDs';
@@ -13,7 +12,6 @@ interface LocationInfoCardProps {
 }
 
 const LocationInfoCard: React.FC<LocationInfoCardProps> = ({ location, onClose }) => {
-  const { gameState } = useContext(GameStateContext);
   const { user } = useAuth();
   const [showOptionsPanel, setShowOptionsPanel] = useState(false);
 

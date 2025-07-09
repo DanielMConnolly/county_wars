@@ -425,7 +425,8 @@ export async function placeLocation(
   long: number,
   name: string,
   elapsedTime?: number,
-  locationType: PlacementMode = 'franchise'
+  locationType: PlacementMode = 'franchise',
+  population?: number
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/franchises`, {
@@ -441,6 +442,7 @@ export async function placeLocation(
         name,
         elapsedTime,
         locationType: locationType === 'distribution-center' ? 'distributionCenter' : 'franchise',
+        population,
       }),
     });
 

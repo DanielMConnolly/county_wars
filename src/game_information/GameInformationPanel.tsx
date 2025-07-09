@@ -8,6 +8,7 @@ import FranchiseList from './FranchiseList';
 import DistributionCenterList from './DistributionCenterList';
 import { fetchFranchiseIncome } from '../api_calls/HTTPRequests';
 import { getCurrentGameId } from '../utils/gameUrl';
+import { Franchise } from '../types/GameTypes';
 
 type TabType = 'income' | 'franchises' | 'distribution-centers' | 'standings';
 
@@ -26,9 +27,10 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
   const { gameState } = useContext(GameStateContext);
   const { user } = useAuth();
 
-  // Filter locations to show only the current user's locations
-  const userFranchises = gameState.locations.filter(
-    location => user && location.userId === user.id && location.locationType === 'franchise'
+ // @ts-expect-error Assigning placed location to franchise is ok
+  const userFranchises: Franchise[]= gameState.locations.filter(
+    location => user && location.userId === user.id && (!location.locationType || location.locationType === 'franchise'
+    )
   );
 
   // Filter distribution centers to show only the current user's distribution centers
@@ -48,7 +50,6 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
     setIncomeLoading(true);
     try {
       const result = await fetchFranchiseIncome(gameId, user.id);
-      console.log('Franchise income: ', result);
       if (result.success) {
         setTotalIncome(result.totalIncome || 0);
         setFranchiseIncomeData(result.franchises || []);

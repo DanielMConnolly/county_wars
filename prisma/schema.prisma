@@ -68,6 +68,7 @@ model PlacedLocation {
   county       String?
   state        String?
   metroArea    String?      @map("metro_area")
+  population   Int?
   game         Game         @relation(fields: [gameId], references: [id])
   user         User         @relation(fields: [userId], references: [id])
 

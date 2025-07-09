@@ -1,32 +1,27 @@
-import React, { useState, ReactNode, useEffect } from "react";
-import { GameStateContext, GameStateContextType } from "./GameStateContext";
-import { GameState, Franchise, PlacementMode, PlacedLocation } from "./types/GameTypes";
-import { gameSocketService } from "./services/gameSocketService";
-import { connectToGameSocket, disconnectFromGameSocket } from "./services/connectToGameSocket";
+import React, { useState, ReactNode, useEffect } from 'react';
+import { GameStateContext, GameStateContextType } from './GameStateContext';
+import { GameState, PlacementMode, PlacedLocation } from './types/GameTypes';
+import { connectToGameSocket, disconnectFromGameSocket } from './services/connectToGameSocket';
 import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
   fetchUserGameMoney,
   placeLocation,
-  placeDistributionCenter,
   fetchGameState,
-} from "./api_calls/HTTPRequests";
-import { GAME_DEFAULTS } from "./constants/gameDefaults";
-import { getDefaultState } from "./utils/getDefaultState";
-import { getCurrentGameId } from "./utils/gameUrl";
-import { useAuth } from "./auth/AuthContext";
-import { useToast } from "./Toast/ToastContext";
-import { getUserColorUnique } from "./utils/colorUtils";
+} from './api_calls/HTTPRequests';
+import { getDefaultState } from './utils/getDefaultState';
+import { getCurrentGameId } from './utils/gameUrl';
+import { useAuth } from './auth/AuthContext';
+import { useToast } from './Toast/ToastContext';
+import { getUserColorUnique } from './utils/colorUtils';
 
 interface GameStateProviderProps {
   children: ReactNode;
 }
 
-export const GameStateProvider: React.FC<GameStateProviderProps> = ({
-  children,
-}) => {
+export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }) => {
   const [gameState, setGameState] = useState<GameState>(getDefaultState());
-  const [gameId, setGameId] = useState<string | null>(getCurrentGameId());
+  const gameId = getCurrentGameId();
   const [placementMode, setPlacementMode] = useState<PlacementMode>('franchise');
   const { user } = useAuth();
   const [_, setIsConnected] = useState<boolean>(false);
@@ -35,8 +30,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   const userId = user?.id;
 
   // Helper function to select a franchise
-  const selectLocation = (location: PlacedLocation| null) => {
-    setGameState((prevState) => ({
+  const selectLocation = (location: PlacedLocation | null) => {
+    setGameState(prevState => ({
       ...prevState,
       selectedLocation: location,
       clickedLocation: null,
@@ -45,67 +40,54 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
 
   // Helper function to set map style
   const setMapStyle = (style: string) => {
-    setGameState((prevState) => ({
+    setGameState(prevState => ({
       ...prevState,
       mapStyle: style,
     }));
   };
 
   const resetGame = () => {
-    if (window.confirm("Are you sure you want to reset the game?")) {
+    if (window.confirm('Are you sure you want to reset the game?')) {
       setGameState(getDefaultState());
     }
   };
 
-
-
-  const setCurrentGame = (gameId: string | null) => {
-    setGameState((prevState) => ({
-      ...prevState,
-      currentGameId: gameId,
-    }));
-    if (gameId) {
-      setGameId(gameId);
-    }
-  };
-
-  const setClickedLocation = (location: { lat: number, lng: number } | null) => {
-    setGameState((prevState) => ({
+  const setClickedLocation = (location: { lat: number; lng: number } | null) => {
+    setGameState(prevState => ({
       ...prevState,
       clickedLocation: location,
       selectedLocation: null,
     }));
-  }
+  };
 
   const onPlacementModeChange = (mode: PlacementMode) => {
     setPlacementMode(mode);
   };
-
 
   const assignUserColors = async (newHighlightColor: string) => {
     if (userId == null) return;
     await updateUserHighlightColor(userId, newHighlightColor);
     const newUserColors = new Map(gameState.userColors);
     let existingUserWithNewColor = null;
-    gameState.userColors.forEach(
-      (color, user) => {
-        if (user != userId && color === newHighlightColor) {
-          existingUserWithNewColor = user;
-        }
+    gameState.userColors.forEach((color, user) => {
+      if (user != userId && color === newHighlightColor) {
+        existingUserWithNewColor = user;
       }
-    );
-    newUserColors.set(userId, newHighlightColor)
+    });
+    newUserColors.set(userId, newHighlightColor);
     if (existingUserWithNewColor) {
-      const uniqueColor = getUserColorUnique(existingUserWithNewColor, new Set(gameState.userColors.values()));
+      const uniqueColor = getUserColorUnique(
+        existingUserWithNewColor,
+        new Set(gameState.userColors.values())
+      );
       newUserColors.set(existingUserWithNewColor, uniqueColor);
     }
 
-    setGameState((prevState) => ({
+    setGameState(prevState => ({
       ...prevState,
       userColors: newUserColors,
     }));
-  }
-
+  };
 
   const placeFranchise = async (name: string) => {
     if (userId == null || gameId == null) return;
@@ -113,13 +95,19 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       console.error('No clicked location available for placement');
       return;
     }
+    
+    // Get population from clicked location data
+    const locationData = await import('./api_calls/HTTPRequests').then(module => 
+      module.fetchClickedLocationData(gameState.clickedLocation!.lat, gameState.clickedLocation!.lng)
+    );
+    
     const newFranchise: PlacedLocation = {
       id: `${placementMode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       lat: gameState.clickedLocation.lat,
       long: gameState.clickedLocation.lng,
       name: name,
       userId: userId,
-      username: user?.username ?? "UNKNOWN",
+      username: user?.username ?? 'UNKNOWN',
       county: null,
       state: null,
       metroArea: null,
@@ -133,12 +121,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       gameState.clickedLocation.lng,
       name,
       0,
-      placementMode
+      placementMode,
+      locationData?.population
     );
 
     if (result.success) {
       const cost = result.cost ?? 0;
-      setGameState((prevState) => ({
+      setGameState(prevState => ({
         ...prevState,
         money: result.remainingMoney ?? prevState.money - cost,
         selectedLocation: newFranchise, // Automatically select the newly placed franchise
@@ -215,12 +204,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     };
   }, [userId, gameId]); // Removed showToast from dependencies to prevent re-runs
 
-
-
   const getUserSelectedColor = () => {
     if (userId == null) return '#000000';
     return gameState.userColors.get(userId) ?? '#000000';
-  }
+  };
 
   const contextValue: GameStateContextType = {
     gameState,
@@ -236,9 +223,5 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     onPlacementModeChange,
   };
 
-  return (
-    <GameStateContext.Provider value={contextValue}>
-      {children}
-    </GameStateContext.Provider>
-  );
+  return <GameStateContext.Provider value={contextValue}>{children}</GameStateContext.Provider>;
 };

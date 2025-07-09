@@ -23,7 +23,7 @@ export type Franchise = {
     state: string | null;
     metroArea: string | null;
     locationType?: PlacementMode; // Type of location: franchise or distribution-center
-    populaton?: number; // Population of the area the Franchise servers
+    population: number; // Population of the area the Franchise servers
 }
 
 export type GameState = {
