@@ -2,6 +2,7 @@ import React, { useState, ReactNode, useEffect } from 'react';
 import { GameStateContext, GameStateContextType } from './GameStateContext';
 import { GameState, PlacementMode, PlacedLocation } from './types/GameTypes';
 import { connectToGameSocket, disconnectFromGameSocket } from './services/connectToGameSocket';
+import { fetchClickedLocationData } from './api_calls/HTTPRequests';
 import {
   fetchUserHighlightColor,
   updateUserHighlightColor,
@@ -95,12 +96,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
       console.error('No clicked location available for placement');
       return;
     }
-    
+
     // Get population from clicked location data
-    const locationData = await import('./api_calls/HTTPRequests').then(module => 
-      module.fetchClickedLocationData(gameState.clickedLocation!.lat, gameState.clickedLocation!.lng)
-    );
-    
+    const locationData = await fetchClickedLocationData(gameState.clickedLocation!.lat, gameState.clickedLocation!.lng);
+
     const newFranchise: PlacedLocation = {
       id: `${placementMode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       lat: gameState.clickedLocation.lat,
@@ -120,7 +119,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
       gameState.clickedLocation.lat,
       gameState.clickedLocation.lng,
       name,
-      0,
       placementMode,
       locationData?.population
     );
@@ -133,9 +131,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         selectedLocation: newFranchise, // Automatically select the newly placed franchise
         clickedLocation: null, // Clear clicked location
       }));
-
-      console.log('Franchise placed:', newFranchise, 'Cost:', result.cost);
-      // Note: Server will emit location-added event and money-update event to keep all clients synchronized
     } else {
       console.error('Failed to place franchise:', result.error);
       alert(result.error || 'Failed to place franchise');

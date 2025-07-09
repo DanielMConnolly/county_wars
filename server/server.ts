@@ -8,9 +8,11 @@ import { dbOperations, initDatabase } from './database.js';
 import { setupSocketForLobby, lobbyStates } from './SetupSocketForLobby.js';
 import { setupSocketForGame, gameStates } from './SetupSocketForGame.js';
 import authRoutes from './authRoutes.js';
-import { getGeoDataFromCoordinates, getPopulationCost } from './metroAreaUtils';
-import { getDistributionCost } from './calculateCosts.js';
+import { getGeoDataFromCoordinates } from './metroAreaUtils';
+import { getDistributionCost, getFranchiseCost, getPopulationCost } from './calculateCosts.js';
 import { VALID_COLOR_NAMES } from '../src/constants/gameDefaults.js';
+import { Franchise } from '../src/types/GameTypes.js';
+import { calculateIncomeForFranchise } from './incomeUtils.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -22,14 +24,14 @@ const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' ? true : true,
     methods: ['GET', 'POST'],
-    credentials: true
+    credentials: true,
   },
 });
 
 app.use(
   cors({
     origin: process.env.NODE_ENV === 'production' ? true : true,
-    credentials: true
+    credentials: true,
   })
 );
 app.use(express.json());
@@ -306,7 +308,7 @@ app.get('/api/clicked-location-data', async (req: Request, res: Response): Promi
     const { county, metroArea, state } = locationData;
 
     // Get population and cost data from Overpass API
-    const populationData = await getPopulationCost(lat, lon);
+    const populationData = await getFranchiseCost(lat, lon);
     const population = populationData.population;
     const franchisePlacementCost = populationData.cost;
 
@@ -324,34 +326,37 @@ app.get('/api/clicked-location-data', async (req: Request, res: Response): Promi
 });
 
 // Get distribution center cost for a specific user and game
-app.get('/api/games/:gameId/distribution-center-cost', async (req: Request, res: Response): Promise<void> => {
-  const { gameId } = req.params;
-  const { userId } = req.query;
+app.get(
+  '/api/games/:gameId/distribution-center-cost',
+  async (req: Request, res: Response): Promise<void> => {
+    const { gameId } = req.params;
+    const { userId } = req.query;
 
-  if (!userId || typeof userId !== 'string') {
-    res.status(400).json({ error: 'userId query parameter is required' });
-    return;
+    if (!userId || typeof userId !== 'string') {
+      res.status(400).json({ error: 'userId query parameter is required' });
+      return;
+    }
+
+    try {
+      // Check if this would be the user's first distribution center
+      const existingLocations = await dbOperations.getGameFranchises(gameId);
+      const userDistributionCenters = existingLocations.filter(
+        location => location.locationType === 'distribution-center' && location.userId === userId
+      );
+      const isFirstDistributionCenter = userDistributionCenters.length === 0;
+      const cost = isFirstDistributionCenter ? 0 : 10000;
+
+      res.json({
+        cost,
+        isFirstDistributionCenter,
+        existingDistributionCenters: userDistributionCenters.length,
+      });
+    } catch (error) {
+      console.error('Error fetching distribution center cost:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-
-  try {
-    // Check if this would be the user's first distribution center
-    const existingLocations = await dbOperations.getGameFranchises(gameId);
-    const userDistributionCenters = existingLocations.filter(
-      location => location.locationType === 'distribution-center' && location.userId === userId
-    );
-    const isFirstDistributionCenter = userDistributionCenters.length === 0;
-    const cost = isFirstDistributionCenter ? 0 : 10000;
-
-    res.json({
-      cost,
-      isFirstDistributionCenter,
-      existingDistributionCenters: userDistributionCenters.length
-    });
-  } catch (error) {
-    console.error('Error fetching distribution center cost:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+);
 
 app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
@@ -446,42 +451,32 @@ app.get('/api/games/:gameId/players', async (req: Request, res: Response): Promi
   }
 });
 
-// Get franchise income information for a user in a game
-app.get('/api/games/:gameId/users/:userId/franchise-income', async (req: Request, res: Response): Promise<void> => {
-  const { gameId, userId } = req.params;
+app.get(
+  '/api/games/:gameId/users/:userId/franchise-income',
+  async (req: Request, res: Response): Promise<void> => {
+    const { gameId, userId } = req.params;
 
-  try {
-    const franchises = await dbOperations.getUserGameFranchises(userId, gameId);
+    try {
+      const franchises = await dbOperations.getUserGameFranchises(userId, gameId);
 
-    const franchiseIncome = franchises.map(franchise => ({
-      id: franchise.id,
-      name: franchise.name,
-      income: calculateIncomeForFranchise(franchise)
-    }));
+      const franchiseIncome = franchises.map(franchise => ({
+        id: franchise.id,
+        name: franchise.name,
+        income: calculateIncomeForFranchise(franchise),
+      }));
 
-    const totalIncome = franchiseIncome.reduce((sum, f) => sum + f.income, 0);
+      const totalIncome = franchiseIncome.reduce((sum, f) => sum + f.income, 0);
 
-    res.json({
-      franchises: franchiseIncome,
-      totalIncome
-    });
-  } catch (error) {
-    console.error('Error fetching franchise income:', error);
-    res.status(500).json({ error: 'Internal server error' });
+      res.json({
+        franchises: franchiseIncome,
+        totalIncome,
+      });
+    } catch (error) {
+      console.error('Error fetching franchise income:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
-});
-
-// Helper function for calculating franchise income (moved from incomeUtils to avoid client-side imports)
-function calculateIncomeForFranchise(franchise: any): number {
-  const population = franchise.populaton || 0;
-  const maxPopulation = 250000;
-  const maxIncome = 1000;
-
-  // Calculate income as a linear proportion of population
-  const income = Math.min((population / maxPopulation) * maxIncome, maxIncome);
-
-  return Math.round(income);
-}
+);
 
 app.get('/api/games', async (req: Request, res: Response): Promise<void> => {
   const { status } = req.query;
@@ -567,58 +562,9 @@ app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<vo
   }
 });
 
-// County cost calculation (duplicated from client-side utils)
-const COUNTY_COSTS = {
-  EASY: 100,
-  MEDIUM: 200,
-  HARD: 300,
-};
-
-function calculateCountyDifficulty(countyName: string): 'EASY' | 'MEDIUM' | 'HARD' {
-  let hash = 0;
-  for (let i = 0; i < countyName.length; i++) {
-    const char = countyName.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-
-  const absHash = Math.abs(hash);
-  const remainder = absHash % 3;
-
-  switch (remainder) {
-    case 0:
-      return 'EASY';
-    case 1:
-      return 'MEDIUM';
-    case 2:
-      return 'HARD';
-    default:
-      return 'MEDIUM';
-  }
-}
-
-function getMetroAreaCost(metroAreaName: string | null): number {
-  // Use metroAreaName if available, otherwise fall back to a default
-  const nameForCostCalculation = metroAreaName || 'Unknown';
-  const difficulty = calculateCountyDifficulty(nameForCostCalculation);
-  return COUNTY_COSTS[difficulty];
-}
-
 // Location management endpoints (franchises and distribution centers)
 app.post('/api/franchises', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, elapsedTime, locationType = 'franchise', population } = req.body;
-
-  console.log('📍 Place location request:', {
-    userId,
-    gameId,
-    lat,
-    long,
-    name,
-    elapsedTime,
-    locationType,
-    population,
-  });
-
+  const { userId, gameId, lat, long, name, locationType = 'franchise', population } = req.body;
   if (!userId || !gameId || lat === undefined || long === undefined || !name) {
     res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
     return;
@@ -630,9 +576,6 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
   }
 
   try {
-    const gameState = gameStates.get(gameId);
-
-    // Get geo data (with automatic caching) and calculate cost
     const geoData = await getGeoDataFromCoordinates(lat, long);
     const { county, state, metroArea } = geoData || {};
     if (!geoData) {
@@ -649,7 +592,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
       );
       placementCost = getDistributionCost(userDistributionCenters.length);
     } else {
-      placementCost = getMetroAreaCost(geoData.metroArea);
+      placementCost = await getFranchiseCost(lat, long).then(data => data.cost ?? 0);
     }
 
     // Check if user has enough money in this game
@@ -702,7 +645,6 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
         lat,
         long,
         name,
-        elapsedTime,
         county,
         state,
         metroArea,
@@ -820,7 +762,7 @@ app.delete('/api/franchises/:franchiseId', async (req: Request, res: Response): 
 
 // Distribution center placement endpoint
 app.post('/api/distribution-centers', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name, elapsedTime } = req.body;
+  const { userId, gameId, lat, long, name} = req.body;
 
   if (!userId || !gameId || lat === undefined || long === undefined || !name) {
     res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
@@ -833,9 +775,6 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
   }
 
   try {
-    const gameState = gameStates.get(gameId);
-
-    // Get geo data and calculate cost
     const geoData = await getGeoDataFromCoordinates(lat, long);
     const { county, state, metroArea } = geoData || {};
     if (!geoData) {
@@ -854,7 +793,7 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
     console.log(`📊 Distribution center cost calculation for user ${userId}:`, {
       existingDistributionCenters: userDistributionCenters.length,
       isFirstDistributionCenter,
-      cost: distributionCenterCost
+      cost: distributionCenterCost,
     });
 
     // Check if user has enough money in this game
@@ -867,7 +806,11 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
     // Deduct money first (only if cost is greater than 0)
     let moneyDeducted = true;
     if (distributionCenterCost > 0) {
-      moneyDeducted = await dbOperations.deductUserGameMoney(userId, gameId, distributionCenterCost);
+      moneyDeducted = await dbOperations.deductUserGameMoney(
+        userId,
+        gameId,
+        distributionCenterCost
+      );
       if (!moneyDeducted) {
         res.status(400).json({ error: 'Failed to deduct money - insufficient funds' });
         return;
@@ -883,7 +826,6 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
         lat,
         long,
         name,
-        elapsedTime,
         county,
         state,
         metroArea,
@@ -895,7 +837,11 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
       // If placement failed, refund the money (only if money was deducted)
       if (distributionCenterCost > 0) {
         const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
-        await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + distributionCenterCost);
+        await dbOperations.updateUserGameMoney(
+          userId,
+          gameId,
+          currentMoney + distributionCenterCost
+        );
       }
       res.status(500).json({ error: 'Database error: ' + (error as Error).message });
       return;
@@ -905,7 +851,11 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
       // If placement failed, refund the money (only if money was deducted)
       if (distributionCenterCost > 0) {
         const currentMoney = await dbOperations.getUserGameMoney(userId, gameId);
-        await dbOperations.updateUserGameMoney(userId, gameId, currentMoney + distributionCenterCost);
+        await dbOperations.updateUserGameMoney(
+          userId,
+          gameId,
+          currentMoney + distributionCenterCost
+        );
       }
       res.status(500).json({ error: 'Failed to place distribution center' });
       return;

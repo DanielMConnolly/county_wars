@@ -73,6 +73,20 @@ export async function calculatePopulationInRadius(
   return totalPopulation;
 }
 
+// Get population around a point using default radius
+export async function getPopulationAroundPoint(
+  lat: number,
+  lng: number
+): Promise<number | null> {
+  try {
+    const radiusMeters = GAME_DEFAULTS.DEFAULT_RADIUS_METERS;
+    const population = await calculatePopulationInRadius(lat, lng, radiusMeters);
+    return population;
+  } catch (_error) {
+    return null;
+  }
+}
+
 // Check if a source file has already been processed
 export async function isFileAlreadyProcessed(sourceFile: string): Promise<boolean> {
   const count = await prisma.populationPoint.count({

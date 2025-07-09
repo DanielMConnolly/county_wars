@@ -37,7 +37,7 @@ const InfoCard = () => {
 
     if (placementMode === 'distribution-center') {
       return {
-        isValid: false,
+        isValid: true
       };
     }
 

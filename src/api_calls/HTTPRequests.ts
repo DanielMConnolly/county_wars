@@ -424,7 +424,6 @@ export async function placeLocation(
   lat: number,
   long: number,
   name: string,
-  elapsedTime?: number,
   locationType: PlacementMode = 'franchise',
   population?: number
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
@@ -440,7 +439,6 @@ export async function placeLocation(
         lat,
         long,
         name,
-        elapsedTime,
         locationType: locationType === 'distribution-center' ? 'distributionCenter' : 'franchise',
         population,
       }),

@@ -213,7 +213,9 @@ export const dbOperations = {
     }
   },
 
-  getGameTurnInfo: async (gameId: string): Promise<{ turnNumber: number; playerWhosTurnItIs: string | null }> => {
+  getGameTurnInfo: async (
+    gameId: string
+  ): Promise<{ turnNumber: number; playerWhosTurnItIs: string | null }> => {
     try {
       const game = await prisma.game.findUnique({
         where: { id: gameId },
@@ -242,7 +244,11 @@ export const dbOperations = {
     }
   },
 
-  updateGameTurnInfo: async (gameId: string, turnNumber: number, playerWhosTurnItIs: string | null): Promise<boolean> => {
+  updateGameTurnInfo: async (
+    gameId: string,
+    turnNumber: number,
+    playerWhosTurnItIs: string | null
+  ): Promise<boolean> => {
     try {
       await prisma.game.update({
         where: { id: gameId },
@@ -344,7 +350,6 @@ export const dbOperations = {
     lat: number,
     long: number,
     name: string,
-    turnNumber: number,
     county?: string,
     state?: string,
     metroArea?: string | null,
