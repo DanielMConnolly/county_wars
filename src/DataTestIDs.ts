@@ -35,9 +35,10 @@ export enum DataTestIDs {
 
   LOGGED_IN_USER_MENU = 'logged-in-user-menu',
 
-  // Timeline
-  TIMELINE_TIME_DISPLAY = 'timeline-time-display',
-  TIMELINE_PLAY_PAUSE_BUTTON = 'timeline-play-pause-button',
+  // TurnMenu
+  TURN_MENU = 'turn-menu',
+  PLAYER_CARD = 'player-card',
+  END_TURN_BUTTON = 'end-turn-button',
 
   // Settings
   SETTINGS_BUTTON = 'settings-button',

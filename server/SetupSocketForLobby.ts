@@ -44,7 +44,11 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
 
     // Add user to lobby players if not already present
     const addUserToLobby = async () => {
-      let gameState = lobbyStates.get(socket.gameId) || { elapsedTime: 0, isGamePaused: false, lobbyPlayers: [] };
+      let gameState = lobbyStates.get(socket.gameId) || { 
+        turnNumber: 1, 
+        playerWhosTurnItIs: null, 
+        lobbyPlayers: [] 
+      };
       let playerAdded = false;
 
       // Check if user is already in lobby
@@ -53,13 +57,13 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
         // Get user info from database
         const user = await dbOperations.createUser(socket.userId);
 
-
-        gameState.lobbyPlayers.push({
+        const newPlayer = {
           userId: socket.userId,
           username: user.username || socket.userId,
           isHost: gameState.lobbyPlayers.length === 0, // First player becomes host by default
-        });
+        };
 
+        gameState.lobbyPlayers.push(newPlayer);
         lobbyStates.set(socket.gameId, gameState);
         playerAdded = true;
 

@@ -58,16 +58,16 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
   const { players, isHost } = useGameLobby();
   const localNavigate = useNavigate();
   const [gameName, setGameName] = useState('New Game');
-  const [gameDuration, setGameDuration] = useState(30);
+  const [maxTurns, setMaxTurns] = useState(30);
 
   const handleStartGame = () => {
     if (!gameId) return;
-    console.log('Starting game:', gameName, gameDuration);
+    console.log('Starting game:', gameName, maxTurns);
 
     try {
       // Use lobby socket service to start the game with settings
-      lobbySocketService.startGame({ name: gameName, duration: gameDuration });
-      console.log('Start game request sent via socket with settings:', { name: gameName, duration: gameDuration });
+      lobbySocketService.startGame({ name: gameName, numberOfTurns: maxTurns });
+      console.log('Start game request sent via socket with settings:', { name: gameName, maxTurns });
     } catch (error) {
       console.error('Error starting game:', error);
       alert('Failed to start game. Please try again.');
@@ -127,18 +127,20 @@ const AuthenticatedGameLobby = ({ gameId, user, navigate }: {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Game Duration
+                    Number of Turns
                   </label>
                   <select
-                    value={gameDuration}
-                    onChange={(e) => setGameDuration(Number(e.target.value))}
+                    value={maxTurns}
+                    onChange={(e) => setMaxTurns(Number(e.target.value))}
                     className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg
                      text-white focus:outline-none focus:ring-2 focus:ring-blue-500
                      focus:border-transparent"
                   >
-                    <option value={15} className="bg-gray-800">15 minutes</option>
-                    <option value={30} className="bg-gray-800">30 minutes</option>
-                    <option value={60} className="bg-gray-800">1 hour</option>
+                    <option value={10} className="bg-gray-800">10 turns</option>
+                    <option value={20} className="bg-gray-800">20 turns</option>
+                    <option value={30} className="bg-gray-800">30 turns</option>
+                    <option value={50} className="bg-gray-800">50 turns</option>
+                    <option value={100} className="bg-gray-800">100 turns</option>
                   </select>
                 </div>
               </div>

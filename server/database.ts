@@ -79,10 +79,10 @@ export const dbOperations = {
       await prisma.game.create({
         data: {
           id: gameId,
-
           createdBy,
           isActive: true,
-          elapsedTime: 0,
+          turnNumber: 1,
+          playerWhosTurnItIs: createdBy,
         },
       });
       return true;
@@ -100,8 +100,8 @@ export const dbOperations = {
       if (updates.name !== undefined) {
         updateData.name = updates.name;
       }
-      if (updates.duration !== undefined) {
-        updateData.duration = updates.duration;
+      if (updates.numberOfTurns !== undefined) {
+        updateData.numberOfTurns = updates.numberOfTurns;
       }
       if (updates.status !== undefined) {
         updateData.status = updates.status;
@@ -213,41 +213,67 @@ export const dbOperations = {
     }
   },
 
-  getGameElapsedTime: async (gameId: string): Promise<number> => {
+  getGameTurnInfo: async (gameId: string): Promise<{ turnNumber: number; playerWhosTurnItIs: string | null }> => {
     try {
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { elapsedTime: true },
+        select: { turnNumber: true, playerWhosTurnItIs: true },
       });
-      return game?.elapsedTime || 0;
+      return {
+        turnNumber: game?.turnNumber || 1,
+        playerWhosTurnItIs: game?.playerWhosTurnItIs || null,
+      };
     } catch (error) {
-      console.error('Error getting game elapsed time:', error);
-      return 0;
+      console.error('Error getting game turn info:', error);
+      return { turnNumber: 1, playerWhosTurnItIs: null };
     }
   },
 
-  getGameDuration: async (gameId: string): Promise<number | null> => {
+  getGameNumberOfTurns: async (gameId: string): Promise<number | null> => {
     try {
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { duration: true },
+        select: { numberOfTurns: true },
       });
-      return game?.duration || null;
+      return game?.numberOfTurns || null;
     } catch (error) {
-      console.error('Error getting game duration:', error);
+      console.error('Error getting game number of turns:', error);
       return null;
     }
   },
 
-  updateGameElapsedTime: async (gameId: string, elapsedTime: number): Promise<boolean> => {
+  updateGameTurnInfo: async (gameId: string, turnNumber: number, playerWhosTurnItIs: string | null): Promise<boolean> => {
     try {
       await prisma.game.update({
         where: { id: gameId },
-        data: { elapsedTime },
+        data: { turnNumber, playerWhosTurnItIs },
       });
       return true;
     } catch (error) {
-      console.error('Error updating game elapsed time:', error);
+      console.error('Error updating game turn info:', error);
+      return false;
+    }
+  },
+
+  advanceGameTurn: async (gameId: string, nextPlayerId: string): Promise<boolean> => {
+    try {
+      const game = await prisma.game.findUnique({
+        where: { id: gameId },
+        select: { turnNumber: true },
+      });
+      
+      if (!game) return false;
+
+      await prisma.game.update({
+        where: { id: gameId },
+        data: { 
+          turnNumber: game.turnNumber + 1,
+          playerWhosTurnItIs: nextPlayerId,
+        },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error advancing game turn:', error);
       return false;
     }
   },
@@ -318,7 +344,7 @@ export const dbOperations = {
     lat: number,
     long: number,
     name: string,
-    elapsedTime: number,
+    turnNumber: number,
     county?: string,
     state?: string,
     metroArea?: string | null,
@@ -335,7 +361,6 @@ export const dbOperations = {
           long,
           name,
           locationType: locationType,
-          timePlaced: new Date(elapsedTime),
           county,
           state,
           metroArea,
@@ -343,7 +368,6 @@ export const dbOperations = {
       });
       return {
         ...result,
-        placedAt: elapsedTime,
         username: userData?.username ?? 'Unknown',
         id: result.id.toString(),
         locationType:
@@ -366,7 +390,7 @@ export const dbOperations = {
             },
           },
         },
-        orderBy: { timePlaced: 'desc' },
+        orderBy: { id: 'desc' },
       });
 
       // Transform to match client-side Franchise type
@@ -375,7 +399,6 @@ export const dbOperations = {
         lat: franchise.lat,
         long: franchise.long,
         name: franchise.name,
-        placedAt: franchise.timePlaced.getTime(),
         userId: franchise.userId,
         username: franchise.user.username || 'Unknown',
         county: franchise.county,
@@ -405,7 +428,7 @@ export const dbOperations = {
             },
           },
         },
-        orderBy: { timePlaced: 'desc' },
+        orderBy: { id: 'desc' },
       });
 
       // Transform to match client-side Franchise type
@@ -414,7 +437,6 @@ export const dbOperations = {
         lat: franchise.lat,
         long: franchise.long,
         name: franchise.name,
-        placedAt: franchise.timePlaced.getTime(),
         userId: franchise.userId,
         username: franchise.user.username || 'Unknown',
         county: franchise.county,

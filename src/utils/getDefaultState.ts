@@ -14,5 +14,7 @@ export const getDefaultState = (): GameState => {
       gameDurationHours: GAME_DEFAULTS.GAME_DURATION_HOURS,
       startTime: 0,
     },
+    turnNumber: 1,
+    playerWhosTurnItIs: null,
   };
 };

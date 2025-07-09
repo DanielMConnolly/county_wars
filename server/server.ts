@@ -270,15 +270,15 @@ app.get('/api/games/:gameId/state', async (req: Request, res: Response): Promise
     if (gameState) {
       res.json({
         players: players.map(player => player.userId),
-        elapsedTime: gameState.elapsedTime,
-        isPaused: gameState.isGamePaused,
+        turnNumber: gameState.turnNumber,
+        playerWhosTurnItIs: gameState.playerWhosTurnItIs,
       });
     } else {
       // No game state exists yet, return defaults
       res.json({
         gameId,
-        elapsedTime: 0,
-        isPaused: false,
+        turnNumber: 1,
+        playerWhosTurnItIs: null,
       });
     }
   } catch (error) {
@@ -378,8 +378,8 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
       const user = await dbOperations.createUser(userId);
 
       gameState = {
-        elapsedTime: 0,
-        isGamePaused: false,
+        turnNumber: 1,
+        playerWhosTurnItIs: null,
         lobbyPlayers: [
           {
             userId: userId,
@@ -629,12 +629,7 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
   }
 
   try {
-    // Check if game is paused
     const gameState = gameStates.get(gameId);
-    if (gameState && gameState.isGamePaused) {
-      res.status(400).json({ error: 'Cannot place location while game is paused' });
-      return;
-    }
 
     // Get geo data (with automatic caching) and calculate cost
     const geoData = await getGeoDataFromCoordinates(lat, long);
@@ -836,12 +831,7 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
   }
 
   try {
-    // Check if game is paused
     const gameState = gameStates.get(gameId);
-    if (gameState && gameState.isGamePaused) {
-      res.status(400).json({ error: 'Cannot place distribution center while game is paused' });
-      return;
-    }
 
     // Get geo data and calculate cost
     const geoData = await getGeoDataFromCoordinates(lat, long);

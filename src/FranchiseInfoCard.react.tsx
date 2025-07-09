@@ -58,8 +58,8 @@ const FranchiseInfoCard: React.FC<FranchiseInfoCardProps> = ({ franchise, onClos
           className=""
         />
         <InfoRow
-          label="Placed:"
-          value={elapsedTimeToGameDate(franchise.placedAt, gameState.gameTime.gameDurationHours)}
+          label="Turn:"
+          value={`Turn ${gameState.turnNumber}`}
           className="text-gray-300"
         />
         <InfoRow

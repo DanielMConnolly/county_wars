@@ -77,13 +77,6 @@ export default function FranchiseList({ userFranchises, gameState, franchiseInco
                       Location:{' '}
                       {getCountyNameFromCoordinates(franchise.lat, franchise.long)}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Placed:{' '}
-                      {elapsedTimeToGameDate(
-                        franchise.placedAt,
-                        gameState.gameTime.gameDurationHours
-                      )}
-                    </p>
                     {franchise.state && (
                       <p className="text-xs text-gray-500 mt-1">State: {franchise.state}</p>
                     )}

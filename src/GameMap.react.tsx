@@ -46,10 +46,8 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       if (franchises == null) return;
       setGameState(gameState => ({
         ...gameState,
-        gameTime: {
-          ...gameState.gameTime,
-          elapsedTime: game?.elapsedTime ?? 0,
-        },
+        turnNumber: game?.turnNumber ?? 1,
+        playerWhosTurnItIs: game?.playerWhosTurnItIs ?? null,
         locations: franchises,
       }));
     }

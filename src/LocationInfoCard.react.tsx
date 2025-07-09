@@ -76,11 +76,6 @@ const LocationInfoCard: React.FC<LocationInfoCardProps> = ({ location, onClose }
           className=""
         />
         <InfoRow
-          label="Placed:"
-          value={elapsedTimeToGameDate(location.placedAt, gameState.gameTime.gameDurationHours)}
-          className="text-gray-300"
-        />
-        <InfoRow
           label="Location:"
           value={location.metroArea && location.state ? `${location.metroArea}, ${location.state}` :
                  location.county && location.state ? `${location.county}, ${location.state}` :

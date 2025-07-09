@@ -10,7 +10,6 @@ export type PlacedLocation = {
     lat: number;
     long: number;
     name: string;
-    placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
     county: string | null;
@@ -24,7 +23,6 @@ export type Franchise = {
     lat: number;
     long: number;
     name: string;
-    placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
     county: string | null;
@@ -42,6 +40,8 @@ export type GameState = {
     clickedLocation: { lat: number, lng: number } | null,
     locations: PlacedLocation[],
     userColors: Map<string, string>, // Maps userId to assigned color
+    turnNumber: number,
+    playerWhosTurnItIs: string | null,
 }
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
@@ -78,8 +78,8 @@ export type GamePlayer =  {
 }
 
 export interface ServerGameState {
-    elapsedTime: number;
-    isGamePaused: boolean;
+    turnNumber: number;
+    playerWhosTurnItIs: string | null;
     lobbyPlayers: LobbyPlayer[];
 }
 
@@ -93,18 +93,19 @@ export interface ClickedLocationData {
 
 export interface GameUpdate {
     name?: string;
-    duration?: number;
+    numberOfTurns?: number;
     status?: 'DRAFT' | 'LIVE' | 'FINISHED';
 }
 
 export interface Game {
     id: string;
     name: string | null;
-    duration: number | null;
+    numberOfTurns: number | null;
     status: 'DRAFT' | 'LIVE' | 'FINISHED';
     createdBy: string;
     isActive: boolean;
-    elapsedTime: number;
+    turnNumber: number;
+    playerWhosTurnItIs: string | null;
     createdAt: Date;
     updatedAt: Date;
 }

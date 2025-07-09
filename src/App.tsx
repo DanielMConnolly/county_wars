@@ -6,7 +6,7 @@ import LocationInfoCard from './LocationInfoCard.react';
 import TopMenu from './TopMenu';
 import MapControls from './MapControls';
 import PlacementModeToggle from './components/PlacementModeToggle';
-import { Timeline } from './Timeline';
+import { TurnMenu } from './TurnMenu';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
 import { AuthProvider, useAuth } from './auth/AuthContext';
@@ -121,9 +121,9 @@ const AppContent = () => {
           onClose={() => selectLocation(null)}
         />
       )}
-      {/* Timeline at bottom of screen */}
+      {/* TurnMenu at bottom of screen */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-50">
-        <Timeline />
+        <TurnMenu />
       </div>
     </>
   );

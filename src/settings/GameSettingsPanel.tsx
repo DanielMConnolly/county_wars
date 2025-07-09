@@ -2,7 +2,6 @@ import React, { useContext, useState } from 'react';
 import { Palette, Map } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { COLOR_OPTIONS } from '../constants/gameDefaults';
-import { GameDurationSettings } from './GameDurationSettings';
 import { mapStyles } from '../data/mapStyles';
 import { MapStyle } from '../types/GameTypes';
 import { Dropdown, DropdownOption } from '../components/Dropdown';
@@ -102,12 +101,6 @@ export function GameSettingsPanel({
           </div>
         </div>
       </div>
-
-      <GameDurationSettings
-        selectedDuration={selectedDuration}
-        onDurationChange={setSelectedDuration}
-      />
-
       <div className="flex gap-3 pt-6 border-t border-gray-200">
         <button
           onClick={onBack}

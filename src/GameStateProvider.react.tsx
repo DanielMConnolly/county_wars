@@ -158,7 +158,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       lat: gameState.clickedLocation.lat,
       long: gameState.clickedLocation.lng,
       name: name,
-      placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
       username: user?.username ?? "UNKNOWN",
       county: null,

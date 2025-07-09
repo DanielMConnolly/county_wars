@@ -82,6 +82,14 @@ export class GameSocketService {
       this.emit('game-state-sync', data);
     });
 
+    this.socket.on('turn-update', (data) => {
+      this.emit('turn-update', data);
+    });
+
+    this.socket.on('turn-error', (data) => {
+      this.emit('turn-error', data);
+    });
+
     this.socket.on('player-left', (data) => {
       this.emit('player-left', data);
     });
@@ -119,6 +127,12 @@ export class GameSocketService {
   requestGameSync() {
     if (this.socket) {
       this.socket.emit('request-game-sync', {});
+    }
+  }
+
+  advanceTurn(nextPlayerId: string) {
+    if (this.socket) {
+      this.socket.emit('advance-turn', { nextPlayerId });
     }
   }
 
