@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap, X } from 'lucide-react';
-import { validateLocationPlacement } from './utils/countyUtils';
+import { validateLocationPlacement } from './utils/locationUtils';
 import { GameStateContext } from './GameStateContext';
 import { DataTestIDs } from './DataTestIDs';
 import { fetchClickedLocationData, fetchDistributionCenterCost } from './api_calls/HTTPRequests';

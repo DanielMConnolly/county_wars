@@ -3,8 +3,8 @@ import { Building, Truck, X, Settings, DollarSign } from 'lucide-react';
 import { PlacedLocation } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
 import { DataTestIDs } from './DataTestIDs';
-import { getCountyNameFromCoordinates } from './utils/reverseGeocode';
 import InfoRow from './components/InfoRow';
+import { getReadableLocationName } from './utils/locationUtils';
 
 interface LocationInfoCardProps {
   location: PlacedLocation;
@@ -74,11 +74,7 @@ const LocationInfoCard: React.FC<LocationInfoCardProps> = ({ location, onClose }
         />
         <InfoRow
           label="Location:"
-          value={location.metroArea && location.state ? `${location.metroArea}, ${location.state}` :
-                 location.county && location.state ? `${location.county}, ${location.state}` :
-                 location.county ? location.county :
-                 location.metroArea ? location.metroArea :
-                 getCountyNameFromCoordinates(location.lat, location.long)}
+          value={getReadableLocationName(location)}
           className="text-gray-300 text-sm"
         />
       </div>

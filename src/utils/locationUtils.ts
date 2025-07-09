@@ -98,3 +98,24 @@ export function getStateName(stateFP: string): string {
 
   return stateMap[stateFP] || 'Unknown';
 }
+
+/**
+ * Get a readable location name for display purposes
+ * @param location PlacedLocation object
+ * @returns Formatted location string or null if no location data
+ */
+export function getReadableLocationName(location: PlacedLocation): string | null {
+  if (location.metroArea && location.state) {
+    return `${location.metroArea}, ${location.state}`;
+  }
+  if (location.county && location.state) {
+    return `${location.county}, ${location.state}`;
+  }
+  if (location.county) {
+    return location.county;
+  }
+  if (location.metroArea) {
+    return location.metroArea;
+  }
+  return null;
+}

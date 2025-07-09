@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { Package, Filter } from 'lucide-react';
 import { GameState, PlacedLocation } from '../types/GameTypes';
-import { getCountyNameFromCoordinates } from '../utils/reverseGeocode';
-import DistributionCenterInfoCard from './DistributionCenterInfoCard';
+import LocationInfoCard from '../components/LocationListCard';
 
 interface DistributionCenterListProps {
   userDistributionCenters: PlacedLocation[];
   gameState: GameState;
 }
 
-export default function DistributionCenterList({ userDistributionCenters, gameState }: DistributionCenterListProps) {
+export default function DistributionCenterList({ userDistributionCenters}: DistributionCenterListProps) {
   const [selectedState, setSelectedState] = useState<string>('all');
 
   // Get unique states for filtering
@@ -59,9 +58,9 @@ export default function DistributionCenterList({ userDistributionCenters, gameSt
       {filteredDistributionCenters.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {filteredDistributionCenters.map((distributionCenter, index) => (
-            <DistributionCenterInfoCard
+            <LocationInfoCard
               key={distributionCenter.id}
-              distributionCenter={distributionCenter}
+              location={distributionCenter}
               index={index}
             />
           ))}
