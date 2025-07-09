@@ -9,10 +9,7 @@ export const getDefaultState = (): GameState => {
     clickedLocation: null,
     locations: [],
     userColors: new Map<string, string>(),
-    gameTime: {
-      isPaused: false,
-      gameDurationHours: GAME_DEFAULTS.GAME_DURATION_HOURS,
-      startTime: 0,
-    },
+    turnNumber: 1,
+    playerWhosTurnItIs: null,
   };
 };

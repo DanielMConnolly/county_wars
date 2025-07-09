@@ -62,13 +62,6 @@ export class GameSocketService {
       this.emit('time-update', data);
     });
 
-    this.socket.on('game-paused', (data) => {
-      this.emit('game-paused', data);
-    });
-
-    this.socket.on('game-resumed', (data) => {
-      this.emit('game-resumed', data);
-    });
 
     this.socket.on('money-update', (data) => {
       this.emit('money-update', data);
@@ -80,6 +73,14 @@ export class GameSocketService {
 
     this.socket.on('game-state-sync', (data) => {
       this.emit('game-state-sync', data);
+    });
+
+    this.socket.on('turn-update', (data) => {
+      this.emit('turn-update', data);
+    });
+
+    this.socket.on('turn-error', (data) => {
+      this.emit('turn-error', data);
     });
 
     this.socket.on('player-left', (data) => {
@@ -98,17 +99,6 @@ export class GameSocketService {
     }
   }
 
-  pauseGame() {
-    if (this.socket) {
-      this.socket.emit('game-paused', {});
-    }
-  }
-
-  resumeGame() {
-    if (this.socket) {
-      this.socket.emit('game-resumed', {});
-    }
-  }
 
   sendChatMessage(message: string) {
     if (this.socket) {
@@ -119,6 +109,12 @@ export class GameSocketService {
   requestGameSync() {
     if (this.socket) {
       this.socket.emit('request-game-sync', {});
+    }
+  }
+
+  advanceTurn(nextPlayerId: string) {
+    if (this.socket) {
+      this.socket.emit('advance-turn', { nextPlayerId });
     }
   }
 

@@ -40,53 +40,7 @@ export const connectToGameSocket = async ({
       }));
     });
 
-    gameSocketService.on('time-update', (serverElapsedTime: number) => {
-      // Check if client time is out of sync with server time
-      setGameState((prevState) => {
-        const clientElapsedTime = prevState.gameTime.elapsedTime || 0;
-        const timeDrift = Math.abs(clientElapsedTime - serverElapsedTime);
 
-        if (timeDrift > 1000) {
-          return {
-            ...prevState,
-            gameTime: {
-              ...prevState.gameTime,
-              elapsedTime: serverElapsedTime
-            }
-          };
-        } else {
-          return prevState;
-        }
-      });
-    });
-
-    gameSocketService.on('game-paused', (data: { pausedBy: string }) => {
-      console.log('⏸️ GAME: Game paused by another player:', data.pausedBy);
-      setGameState((prevState) => ({
-        ...prevState,
-        gameTime: {
-          ...prevState.gameTime,
-          isPaused: true
-        }
-      }));
-      if (showToast) {
-        showToast('⏸️ Game paused by another player', 'warning', 3000);
-      }
-    });
-
-    gameSocketService.on('game-resumed', (data: { resumedBy: string }) => {
-      console.log('▶️ GAME: Game resumed by another player:', data.resumedBy);
-      setGameState((prevState) => ({
-        ...prevState,
-        gameTime: {
-          ...prevState.gameTime,
-          isPaused: false
-        }
-      }));
-      if (showToast) {
-        showToast('▶️ Game resumed by another player', 'success', 3000);
-      }
-    });
 
     gameSocketService.on('money-update', (data: { userId: string; newMoney: number }) => {
       setGameState((prevState) => ({
@@ -104,17 +58,6 @@ export const connectToGameSocket = async ({
       // Handle game chat messages (could emit to a chat state or context)
     });
 
-    gameSocketService.on('game-state-sync', (data: { elapsedTime: number; isGamePaused: boolean }) => {
-      console.log('🔄 GAME: Syncing game state:', data);
-      setGameState((prevState) => ({
-        ...prevState,
-        gameTime: {
-          ...prevState.gameTime,
-          elapsedTime: data.elapsedTime,
-          isPaused: data.isGamePaused
-        }
-      }));
-    });
 
     gameSocketService.on('player-left', (data: { userId: string }) => {
       console.log('👋 GAME: Player left:', data.userId);

@@ -44,13 +44,6 @@ export class SocketService {
       this.emit('time-update', data);
     });
 
-    this.socket.on('game-paused', (data) => {
-      this.emit('game-paused', data);
-    });
-
-    this.socket.on('game-resumed', (data) => {
-      this.emit('game-resumed', data);
-    });
 
     this.socket.on('money-update', (data) => {
       this.emit('money-update', data);
@@ -66,17 +59,6 @@ export class SocketService {
     });
   }
 
-  pauseGame() {
-    if (this.socket) {
-      this.socket.emit('game-paused', {});
-    }
-  }
-
-  resumeGame() {
-    if (this.socket) {
-      this.socket.emit('game-resumed', {});
-    }
-  }
 
   // Event system for React components
   on(event: string, callback: Function) {

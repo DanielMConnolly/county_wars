@@ -13,9 +13,8 @@ export default function SettingsModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { gameState, setGameDuration, resetGame } = useContext(GameStateContext);
+  const { gameState, resetGame } = useContext(GameStateContext);
   const [currentView, setCurrentView] = useState<ModalView>('main');
-  const [selectedDuration, setSelectedDuration] = React.useState(gameState.gameTime.gameDurationHours);
 
 
   const handleModalClose = () => {
@@ -69,7 +68,7 @@ export default function SettingsModal({
                 <Settings size={20} className="text-blue-600" />
                 <div>
                   <h3 className="font-medium text-gray-800">Game Settings</h3>
-                  <p className="text-sm text-gray-600">Configure colors, map style, and game duration</p>
+                  <p className="text-sm text-gray-600">Configure colors and map style</p>
                 </div>
               </button>
 
@@ -93,13 +92,8 @@ export default function SettingsModal({
 
           {currentView === 'gameSettings' && (
             <GameSettingsPanel
-              selectedDuration={selectedDuration}
-              setSelectedDuration={setSelectedDuration}
               onBack={() => setCurrentView('main')}
               onSave={() => {
-                if (selectedDuration !== gameState.gameTime.gameDurationHours) {
-                  setGameDuration(selectedDuration);
-                }
                 handleModalClose();
               }}
             />

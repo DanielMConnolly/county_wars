@@ -14,8 +14,6 @@ import {
 import { GAME_DEFAULTS } from "./constants/gameDefaults";
 import { getDefaultState } from "./utils/getDefaultState";
 import { getCurrentGameId } from "./utils/gameUrl";
-import useInterval from "./utils/useInterval";
-import { getMonthAndYear } from "./utils/useGetMonthAndYear";
 import { useAuth } from "./auth/AuthContext";
 import { useToast } from "./Toast/ToastContext";
 import { getUserColorUnique } from "./utils/colorUtils";
@@ -59,45 +57,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     }
   };
 
-  // Time management functions
-  const pauseTime = () => {
-    setGameState((prevState) => ({
-      ...prevState,
-      gameTime: {
-        ...prevState.gameTime,
-        isPaused: true,
-      },
-    }));
 
-    // Emit socket event to notify other players
-    gameSocketService.pauseGame();
-  };
-
-  const resumeTime = () => {
-    setGameState((prevState) => ({
-      ...prevState,
-      gameTime: {
-        ...prevState.gameTime,
-        isPaused: false,
-      },
-    }));
-
-    // Emit socket event to notify other players
-    gameSocketService.resumeGame();
-  };
-
-  const setGameDuration = (hours: number) => {
-    setGameState((prevState) => ({
-      ...prevState,
-      gameTime: {
-        ...prevState.gameTime,
-        gameDurationHours: hours,
-        startTime: Date.now(), // Reset start time when duration changes
-        year: GAME_DEFAULTS.START_YEAR,
-        month: GAME_DEFAULTS.START_MONTH,
-      },
-    }));
-  };
 
   const setCurrentGame = (gameId: string | null) => {
     setGameState((prevState) => ({
@@ -158,7 +118,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       lat: gameState.clickedLocation.lat,
       long: gameState.clickedLocation.lng,
       name: name,
-      placedAt: gameState.gameTime.elapsedTime || 0,
       userId: userId,
       username: user?.username ?? "UNKNOWN",
       county: null,
@@ -173,7 +132,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
       gameState.clickedLocation.lat,
       gameState.clickedLocation.lng,
       name,
-      gameState.gameTime.elapsedTime || 0,
+      0,
       placementMode
     );
 
@@ -234,11 +193,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
         });
         setGameState(prevState => ({
           ...prevState,
-          gameTime: {
-            ...prevState.gameTime,
-            elapsedTime: gameState!.elapsedTime,
-            isPaused: gameState!.isPaused
-          },
           userColors: userColors,
         }));
       }
@@ -262,44 +216,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
   }, [userId, gameId]); // Removed showToast from dependencies to prevent re-runs
 
 
-  useInterval(() => {
-    if (gameState.gameTime.isPaused == true || userId == null) {
-      return;
-    }
-    setGameState((prevState) => {
-      let elapsedTime;
-      if (prevState?.gameTime?.elapsedTime != null) {
-        elapsedTime = 1000 + prevState?.gameTime?.elapsedTime;
-      }
-      else {
-        elapsedTime = 1000;
-      }
-
-
-      const { month, year } = getMonthAndYear({ ...prevState.gameTime, elapsedTime: elapsedTime });
-
-      // Don't update if we're already at the end
-      if (year >= 2025 && month >= 12) {
-        return {
-          ...prevState,
-          gameTime: {
-            ...prevState.gameTime,
-            isPaused: true, // Auto-pause when reaching the end
-          },
-        };
-      }
-
-      return {
-        ...prevState,
-        gameTime: {
-          ...prevState.gameTime,
-          elapsedTime: elapsedTime,
-          year,
-          month,
-        },
-      };
-    });
-  }, GAME_DEFAULTS.NUMBER_OF_MILLISECONDS_TO_UPDATE_GAME_IN);
 
   const getUserSelectedColor = () => {
     if (userId == null) return '#000000';
@@ -314,9 +230,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({
     assignUserColors,
     getUserSelectedColor,
     resetGame,
-    pauseTime,
-    resumeTime,
-    setGameDuration,
     setClickedLocation,
     placeFranchise,
     placementMode,

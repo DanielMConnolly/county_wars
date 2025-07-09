@@ -1,14 +1,15 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { X, Coins, UtensilsCrossed, Trophy } from 'lucide-react';
+import { X, Coins, UtensilsCrossed, Trophy, Package } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { useAuth } from '../auth/AuthContext';
 import { DataTestIDs } from '../DataTestIDs';
 import GameStandings from './GameStandings';
 import FranchiseList from './FranchiseList';
+import DistributionCenterList from './DistributionCenterList';
 import { fetchFranchiseIncome } from '../api_calls/HTTPRequests';
 import { getCurrentGameId } from '../utils/gameUrl';
 
-type TabType = 'income' | 'franchises' | 'standings';
+type TabType = 'income' | 'franchises' | 'distribution-centers' | 'standings';
 
 interface GameInformationProps {
   isOpen: boolean;
@@ -27,7 +28,12 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
 
   // Filter locations to show only the current user's locations
   const userFranchises = gameState.locations.filter(
-    location => user && location.userId === user.id
+    location => user && location.userId === user.id && location.locationType === 'franchise'
+  );
+
+  // Filter distribution centers to show only the current user's distribution centers
+  const userDistributionCenters = gameState.locations.filter(
+    location => user && location.userId === user.id && location.locationType === 'distribution-center'
   );
 
   // Fetch franchise income data when the component opens
@@ -108,6 +114,19 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
               </div>
             </button>
             <button
+              onClick={() => setActiveTab('distribution-centers')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'distribution-centers'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Package size={16} />
+                Distribution Centers
+              </div>
+            </button>
+            <button
               onClick={() => setActiveTab('standings')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'standings'
@@ -175,6 +194,13 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
               userFranchises={userFranchises}
               gameState={gameState}
               franchiseIncomeData={franchiseIncomeData}
+            />
+          )}
+
+          {activeTab === 'distribution-centers' && (
+            <DistributionCenterList
+              userDistributionCenters={userDistributionCenters}
+              gameState={gameState}
             />
           )}
 

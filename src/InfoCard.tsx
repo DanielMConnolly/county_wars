@@ -104,7 +104,6 @@ const InfoCard = () => {
 
   const isPlaceFranchiseButtonEnabled = (): boolean => {
     if (!clickedLocation) return false;
-    if (gameState.gameTime?.isPaused) return false;
 
     const validation = getLocationValidation(clickedLocation.lat, clickedLocation.lng);
     if (!validation.isValid) return false;

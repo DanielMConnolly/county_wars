@@ -1,16 +1,9 @@
-export type GameTime = {
-    isPaused: boolean;
-    gameDurationHours: number; // How long the full timeline takes in real hours
-    startTime: number; // Timestamp when game started
-    elapsedTime?: number; // How much time has elapsed (for save/restore)
-}
 
 export type PlacedLocation = {
     id: string;
     lat: number;
     long: number;
     name: string;
-    placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
     county: string | null;
@@ -24,7 +17,6 @@ export type Franchise = {
     lat: number;
     long: number;
     name: string;
-    placedAt: number; // timestamp
     userId: string; // Owner of the franchise
     username: string; // Owner's username
     county: string | null;
@@ -38,10 +30,11 @@ export type GameState = {
     money: number, // Changed from resources to money (USD)
     selectedLocation: PlacedLocation | null,
     mapStyle: string
-    gameTime: GameTime,
     clickedLocation: { lat: number, lng: number } | null,
     locations: PlacedLocation[],
     userColors: Map<string, string>, // Maps userId to assigned color
+    turnNumber: number,
+    playerWhosTurnItIs: string | null,
 }
 
 export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
@@ -78,8 +71,8 @@ export type GamePlayer =  {
 }
 
 export interface ServerGameState {
-    elapsedTime: number;
-    isGamePaused: boolean;
+    turnNumber: number;
+    playerWhosTurnItIs: string | null;
     lobbyPlayers: LobbyPlayer[];
 }
 
@@ -93,18 +86,19 @@ export interface ClickedLocationData {
 
 export interface GameUpdate {
     name?: string;
-    duration?: number;
+    numberOfTurns?: number;
     status?: 'DRAFT' | 'LIVE' | 'FINISHED';
 }
 
 export interface Game {
     id: string;
     name: string | null;
-    duration: number | null;
+    numberOfTurns: number | null;
     status: 'DRAFT' | 'LIVE' | 'FINISHED';
     createdBy: string;
     isActive: boolean;
-    elapsedTime: number;
+    turnNumber: number;
+    playerWhosTurnItIs: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
