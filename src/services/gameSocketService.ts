@@ -58,17 +58,8 @@ export class GameSocketService {
       this.emit('franchise-removed', data);
     });
 
-    this.socket.on('time-update', (data) => {
-      this.emit('time-update', data);
-    });
-
-
     this.socket.on('money-update', (data) => {
       this.emit('money-update', data);
-    });
-
-    this.socket.on('game-chat-message', (data) => {
-      this.emit('game-chat-message', data);
     });
 
     this.socket.on('game-state-sync', (data) => {
@@ -96,19 +87,6 @@ export class GameSocketService {
   removeFranchise(franchiseData: any) {
     if (this.socket) {
       this.socket.emit('franchise-removed', franchiseData);
-    }
-  }
-
-
-  sendChatMessage(message: string) {
-    if (this.socket) {
-      this.socket.emit('game-chat', { message });
-    }
-  }
-
-  requestGameSync() {
-    if (this.socket) {
-      this.socket.emit('request-game-sync', {});
     }
   }
 

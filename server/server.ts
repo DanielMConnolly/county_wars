@@ -12,7 +12,7 @@ import { getGeoDataFromCoordinates } from './metroAreaUtils';
 import { getDistributionCost, getFranchiseCost, getPopulationCost } from './calculateCosts.js';
 import { VALID_COLOR_NAMES } from '../src/constants/gameDefaults.js';
 import { Franchise } from '../src/types/GameTypes.js';
-import { calculateIncomeForFranchise } from './incomeUtils.js';
+import { calculateIncomeForFranchise, calculateTotalIncomeForPlayer } from './incomeUtils.js';
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -395,13 +395,11 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
       };
 
       lobbyStates.set(gameId, gameState);
-      console.log(`Initialized game state for ${gameId} with host ${user.username} (${userId})`);
 
       // Broadcast lobby update to all players in the lobby room
       io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
         players: gameState.lobbyPlayers,
       });
-      console.log(`Broadcasted initial lobby state for game ${gameId}`);
     } else {
       // Game state exists, check if user is already in lobby
       const existingPlayer = gameState.lobbyPlayers.find(player => player.userId === userId);
@@ -416,15 +414,10 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
         });
 
         lobbyStates.set(gameId, gameState);
-        console.log(
-          `Added player ${user.username} (${userId}) to existing lobby for game ${gameId}`
-        );
 
-        // Broadcast lobby update to all players in the lobby room
         io.of('/lobby').to(`lobby-${gameId}`).emit('lobby-updated', {
           players: gameState.lobbyPlayers,
         });
-        console.log(`Broadcasted lobby update for new player in game ${gameId}`);
       }
     }
 
@@ -441,7 +434,6 @@ app.get('/api/games/:gameId/lobby', async (req: Request, res: Response): Promise
 // Get all players in a game with their money for standings
 app.get('/api/games/:gameId/players', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
-
   try {
     const players = await dbOperations.getGamePlayersWithMoney(gameId);
     res.json(players);
@@ -465,7 +457,7 @@ app.get(
         income: calculateIncomeForFranchise(franchise),
       }));
 
-      const totalIncome = franchiseIncome.reduce((sum, f) => sum + f.income, 0);
+      const totalIncome = await calculateTotalIncomeForPlayer(userId, gameId);
 
       res.json({
         franchises: franchiseIncome,
@@ -505,7 +497,6 @@ app.get('/api/games/:gameId', async (req: Request, res: Response): Promise<void>
 
   try {
     const game = await dbOperations.getGame(gameId);
-
     if (game) {
       res.json(game);
     } else {
@@ -519,7 +510,6 @@ app.get('/api/games/:gameId', async (req: Request, res: Response): Promise<void>
 
 app.get('/api/users/:userId/games', async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
-
   try {
     const games = await dbOperations.getUserGames(userId);
     res.json({ games });
@@ -531,7 +521,6 @@ app.get('/api/users/:userId/games', async (req: Request, res: Response): Promise
 
 app.get('/api/users/:userId/live-games', async (req: Request, res: Response): Promise<void> => {
   const { userId } = req.params;
-
   try {
     const games = await dbOperations.getUserLiveGames(userId);
     res.json({ games });
@@ -543,15 +532,10 @@ app.get('/api/users/:userId/live-games', async (req: Request, res: Response): Pr
 
 app.delete('/api/games/:gameId', async (req: Request, res: Response): Promise<void> => {
   const { gameId } = req.params;
-
   try {
     const success = await dbOperations.deleteGame(gameId);
-
     if (success) {
-      // Broadcast game deletion to all welcome screen clients
       welcomeNamespace.emit('game-deleted', { gameId });
-      console.log(`Broadcasted game deletion: ${gameId}`);
-
       res.json({ message: 'Game deleted successfully' });
     } else {
       res.status(404).json({ error: 'Game not found' });
@@ -638,7 +622,6 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
 
     let franchise;
     try {
-      console.log('🔄 Calling placeFranchise with locationType:', locationType);
       franchise = await dbOperations.placeFranchise(
         userId,
         gameId,
@@ -651,7 +634,6 @@ app.post('/api/franchises', async (req: Request, res: Response): Promise<void> =
         locationType,
         population
       );
-      console.log('✅ placeFranchise result:', franchise);
     } catch (error) {
       console.error('❌ Error in placeFranchise:', error);
       // If location placement failed, refund the money (only if money was deducted)
@@ -762,7 +744,7 @@ app.delete('/api/franchises/:franchiseId', async (req: Request, res: Response): 
 
 // Distribution center placement endpoint
 app.post('/api/distribution-centers', async (req: Request, res: Response): Promise<void> => {
-  const { userId, gameId, lat, long, name} = req.body;
+  const { userId, gameId, lat, long, name } = req.body;
 
   if (!userId || !gameId || lat === undefined || long === undefined || !name) {
     res.status(400).json({ error: 'userId, gameId, lat, long, and name are required' });
@@ -790,12 +772,6 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
     const isFirstDistributionCenter = userDistributionCenters.length === 0;
     const distributionCenterCost = isFirstDistributionCenter ? 0 : 10000;
 
-    console.log(`📊 Distribution center cost calculation for user ${userId}:`, {
-      existingDistributionCenters: userDistributionCenters.length,
-      isFirstDistributionCenter,
-      cost: distributionCenterCost,
-    });
-
     // Check if user has enough money in this game
     const userMoney = await dbOperations.getUserGameMoney(userId, gameId);
     if (userMoney < distributionCenterCost) {
@@ -819,7 +795,6 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
 
     let distributionCenter;
     try {
-      console.log('🔄 Calling placeFranchise with locationType: distributionCenter');
       distributionCenter = await dbOperations.placeFranchise(
         userId,
         gameId,
@@ -831,7 +806,6 @@ app.post('/api/distribution-centers', async (req: Request, res: Response): Promi
         metroArea,
         'distributionCenter'
       );
-      console.log('✅ placeFranchise result:', distributionCenter);
     } catch (error) {
       console.error('❌ Error in placeFranchise:', error);
       // If placement failed, refund the money (only if money was deducted)

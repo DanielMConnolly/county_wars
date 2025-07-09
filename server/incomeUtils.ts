@@ -12,7 +12,7 @@ export const calculateIncomeForFranchise = (franchise: Franchise): number => {
   return Math.round(income);
 };
 
-export const calculateIncome = async (userId: string, gameId: string): Promise<number> => {
+export const calculateTotalIncomeForPlayer = async (userId: string, gameId: string): Promise<number> => {
   try {
     // Get franchises owned by the user in the specific game
     const userFranchises = await dbOperations.getUserGameFranchises(userId, gameId);
