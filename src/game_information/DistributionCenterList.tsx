@@ -8,7 +8,9 @@ interface DistributionCenterListProps {
   gameState: GameState;
 }
 
-export default function DistributionCenterList({ userDistributionCenters}: DistributionCenterListProps) {
+export default function DistributionCenterList({
+  userDistributionCenters,
+}: DistributionCenterListProps) {
   const [selectedState, setSelectedState] = useState<string>('all');
 
   // Get unique states for filtering
@@ -57,12 +59,8 @@ export default function DistributionCenterList({ userDistributionCenters}: Distr
 
       {filteredDistributionCenters.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {filteredDistributionCenters.map((distributionCenter, index) => (
-            <LocationInfoCard
-              key={distributionCenter.id}
-              location={distributionCenter}
-              index={index}
-            />
+          {filteredDistributionCenters.map(distributionCenter => (
+            <LocationInfoCard key={distributionCenter.id} location={distributionCenter} />
           ))}
         </div>
       ) : (
@@ -70,7 +68,8 @@ export default function DistributionCenterList({ userDistributionCenters}: Distr
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-medium text-gray-600 mb-2">No Distribution Centers Yet</h4>
           <p className="text-gray-500">
-            Switch to distribution center mode and click on the map to place your first distribution center!
+            Switch to distribution center mode and click on the map to place your first distribution
+            center!
           </p>
         </div>
       )}

@@ -64,14 +64,13 @@ export default function FranchiseList({ userFranchises, franchiseIncomeData }: F
 
       {filteredFranchises.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {filteredFranchises.map((franchise, index) => {
+          {filteredFranchises.map(franchise => {
             const incomeData = franchiseIncomeData?.find(data => data.id === franchise.id);
             const income = incomeData?.income || 0;
             return (
               <LocationInfoCard
                 key={franchise.id}
                 location={franchise}
-                index={index}
                 showIncome={true}
                 income={income}
               />

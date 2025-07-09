@@ -5,12 +5,15 @@ import { getReadableLocationName } from '../utils/locationUtils';
 
 interface LocationListCardProps {
   location: PlacedLocation | Franchise;
-  index: number;
   showIncome?: boolean;
   income?: number;
 }
 
-export default function LocationListCard({ location, index, showIncome = false, income = 0 }: LocationListCardProps) {
+export default function LocationListCard({
+  location,
+  showIncome = false,
+  income = 0,
+}: LocationListCardProps) {
   const isDistributionCenter = location.locationType === 'distribution-center';
   const franchise = location as Franchise;
 
@@ -26,13 +29,9 @@ export default function LocationListCard({ location, index, showIncome = false, 
           <p className="text-sm text-gray-600 mt-1">
             Location: {getReadableLocationName(location)}
           </p>
-          {location.state && (
-            <p className="text-xs text-gray-500 mt-1">State: {location.state}</p>
-          )}
+          {location.state && <p className="text-xs text-gray-500 mt-1">State: {location.state}</p>}
           {location.metroArea && (
-            <p className="text-xs text-gray-500 mt-1">
-              Metro Area: {location.metroArea}
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Metro Area: {location.metroArea}</p>
           )}
           {!isDistributionCenter && franchise.population && (
             <p className="text-xs text-gray-500 mt-1">
@@ -43,9 +42,6 @@ export default function LocationListCard({ location, index, showIncome = false, 
         <div className="flex flex-col items-end gap-2 ml-4">
           <div className="flex items-center gap-2">
             <IconComponent className={`w-5 h-5 ${iconColor}`} />
-            <span className="text-sm font-medium text-gray-700">
-              #{index + 1}
-            </span>
           </div>
           <div className="text-right">
             {showIncome ? (
