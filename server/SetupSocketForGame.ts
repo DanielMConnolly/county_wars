@@ -99,8 +99,6 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           gameState.turnNumber += 1;
           gameState.playerWhosTurnItIs = nextPlayerId;
           gameStates.set(socket.gameId, gameState);
-
-          // Calculate and distribute income to the next player
           try {
             const incomeAmount = await calculateTotalIncomeForPlayer(nextPlayerId, socket.gameId);
             if (incomeAmount > 0) {
@@ -128,7 +126,7 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
               const playerMoney = await dbOperations.getUserGameMoney(player.userId, socket.gameId);
               const playerFranchises = await dbOperations.getUserGameFranchises(player.userId, socket.gameId);
               const playerIncome = await calculateTotalIncomeForPlayer(player.userId, socket.gameId);
-              
+
               await dbOperations.createStatsByTurn(
                 player.userId,
                 socket.gameId,

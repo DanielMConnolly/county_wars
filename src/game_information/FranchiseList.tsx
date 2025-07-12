@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UtensilsCrossed, Filter } from 'lucide-react';
 import { GameState, Franchise } from '../types/GameTypes';
 import LocationInfoCard from '../components/LocationListCard';
+import { Dropdown, DropdownOption } from '../components/Dropdown';
 
 interface FranchiseIncomeData {
   id: string;
@@ -23,6 +24,15 @@ export default function FranchiseList({ userFranchises, franchiseIncomeData }: F
     new Set(userFranchises.map(f => f.state).filter(Boolean))
   ) as string[];
 
+  // Create dropdown options
+  const stateOptions: DropdownOption[] = [
+    { value: 'all', label: `All States (${userFranchises.length})` },
+    ...uniqueStates.map(state => {
+      const count = userFranchises.filter(f => f.state === state).length;
+      return { value: state, label: `${state} (${count})` };
+    })
+  ];
+
   // Filter franchises by selected state
   const filteredFranchises =
     selectedState === 'all'
@@ -40,26 +50,14 @@ export default function FranchiseList({ userFranchises, franchiseIncomeData }: F
 
       {/* State Filter */}
       {uniqueStates.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-500" />
-          <label className="text-sm font-medium text-gray-700">Filter by State:</label>
-          <select
-            value={selectedState}
-            onChange={e => setSelectedState(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1 text-sm
-             focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All States ({userFranchises.length})</option>
-            {uniqueStates.map(state => {
-              const count = userFranchises.filter(f => f.state === state).length;
-              return (
-                <option key={state} value={state}>
-                  {state} ({count})
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        <Dropdown
+          value={selectedState}
+          onChange={(value) => setSelectedState(value as string)}
+          options={stateOptions}
+          label="Filter by State:"
+          icon={<Filter size={16} className="text-gray-500" />}
+          className="max-w-xs"
+        />
       )}
 
       {filteredFranchises.length > 0 ? (

@@ -16,15 +16,7 @@ import { getCurrentGameId } from '../utils/gameUrl';
 import { useAuth } from '../auth/AuthContext';
 
 // Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface TurnStatsProps {
   isVisible: boolean;
@@ -86,8 +78,8 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
         pointHoverRadius: 8,
         tension: 0.2, // Smooth curves
         fill: true,
-      }
-    ]
+      },
+    ],
   };
 
   const chartOptions = {
@@ -113,11 +105,11 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
             const stat = turnStatsData[dataIndex];
             return [
               `Total Money: $${stat.totalMoney.toLocaleString()}`,
-              `Franchises: ${stat.totalFranchises}`
+              `Franchises: ${stat.totalFranchises}`,
             ];
-          }
-        }
-      }
+          },
+        },
+      },
     },
     scales: {
       y: {
@@ -132,7 +124,7 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
             size: 14,
           },
           color: '#6b7280',
-        }
+        },
       },
       x: {
         title: {
@@ -142,9 +134,9 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
             size: 14,
           },
           color: '#6b7280',
-        }
-      }
-    }
+        },
+      },
+    },
   };
 
   return (
@@ -162,13 +154,17 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
               <Line data={chartData} options={chartOptions} />
             </div>
           </div>
-          
+
           {/* Summary stats below chart */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="bg-white rounded-lg p-4 border border-gray-200">
               <h5 className="font-medium text-gray-800">Average Income</h5>
               <p className="text-2xl font-bold text-blue-600">
-                ${Math.round(turnStatsData.reduce((sum, stat) => sum + stat.incomeReceived, 0) / turnStatsData.length).toLocaleString()}
+                $
+                {Math.round(
+                  turnStatsData.reduce((sum, stat) => sum + stat.incomeReceived, 0) /
+                    turnStatsData.length
+                ).toLocaleString()}
               </p>
             </div>
             <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -180,7 +176,9 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
             <div className="bg-white rounded-lg p-4 border border-gray-200">
               <h5 className="font-medium text-gray-800">Current Franchises</h5>
               <p className="text-2xl font-bold text-purple-600">
-                {turnStatsData.length > 0 ? turnStatsData[turnStatsData.length - 1].totalFranchises : 0}
+                {turnStatsData.length > 0
+                  ? turnStatsData[turnStatsData.length - 1].totalFranchises
+                  : 0}
               </p>
             </div>
           </div>
