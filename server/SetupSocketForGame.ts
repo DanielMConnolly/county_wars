@@ -109,12 +109,18 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
               // Record income in IncomeAtTurn table
               await dbOperations.createIncomeAtTurn(nextPlayerId, socket.gameId, gameState.turnNumber, incomeAmount);
 
-              // Emit money update to the next player
-              gameNamespace.to(`game-${socket.gameId}`).emit('money-update', {
-                userId: nextPlayerId,
-                newMoney: newMoney,
-                incomeReceived: incomeAmount
-              });
+              // Emit money update only to the next player
+              const nextPlayerSocket = Array.from(gameNamespace.sockets.values()).find(
+                s => s.userId === nextPlayerId && s.gameId === socket.gameId
+              );
+              
+              if (nextPlayerSocket) {
+                nextPlayerSocket.emit('money-update', {
+                  userId: nextPlayerId,
+                  newMoney: newMoney,
+                  incomeReceived: incomeAmount
+                });
+              }
             }
           } catch (error) {
             console.error(`Error calculating income for player ${nextPlayerId}:`, error);
