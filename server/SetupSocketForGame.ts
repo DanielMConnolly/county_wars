@@ -122,6 +122,26 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
             console.error(`Error calculating income for player ${nextPlayerId}:`, error);
           }
 
+          // Record stats for all players at the start of this turn
+          try {
+            for (const player of players) {
+              const playerMoney = await dbOperations.getUserGameMoney(player.userId, socket.gameId);
+              const playerFranchises = await dbOperations.getUserGameFranchises(player.userId, socket.gameId);
+              const playerIncome = await calculateTotalIncomeForPlayer(player.userId, socket.gameId);
+              
+              await dbOperations.createStatsByTurn(
+                player.userId,
+                socket.gameId,
+                gameState.turnNumber,
+                playerIncome,
+                playerMoney,
+                playerFranchises.length
+              );
+            }
+          } catch (error) {
+            console.error(`Error recording stats by turn for game ${socket.gameId}:`, error);
+          }
+
           // Broadcast turn update to all players
           gameNamespace.to(`game-${socket.gameId}`).emit('turn-update', {
             turnNumber: gameState.turnNumber,

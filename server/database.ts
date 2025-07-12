@@ -483,6 +483,44 @@ export const dbOperations = {
     }
   },
 
+  getFranchiseById: async (franchiseId: string): Promise<Franchise | null> => {
+    try {
+      const franchise = await prisma.placedLocation.findUnique({
+        where: { id: parseInt(franchiseId) },
+        include: {
+          user: {
+            select: {
+              username: true,
+            },
+          },
+        },
+      });
+
+      if (!franchise) {
+        return null;
+      }
+
+      // Transform to match client-side Franchise type
+      return {
+        id: franchise.id.toString(),
+        lat: franchise.lat,
+        long: franchise.long,
+        name: franchise.name,
+        population: franchise.population ?? 100,
+        userId: franchise.userId,
+        username: franchise.user.username || 'Unknown',
+        county: franchise.county,
+        state: franchise.state,
+        metroArea: franchise.metroArea,
+        locationType:
+          franchise.locationType === 'distributionCenter' ? 'distribution-center' : 'franchise',
+      };
+    } catch (error) {
+      console.error('Error getting franchise by ID:', error);
+      return null;
+    }
+  },
+
   // Update existing franchises with location data
   updateFranchiseLocation: async (
     franchiseId: number,
@@ -701,6 +739,81 @@ export const dbOperations = {
       return playersWithMoney.sort((a, b) => b.money - a.money);
     } catch (error) {
       console.error('Error getting game players with money:', error);
+      return [];
+    }
+  },
+
+  // StatsByTurn operations
+  createStatsByTurn: async (
+    userId: string,
+    gameId: string,
+    turnNumber: number,
+    incomeReceived: number,
+    totalMoney: number,
+    totalFranchises: number
+  ): Promise<boolean> => {
+    try {
+      await prisma.statsByTurn.upsert({
+        where: {
+          userId_gameId_turnNumber: {
+            userId,
+            gameId,
+            turnNumber,
+          },
+        },
+        update: {
+          incomeReceived,
+          totalMoney,
+          totalFranchises,
+        },
+        create: {
+          userId,
+          gameId,
+          turnNumber,
+          incomeReceived,
+          totalMoney,
+          totalFranchises,
+        },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error creating/updating stats by turn:', error);
+      return false;
+    }
+  },
+
+  getStatsByTurnForUser: async (userId: string, gameId: string): Promise<any[]> => {
+    try {
+      const stats = await prisma.statsByTurn.findMany({
+        where: {
+          userId,
+          gameId,
+        },
+        orderBy: {
+          turnNumber: 'asc',
+        },
+      });
+      return stats;
+    } catch (error) {
+      console.error('Error getting stats by turn for user:', error);
+      return [];
+    }
+  },
+
+  getStatsByTurnForGame: async (gameId: string): Promise<any[]> => {
+    try {
+      const stats = await prisma.statsByTurn.findMany({
+        where: {
+          gameId,
+        },
+        orderBy: [
+          { turnNumber: 'asc' },
+          { userId: 'asc' },
+        ],
+      });
+      return stats;
+    } catch (error) {
+      console.error('Error getting stats by turn for game:', error);
       return [];
     }
   },

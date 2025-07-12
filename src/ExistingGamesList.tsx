@@ -37,7 +37,7 @@ export default function ExistingGamesList({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-xl font-bold text-white group-hover:text-green-300 transition-colors">
-                  {game.id}
+                  {game.name || `Game ${game.id}`}
                 </h4>
                 <p className="text-gray-400 text-sm mt-1">
                   Status: <span className="text-green-400 font-medium">{game.status}</span>

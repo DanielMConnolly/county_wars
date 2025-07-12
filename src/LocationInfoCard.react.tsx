@@ -1,10 +1,11 @@
-import React, {useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Building, Truck, X, Settings, DollarSign } from 'lucide-react';
 import { PlacedLocation } from './types/GameTypes';
 import { useAuth } from './auth/AuthContext';
 import { DataTestIDs } from './DataTestIDs';
 import InfoRow from './components/InfoRow';
 import { getReadableLocationName } from './utils/locationUtils';
+import { fetchFranchiseById } from './api_calls/HTTPRequests';
 
 interface LocationInfoCardProps {
   location: PlacedLocation;
@@ -14,9 +15,28 @@ interface LocationInfoCardProps {
 const LocationInfoCard: React.FC<LocationInfoCardProps> = ({ location, onClose }) => {
   const { user } = useAuth();
   const [showOptionsPanel, setShowOptionsPanel] = useState(false);
+  const [income, setIncome] = useState<number | null>(null);
+  const [loadingIncome, setLoadingIncome] = useState(false);
 
   const isOwnedByUser = location.userId === user?.id;
   const isDistributionCenter = location.locationType === 'distribution-center';
+  const isFranchise = location.locationType === 'franchise';
+
+  // Fetch income for franchises
+  useEffect(() => {
+    const fetchIncome = async () => {
+      if (isFranchise && location.id) {
+        setLoadingIncome(true);
+        const response = await fetchFranchiseById(location.id);
+        if (response.success && response.franchise) {
+          setIncome(response.franchise.income);
+        }
+        setLoadingIncome(false);
+      }
+    };
+
+    fetchIncome();
+  }, [isFranchise, location.id]);
 
   // Dynamic content based on location type
   const locationTypeInfo = {
@@ -77,6 +97,21 @@ const LocationInfoCard: React.FC<LocationInfoCardProps> = ({ location, onClose }
           value={getReadableLocationName(location)}
           className="text-gray-300 text-sm"
         />
+        {isFranchise && (
+          <InfoRow
+            label="Income:"
+            value={
+              loadingIncome ? (
+                <span className="text-gray-400">Loading...</span>
+              ) : income !== null ? (
+                <span className="text-green-400 font-semibold">${income.toLocaleString()}</span>
+              ) : (
+                <span className="text-gray-400">--</span>
+              )
+            }
+            className=""
+          />
+        )}
       </div>
 
       {isOwnedByUser && !showOptionsPanel && (

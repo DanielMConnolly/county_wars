@@ -41,6 +41,7 @@ model Game {
   placedLocations   PlacedLocation[]
   userGameMoney     UserGameMoney[]
   incomeAtTurn      IncomeAtTurn[]
+  statsByTurn       StatsByTurn[]
 
   @@map("games")
 }
@@ -101,6 +102,21 @@ model IncomeAtTurn {
 
   @@unique([userId, gameId, turn])
   @@map("income_at_turn")
+}
+
+model StatsByTurn {
+  id               Int      @id @default(autoincrement())
+  userId           String   @map("user_id")
+  gameId           String   @map("game_id")
+  turnNumber       Int      @map("turn_number")
+  incomeReceived   Int      @map("income_received")
+  totalMoney       Int      @map("total_money")
+  totalFranchises  Int      @map("total_franchises")
+  createdAt        DateTime @default(now()) @map("created_at")
+  game             Game     @relation(fields: [gameId], references: [id])
+
+  @@unique([userId, gameId, turnNumber])
+  @@map("stats_by_turn")
 }
 
 model PopulationPoint {

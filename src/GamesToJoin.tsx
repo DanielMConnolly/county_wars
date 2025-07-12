@@ -57,7 +57,7 @@ export default function GamesToJoin({
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">
-                  {game.id}
+                  {game.name || `Game ${game.id}`}
                 </h4>
                 <p className="text-gray-400 text-sm mt-1">
                   Created by {game.createdBy|| 'Unknown'}
