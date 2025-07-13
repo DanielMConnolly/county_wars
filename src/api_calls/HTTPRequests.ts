@@ -424,12 +424,11 @@ export async function placeLocation(
   lat: number,
   long: number,
   name: string,
-  elapsedTime?: number,
   locationType: PlacementMode = 'franchise',
   population?: number
 ): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/franchises`, {
+    const response = await fetch(`${API_BASE_URL}/api/place-franchise`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -440,7 +439,6 @@ export async function placeLocation(
         lat,
         long,
         name,
-        elapsedTime,
         locationType: locationType === 'distribution-center' ? 'distributionCenter' : 'franchise',
         population,
       }),
@@ -459,47 +457,6 @@ export async function placeLocation(
     }
   } catch (error) {
     console.error('Place franchise request failed:', error);
-    return { success: false, error: 'Network error. Please try again.' };
-  }
-}
-
-export async function placeDistributionCenter(
-  userId: string,
-  gameId: string,
-  lat: number,
-  long: number,
-  name: string,
-  elapsedTime?: number
-): Promise<{ success: boolean; error?: string; cost?: number; remainingMoney?: number }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/distribution-centers`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId,
-        gameId,
-        lat,
-        long,
-        name,
-        elapsedTime,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      return {
-        success: true,
-        cost: data.cost,
-        remainingMoney: data.remainingMoney,
-      };
-    } else {
-      return { success: false, error: data.error || 'Failed to place distribution center' };
-    }
-  } catch (error) {
-    console.error('Place distribution center request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -543,6 +500,29 @@ export async function removeFranchise(
     }
   } catch (error) {
     console.error('Remove franchise request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function getStateStats(
+  gameId: string,
+  stateName: string,
+  userId: string
+): Promise<{ success: boolean; totalFranchises?: number; userFranchises?: number; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/states/${encodeURIComponent(stateName)}/stats?userId=${encodeURIComponent(userId)}`);
+    const data = await response.json();
+    if (response.ok) {
+      return { 
+        success: true, 
+        totalFranchises: data.totalFranchises,
+        userFranchises: data.userFranchises
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch state stats' };
+    }
+  } catch (error) {
+    console.error('Fetch state stats request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }
@@ -592,6 +572,101 @@ export async function fetchFranchiseIncome(
     }
   } catch (error) {
     console.error('Fetch franchise income request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchPotentialIncome(
+  lat: number,
+  long: number
+): Promise<{
+  success: boolean;
+  projectedIncome?: number;
+  population?: number;
+  location?: {
+    county: string;
+    state: string;
+    metroArea: string;
+  };
+  error?: string;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/potential-income`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ lat, long }),
+    });
+    
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        projectedIncome: data.projectedIncome,
+        population: data.population,
+        location: data.location,
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch potential income' };
+    }
+  } catch (error) {
+    console.error('Fetch potential income request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchFranchiseById(
+  franchiseId: string
+): Promise<{ success: boolean; franchise?: Franchise & { income: number }; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/franchises/${franchiseId}`);
+    const data = await response.json();
+
+    if (response.ok) {
+      return { success: true, franchise: data };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch franchise' };
+    }
+  } catch (error) {
+    console.error('Fetch franchise by ID request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+// StatsByTurn API functions
+export async function fetchStatsByTurnForUser(
+  gameId: string,
+  userId: string
+): Promise<{
+  success: boolean;
+  stats?: Array<{
+    id: number;
+    turnNumber: number;
+    incomeReceived: number;
+    totalMoney: number;
+    totalFranchises: number;
+    createdAt: Date;
+  }>;
+  error?: string;
+}> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/games/${gameId}/users/${userId}/stats-by-turn`
+    );
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        stats: data.stats,
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch stats by turn' };
+    }
+  } catch (error) {
+    console.error('Fetch stats by turn request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

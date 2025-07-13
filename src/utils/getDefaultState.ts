@@ -11,5 +11,6 @@ export const getDefaultState = (): GameState => {
     userColors: new Map<string, string>(),
     turnNumber: 1,
     playerWhosTurnItIs: null,
+    selectedState: null,
   };
 };

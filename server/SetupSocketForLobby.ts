@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
 import { dbOperations } from './database.js';
 import type { ServerGameState, GameUpdate } from '../src/types/GameTypes.js';
-import { gameStates } from './SetupSocketForGame.js';
 
 // Extend Socket.IO socket to include custom userId property
 declare module 'socket.io' {
@@ -44,10 +43,10 @@ export function setupSocketForLobby(io: Server, namespace = '/lobby') {
 
     // Add user to lobby players if not already present
     const addUserToLobby = async () => {
-      let gameState = lobbyStates.get(socket.gameId) || { 
-        turnNumber: 1, 
-        playerWhosTurnItIs: null, 
-        lobbyPlayers: [] 
+      let gameState = lobbyStates.get(socket.gameId) || {
+        turnNumber: 1,
+        playerWhosTurnItIs: null,
+        lobbyPlayers: []
       };
       let playerAdded = false;
 

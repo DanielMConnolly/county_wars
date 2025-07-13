@@ -1,21 +1,32 @@
 import React, { useState } from 'react';
 import { Package, Filter } from 'lucide-react';
 import { GameState, PlacedLocation } from '../types/GameTypes';
-import { getCountyNameFromCoordinates } from '../utils/reverseGeocode';
-import DistributionCenterInfoCard from './DistributionCenterInfoCard';
+import LocationInfoCard from '../components/LocationListCard';
+import { Dropdown, DropdownOption } from '../components/Dropdown';
 
 interface DistributionCenterListProps {
   userDistributionCenters: PlacedLocation[];
   gameState: GameState;
 }
 
-export default function DistributionCenterList({ userDistributionCenters, gameState }: DistributionCenterListProps) {
+export default function DistributionCenterList({
+  userDistributionCenters,
+}: DistributionCenterListProps) {
   const [selectedState, setSelectedState] = useState<string>('all');
 
   // Get unique states for filtering
   const uniqueStates = Array.from(
     new Set(userDistributionCenters.map(dc => dc.state).filter(Boolean))
   ) as string[];
+
+  // Create dropdown options
+  const stateOptions: DropdownOption[] = [
+    { value: 'all', label: `All States (${userDistributionCenters.length})` },
+    ...uniqueStates.map(state => {
+      const count = userDistributionCenters.filter(dc => dc.state === state).length;
+      return { value: state, label: `${state} (${count})` };
+    })
+  ];
 
   // Filter distribution centers by selected state
   const filteredDistributionCenters =
@@ -34,36 +45,20 @@ export default function DistributionCenterList({ userDistributionCenters, gameSt
 
       {/* State Filter */}
       {uniqueStates.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-500" />
-          <label className="text-sm font-medium text-gray-700">Filter by State:</label>
-          <select
-            value={selectedState}
-            onChange={e => setSelectedState(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1 text-sm
-             focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All States ({userDistributionCenters.length})</option>
-            {uniqueStates.map(state => {
-              const count = userDistributionCenters.filter(dc => dc.state === state).length;
-              return (
-                <option key={state} value={state}>
-                  {state} ({count})
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        <Dropdown
+          value={selectedState}
+          onChange={(value) => setSelectedState(value as string)}
+          options={stateOptions}
+          label="Filter by State:"
+          icon={<Filter size={16} className="text-gray-500" />}
+          className="max-w-xs"
+        />
       )}
 
       {filteredDistributionCenters.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {filteredDistributionCenters.map((distributionCenter, index) => (
-            <DistributionCenterInfoCard
-              key={distributionCenter.id}
-              distributionCenter={distributionCenter}
-              index={index}
-            />
+          {filteredDistributionCenters.map(distributionCenter => (
+            <LocationInfoCard key={distributionCenter.id} location={distributionCenter} />
           ))}
         </div>
       ) : (
@@ -71,7 +66,8 @@ export default function DistributionCenterList({ userDistributionCenters, gameSt
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h4 className="text-lg font-medium text-gray-600 mb-2">No Distribution Centers Yet</h4>
           <p className="text-gray-500">
-            Switch to distribution center mode and click on the map to place your first distribution center!
+            Switch to distribution center mode and click on the map to place your first distribution
+            center!
           </p>
         </div>
       )}

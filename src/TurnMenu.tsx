@@ -79,7 +79,6 @@ export const TurnMenu: React.FC<TurnMenuProps> = ({ className = '' }) => {
                   {player.username}
                   {isCurrentUser && <span className="you-label">(You)</span>}
                 </div>
-
                 {isCurrentPlayer && (
                   <div className="turn-indicator">
                     <Crown className="w-3 h-3" />

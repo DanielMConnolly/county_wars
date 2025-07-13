@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { UtensilsCrossed, Filter } from 'lucide-react';
 import { GameState, Franchise } from '../types/GameTypes';
-import { getCountyNameFromCoordinates } from '../utils/reverseGeocode';
+import LocationInfoCard from '../components/LocationListCard';
+import { Dropdown, DropdownOption } from '../components/Dropdown';
 
 interface FranchiseIncomeData {
   id: string;
@@ -23,6 +24,15 @@ export default function FranchiseList({ userFranchises, franchiseIncomeData }: F
     new Set(userFranchises.map(f => f.state).filter(Boolean))
   ) as string[];
 
+  // Create dropdown options
+  const stateOptions: DropdownOption[] = [
+    { value: 'all', label: `All States (${userFranchises.length})` },
+    ...uniqueStates.map(state => {
+      const count = userFranchises.filter(f => f.state === state).length;
+      return { value: state, label: `${state} (${count})` };
+    })
+  ];
+
   // Filter franchises by selected state
   const filteredFranchises =
     selectedState === 'all'
@@ -40,61 +50,28 @@ export default function FranchiseList({ userFranchises, franchiseIncomeData }: F
 
       {/* State Filter */}
       {uniqueStates.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-500" />
-          <label className="text-sm font-medium text-gray-700">Filter by State:</label>
-          <select
-            value={selectedState}
-            onChange={e => setSelectedState(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1 text-sm
-             focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All States ({userFranchises.length})</option>
-            {uniqueStates.map(state => {
-              const count = userFranchises.filter(f => f.state === state).length;
-              return (
-                <option key={state} value={state}>
-                  {state} ({count})
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        <Dropdown
+          value={selectedState}
+          onChange={(value) => setSelectedState(value as string)}
+          options={stateOptions}
+          label="Filter by State:"
+          icon={<Filter size={16} className="text-gray-500" />}
+          className="max-w-xs"
+        />
       )}
 
       {filteredFranchises.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {filteredFranchises.map((franchise, index) => {
+          {filteredFranchises.map(franchise => {
             const incomeData = franchiseIncomeData?.find(data => data.id === franchise.id);
             const income = incomeData?.income || 0;
             return (
-              <div key={franchise.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800">{franchise.name}</h4>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Location: {getCountyNameFromCoordinates(franchise.lat, franchise.long)}
-                    </p>
-                    {franchise.state && (
-                      <p className="text-xs text-gray-500 mt-1">State: {franchise.state}</p>
-                    )}
-
-                    <p className="text-xs text-gray-500 mt-1">
-                      Population: {franchise.population.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 ml-4">
-                    <div className="flex items-center gap-2">
-                      <UtensilsCrossed className="w-5 h-5 text-orange-500" />
-                      <span className="text-sm font-medium text-gray-700">#{index + 1}</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-green-600">${income}</p>
-                      <p className="text-xs text-gray-500">income</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <LocationInfoCard
+                key={franchise.id}
+                location={franchise}
+                showIncome={true}
+                income={income}
+              />
             );
           })}
         </div>

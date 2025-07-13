@@ -35,14 +35,13 @@ export type GameState = {
     userColors: Map<string, string>, // Maps userId to assigned color
     turnNumber: number,
     playerWhosTurnItIs: string | null,
+    selectedState: string | null, // Selected state name for explore mode
 }
 
-export type GameDifficulty = 'Easy' | 'Medium' | 'Hard';
 export type MapStyle = 'terrain' | 'satellite' | 'dark' | 'street';
 export type BoundaryType = 'counties' | 'states';
-export type PlacementMode = 'franchise' | 'distribution-center';
+export type PlacementMode = 'franchise' | 'distribution-center' | 'explore';
 export type MapControls = {
-    zoom: number,
     style: MapStyle,
     boundaryType: BoundaryType
 }

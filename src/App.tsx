@@ -2,10 +2,9 @@ import { useContext } from 'react';
 import useMapControls from './useMapControls';
 import GameMap from './GameMap.react';
 import InfoCard from './InfoCard';
-import LocationInfoCard from './LocationInfoCard.react';
 import TopMenu from './TopMenu';
 import MapControls from './MapControls';
-import PlacementModeToggle from './components/PlacementModeToggle';
+import ClickModeToggle from './components/ClickModeToggle';
 import { TurnMenu } from './TurnMenu';
 import { GameStateProvider } from './GameStateProvider.react';
 import { GameStateContext } from './GameStateContext';
@@ -59,13 +58,11 @@ const App = () => {
 
 const AppContent = () => {
   const { gameState, selectLocation } = useContext(GameStateContext);
-  const { clickedLocation, selectedLocation} = gameState;
   const { user, loading } = useAuth();
 
   const {
     mapControls,
     changeMapStyle,
-    updateZoom,
     changeBoundaryType,
   } = useMapControls();
 
@@ -104,23 +101,16 @@ const AppContent = () => {
       <MapControls
         mapControls={mapControls}
         onChangeMapStyle={changeMapStyle}
-        onUpdateZoom={updateZoom}
         onChangeBoundaryType={changeBoundaryType}
       />
 
-      <PlacementModeToggle />
+      <ClickModeToggle />
 
       <GameMap
        mapControls={mapControls}
       />
 
-      {clickedLocation && <InfoCard />}
-      {selectedLocation && (
-        <LocationInfoCard
-          location={selectedLocation}
-          onClose={() => selectLocation(null)}
-        />
-      )}
+      <InfoCard />
       {/* TurnMenu at bottom of screen */}
       <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-50">
         <TurnMenu />

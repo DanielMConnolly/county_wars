@@ -1,16 +1,17 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { X, Coins, UtensilsCrossed, Trophy, Package } from 'lucide-react';
+import { X, Coins, UtensilsCrossed, Trophy, Package, TrendingUp } from 'lucide-react';
 import { GameStateContext } from '../GameStateContext';
 import { useAuth } from '../auth/AuthContext';
 import { DataTestIDs } from '../DataTestIDs';
 import GameStandings from './GameStandings';
 import FranchiseList from './FranchiseList';
 import DistributionCenterList from './DistributionCenterList';
+import TurnStats from './TurnStats';
 import { fetchFranchiseIncome } from '../api_calls/HTTPRequests';
 import { getCurrentGameId } from '../utils/gameUrl';
 import { Franchise } from '../types/GameTypes';
 
-type TabType = 'income' | 'franchises' | 'distribution-centers' | 'standings';
+type TabType = 'income' | 'franchises' | 'distribution-centers' | 'standings' | 'turn-stats';
 
 interface GameInformationProps {
   isOpen: boolean;
@@ -140,6 +141,19 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
                 Game Standings
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('turn-stats')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'turn-stats'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <TrendingUp size={16} />
+                Turn Stats
+              </div>
+            </button>
           </nav>
         </div>
 
@@ -184,7 +198,6 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
                   <li>• Each franchise generates income based on its population</li>
                   <li>• Higher population areas generate more income (up to $1,000)</li>
                   <li>• Income is calculated proportionally from population data</li>
-                  <li>• Franchise placement costs vary by county difficulty</li>
                 </ul>
               </div>
             </div>
@@ -206,6 +219,8 @@ export default function GameInformationPanel({ isOpen, onClose }: GameInformatio
           )}
 
           {activeTab === 'standings' && <GameStandings isVisible={activeTab === 'standings'} />}
+
+          {activeTab === 'turn-stats' && <TurnStats isVisible={activeTab === 'turn-stats'} />}
         </div>
       </div>
     </div>

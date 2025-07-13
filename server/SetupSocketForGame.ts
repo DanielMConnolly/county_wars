@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { dbOperations } from './database.js';
 import type { ServerGameState } from '../src/types/GameTypes.js';
+import { calculateTotalIncomeForPlayer } from './incomeUtils.js';
 
 // Extend Socket.IO socket to include custom userId property
 declare module 'socket.io' {
@@ -98,6 +99,52 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
           gameState.turnNumber += 1;
           gameState.playerWhosTurnItIs = nextPlayerId;
           gameStates.set(socket.gameId, gameState);
+          try {
+            const incomeAmount = await calculateTotalIncomeForPlayer(nextPlayerId, socket.gameId);
+            if (incomeAmount > 0) {
+              const currentMoney = await dbOperations.getUserGameMoney(nextPlayerId, socket.gameId);
+              const newMoney = currentMoney + incomeAmount;
+              await dbOperations.updateUserGameMoney(nextPlayerId, socket.gameId, newMoney);
+
+              // Record income in IncomeAtTurn table
+              await dbOperations.createIncomeAtTurn(nextPlayerId, socket.gameId, gameState.turnNumber, incomeAmount);
+
+              // Emit money update only to the next player
+              const nextPlayerSocket = Array.from(gameNamespace.sockets.values()).find(
+                s => s.userId === nextPlayerId && s.gameId === socket.gameId
+              );
+              
+              if (nextPlayerSocket) {
+                nextPlayerSocket.emit('money-update', {
+                  userId: nextPlayerId,
+                  newMoney: newMoney,
+                  incomeReceived: incomeAmount
+                });
+              }
+            }
+          } catch (error) {
+            console.error(`Error calculating income for player ${nextPlayerId}:`, error);
+          }
+
+          // Record stats for all players at the start of this turn
+          try {
+            for (const player of players) {
+              const playerMoney = await dbOperations.getUserGameMoney(player.userId, socket.gameId);
+              const playerFranchises = await dbOperations.getUserGameFranchises(player.userId, socket.gameId);
+              const playerIncome = await calculateTotalIncomeForPlayer(player.userId, socket.gameId);
+
+              await dbOperations.createStatsByTurn(
+                player.userId,
+                socket.gameId,
+                gameState.turnNumber,
+                playerIncome,
+                playerMoney,
+                playerFranchises.length
+              );
+            }
+          } catch (error) {
+            console.error(`Error recording stats by turn for game ${socket.gameId}:`, error);
+          }
 
           // Broadcast turn update to all players
           gameNamespace.to(`game-${socket.gameId}`).emit('turn-update', {
@@ -111,46 +158,6 @@ export function setupSocketForGame(io: Server, namespace = '/game') {
         console.error(`Error advancing turn for game ${socket.gameId}:`, error);
         socket.emit('turn-error', { message: 'Database error' });
       }
-    });
-
-
-    // Handle player chat in game
-    socket.on('game-chat', (data) => {
-      // Broadcast chat message to all players in game
-      gameNamespace.to(`game-${socket.gameId}`).emit('game-chat-message', {
-        userId: socket.userId,
-        message: data.message,
-        timestamp: Date.now()
-      });
-    });
-
-    // Handle game state sync requests
-    socket.on('request-game-sync', async () => {
-      let gameState = gameStates.get(socket.gameId);
-      if (!gameState) {
-        try {
-          const turnInfo = await dbOperations.getGameTurnInfo(socket.gameId);
-          gameState = { 
-            turnNumber: turnInfo.turnNumber,
-            playerWhosTurnItIs: turnInfo.playerWhosTurnItIs,
-            lobbyPlayers: [] 
-          };
-          gameStates.set(socket.gameId, gameState);
-        } catch (error) {
-          console.error(`Error reading turn info from DB for sync request in game ${socket.gameId}:`, error);
-          gameState = { 
-            turnNumber: 1,
-            playerWhosTurnItIs: null,
-            lobbyPlayers: [] 
-          };
-          gameStates.set(socket.gameId, gameState);
-        }
-      }
-
-      socket.emit('game-state-sync', {
-        turnNumber: gameState.turnNumber,
-        playerWhosTurnItIs: gameState.playerWhosTurnItIs
-      });
     });
 
     // Handle disconnection

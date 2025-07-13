@@ -4,12 +4,10 @@ import { MapControls, MapStyle, BoundaryType } from './types/GameTypes';
 const MapControlsComponent = ({
   mapControls,
   onChangeMapStyle,
-  onUpdateZoom,
   onChangeBoundaryType,
 }: {
   mapControls: MapControls;
   onChangeMapStyle: (_arg: MapStyle) => void;
-  onUpdateZoom: (arg: number) => void;
   onChangeBoundaryType: (arg: BoundaryType) => void;
 }) => {
   return (
@@ -36,19 +34,6 @@ const MapControlsComponent = ({
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Zoom Level: {mapControls.zoom}
-          </label>
-          <input
-            type="range"
-            min="3"
-            max="18"
-            value={mapControls.zoom}
-            onChange={(e) => onUpdateZoom(parseInt(e.target.value))}
-            className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
             Boundaries
           </label>
           <select
@@ -63,25 +48,6 @@ const MapControlsComponent = ({
         </div>
       </div>
 
-      <style>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: 2px solid #1e40af;
-        }
-        .slider::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: 2px solid #1e40af;
-        }
-      `}</style>
     </div>
   );
 };

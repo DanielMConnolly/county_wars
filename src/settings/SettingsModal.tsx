@@ -1,6 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { X, Settings, RotateCcw } from 'lucide-react';
-import { GameStateContext } from '../GameStateContext';
+import React, {useState } from 'react';
+import { X, Settings, } from 'lucide-react';
 import { GameSettingsPanel } from './GameSettingsPanel';
 import { DataTestIDs } from '../DataTestIDs';
 
@@ -13,7 +12,6 @@ export default function SettingsModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const { gameState, resetGame } = useContext(GameStateContext);
   const [currentView, setCurrentView] = useState<ModalView>('main');
 
 
@@ -69,22 +67,6 @@ export default function SettingsModal({
                 <div>
                   <h3 className="font-medium text-gray-800">Game Settings</h3>
                   <p className="text-sm text-gray-600">Configure colors and map style</p>
-                </div>
-              </button>
-
-
-              <button
-                onClick={() => {
-                  resetGame();
-                  handleModalClose();
-                }}
-                className="w-full flex items-center gap-3 p-4 border border-gray-200
-                 rounded-lg hover:bg-gray-50 transition-colors text-left"
-              >
-                <RotateCcw size={20} className="text-orange-600" />
-                <div>
-                  <h3 className="font-medium text-gray-800">Reset Game</h3>
-                  <p className="text-sm text-gray-600">Reset the current game progress</p>
                 </div>
               </button>
             </div>
