@@ -1,14 +1,14 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Zap, X } from 'lucide-react';
-import { validateLocationPlacement } from './utils/locationUtils';
-import { GameStateContext } from './GameStateContext';
-import { DataTestIDs } from './DataTestIDs';
-import { fetchClickedLocationData, fetchDistributionCenterCost, fetchPotentialIncome } from './api_calls/HTTPRequests';
-import { ClickedLocationData } from './types/GameTypes';
-import { getCurrentGameId } from './utils/gameUrl';
-import InfoRow from './components/InfoRow';
-import { useAuth } from './auth/AuthContext';
-import { useGetUserFranchises } from './utils/gameUtils';
+import { validateLocationPlacement } from '../utils/locationUtils';
+import { GameStateContext } from '../GameStateContext';
+import { DataTestIDs } from '../DataTestIDs';
+import { fetchClickedLocationData, fetchDistributionCenterCost, fetchPotentialIncome } from '../api_calls/HTTPRequests';
+import { ClickedLocationData } from '../types/GameTypes';
+import { getCurrentGameId } from '../utils/gameUrl';
+import InfoRow from '../components/InfoRow';
+import { useAuth } from '../auth/AuthContext';
+import { useGetUserFranchises } from '../utils/gameUtils';
 
 const PlacementInfoCard = () => {
   const { gameState, placeFranchise, setClickedLocation, placementMode } =

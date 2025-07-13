@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { X } from 'lucide-react';
-import { GameStateContext } from './GameStateContext';
-import { useAuth } from './auth/AuthContext';
-import { getCurrentGameId } from './utils/gameUrl';
-import { getStateStats } from './api_calls/HTTPRequests';
-import InfoRow from './components/InfoRow';
+import { GameStateContext } from '../GameStateContext';
+import { useAuth } from '../auth/AuthContext';
+import { getCurrentGameId } from '../utils/gameUrl';
+import { getStateStats } from '../api_calls/HTTPRequests';
+import InfoRow from '../components/InfoRow';
 
 interface StateStats {
   totalFranchises: number;

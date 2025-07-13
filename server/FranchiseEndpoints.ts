@@ -226,6 +226,38 @@ export function setupFranchiseEndpoints(app: express.Application, io: Server) {
     }
   });
 
+  // Get distribution center cost for a user in a game
+  app.get('/api/games/:gameId/distribution-center-cost', async (req: Request, res: Response): Promise<void> => {
+    const { gameId } = req.params;
+    const { userId } = req.query;
+
+    if (!userId || typeof userId !== 'string') {
+      res.status(400).json({ error: 'userId is required' });
+      return;
+    }
+
+    try {
+      // Get all existing locations for this game to check distribution centers
+      const existingLocations = await dbOperations.getGameFranchises(gameId);
+      const userDistributionCenters = existingLocations.filter(
+        location => location.locationType === 'distribution-center' && location.userId === userId
+      );
+
+      const existingDistributionCenters = userDistributionCenters.length;
+      const cost = getDistributionCost(existingDistributionCenters);
+      const isFirstDistributionCenter = existingDistributionCenters === 0;
+
+      res.json({
+        cost,
+        isFirstDistributionCenter,
+        existingDistributionCenters,
+      });
+    } catch (error) {
+      console.error('Error fetching distribution center cost:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Get all franchises for a game
   app.get('/api/games/:gameId/franchises', async (req: Request, res: Response): Promise<void> => {
     const { gameId } = req.params;

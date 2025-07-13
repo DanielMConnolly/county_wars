@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { GameStateContext } from './GameStateContext';
+import { GameStateContext } from '../GameStateContext';
 import PlacementInfoCard from './PlacementInfoCard';
 import LocationInfoCard from './LocationInfoCard.react';
 import StateInfoCard from './StateInfoCard';
