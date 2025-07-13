@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Building, Truck, X, Settings, DollarSign } from 'lucide-react';
-import { PlacedLocation } from './types/GameTypes';
-import { useAuth } from './auth/AuthContext';
-import { DataTestIDs } from './DataTestIDs';
-import InfoRow from './components/InfoRow';
-import { getReadableLocationName } from './utils/locationUtils';
-import { fetchFranchiseById } from './api_calls/HTTPRequests';
+import { PlacedLocation } from '../types/GameTypes';
+import { useAuth } from '../auth/AuthContext';
+import { DataTestIDs } from '../DataTestIDs';
+import InfoRow from '../components/InfoRow';
+import { getReadableLocationName } from '../utils/locationUtils';
+import { fetchFranchiseById } from '../api_calls/HTTPRequests';
 
 interface LocationInfoCardProps {
   location: PlacedLocation;

@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import useMapControls from './useMapControls';
 import GameMap from './GameMap.react';
-import InfoCard from './InfoCard';
+import InfoCard from './InfoCards/InfoCard';
 import TopMenu from './TopMenu';
 import MapControls from './MapControls';
 import ClickModeToggle from './components/ClickModeToggle';
