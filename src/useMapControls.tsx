@@ -4,7 +4,6 @@ import { MapControls, MapStyle, BoundaryType } from './types/GameTypes';
 
 const useMapControls = () => {
   const [mapControls, setMapControls] = useState<MapControls>({
-    zoom: 4,
     style: 'terrain',
     boundaryType: 'states'
   });
@@ -13,9 +12,6 @@ const useMapControls = () => {
     setMapControls(prev => ({ ...prev, style }));
   };
 
-  const updateZoom = (zoom: number) => {
-    setMapControls(prev => ({ ...prev, zoom }));
-  };
 
   const changeBoundaryType = (boundaryType: BoundaryType) => {
     setMapControls(prev => ({ ...prev, boundaryType }));
@@ -31,7 +27,6 @@ const useMapControls = () => {
   return {
     mapControls,
     changeMapStyle,
-    updateZoom,
     changeBoundaryType,
     toggleMapStyle
   };

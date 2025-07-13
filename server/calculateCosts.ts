@@ -34,13 +34,13 @@ export const getPopulationCost = (population: number): number => {
 export const getFranchiseCost = async (
   lat: number,
   lng: number
-): Promise<{ population: number | null; cost: number | null }> => {
+): Promise<{ population: number; cost: number | null }> => {
   try {
     const population = await getPopulationAroundPoint(lat, lng);
     const cost = population !== null ? getPopulationCost(population) : null;
     return { population, cost };
   } catch (_error) {
-    return { population: null, cost: null };
+    return { population: 0, cost: null };
   }
 };
 

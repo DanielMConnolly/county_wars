@@ -77,13 +77,13 @@ export async function calculatePopulationInRadius(
 export async function getPopulationAroundPoint(
   lat: number,
   lng: number
-): Promise<number | null> {
+): Promise<number> {
   try {
     const radiusMeters = GAME_DEFAULTS.DEFAULT_RADIUS_METERS;
     const population = await calculatePopulationInRadius(lat, lng, radiusMeters);
     return population;
   } catch (_error) {
-    return null;
+    return 0;
   }
 }
 

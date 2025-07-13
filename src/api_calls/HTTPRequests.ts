@@ -504,6 +504,29 @@ export async function removeFranchise(
   }
 }
 
+export async function getStateStats(
+  gameId: string,
+  stateName: string,
+  userId: string
+): Promise<{ success: boolean; totalFranchises?: number; userFranchises?: number; error?: string }> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/states/${encodeURIComponent(stateName)}/stats?userId=${encodeURIComponent(userId)}`);
+    const data = await response.json();
+    if (response.ok) {
+      return { 
+        success: true, 
+        totalFranchises: data.totalFranchises,
+        userFranchises: data.userFranchises
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch state stats' };
+    }
+  } catch (error) {
+    console.error('Fetch state stats request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
 export async function fetchGamePlayers(
   gameId: string
 ): Promise<{ success: boolean; players?: GamePlayer[]; error?: string }> {
@@ -549,6 +572,47 @@ export async function fetchFranchiseIncome(
     }
   } catch (error) {
     console.error('Fetch franchise income request failed:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+}
+
+export async function fetchPotentialIncome(
+  lat: number,
+  long: number
+): Promise<{
+  success: boolean;
+  projectedIncome?: number;
+  population?: number;
+  location?: {
+    county: string;
+    state: string;
+    metroArea: string;
+  };
+  error?: string;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/potential-income`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ lat, long }),
+    });
+    
+    const data = await response.json();
+
+    if (response.ok) {
+      return {
+        success: true,
+        projectedIncome: data.projectedIncome,
+        population: data.population,
+        location: data.location,
+      };
+    } else {
+      return { success: false, error: data.error || 'Failed to fetch potential income' };
+    }
+  } catch (error) {
+    console.error('Fetch potential income request failed:', error);
     return { success: false, error: 'Network error. Please try again.' };
   }
 }

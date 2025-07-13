@@ -11,7 +11,6 @@ import authRoutes from './authRoutes.js';
 import { getGeoDataFromCoordinates } from './metroAreaUtils';
 import { getFranchiseCost } from './calculateCosts.js';
 import { VALID_COLOR_NAMES } from '../src/constants/gameDefaults.js';
-import { Franchise } from '../src/types/GameTypes.js';
 import { setupFranchiseEndpoints } from './FranchiseEndpoints.js';
 
 // Get __dirname equivalent for ES modules
@@ -157,7 +156,7 @@ app.post('/api/games/:gameId/users/:userId/stats-by-turn', async (req: Request, 
   const { gameId, userId } = req.params;
   const { turnNumber, incomeReceived, totalMoney, totalFranchises } = req.body;
 
-  if (typeof turnNumber !== 'number' || typeof incomeReceived !== 'number' || 
+  if (typeof turnNumber !== 'number' || typeof incomeReceived !== 'number' ||
       typeof totalMoney !== 'number' || typeof totalFranchises !== 'number') {
     res.status(400).json({ success: false, error: 'All numeric fields are required' });
     return;
@@ -165,14 +164,14 @@ app.post('/api/games/:gameId/users/:userId/stats-by-turn', async (req: Request, 
 
   try {
     const success = await dbOperations.createStatsByTurn(
-      userId, 
-      gameId, 
-      turnNumber, 
-      incomeReceived, 
-      totalMoney, 
+      userId,
+      gameId,
+      turnNumber,
+      incomeReceived,
+      totalMoney,
       totalFranchises
     );
-    
+
     if (success) {
       res.json({ success: true, message: 'Stats recorded successfully' });
     } else {

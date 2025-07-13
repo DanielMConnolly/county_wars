@@ -18,7 +18,7 @@ import { loadCounties, loadStates } from './GameMapHelper';
 import { GAME_DEFAULTS } from './constants/gameDefaults';
 
 const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode => {
-  const { gameState, selectLocation, setClickedLocation, setGameState, placementMode } =
+  const { gameState, selectLocation, setClickedLocation, setGameState, placementMode, selectState } =
     useContext(GameStateContext);
   const { user } = useAuth();
 
@@ -114,6 +114,11 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
 
     mapInstance.current.on('click', e => {
+      // In explore mode, state selection is handled by the state layer click handler
+      if (placementMode === 'explore') {
+        return;
+      }
+
       // Check if the click is within any county boundary
       const isInUSA = checkIfLocationInUSA(e.latlng.lat, e.latlng.lng);
 
@@ -123,7 +128,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       }
       setClickedLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
     });
-  }, []);
+  }, [placementMode]);
 
   useEffect(() => {
     if (!mapInstance.current) return;
@@ -152,6 +157,12 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
           stateLayerRef.current = layer;
         },
         onError: () => {},
+        onStateClick: (stateName) => {
+          if (placementMode === 'explore') {
+            selectState(stateName);
+          }
+        },
+        selectedState: gameState.selectedState,
       });
     };
 
@@ -170,7 +181,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
         mapInstance.current.removeLayer(stateLayerRef.current);
       }
     };
-  }, [boundaryType]); // No dependencies - only run once
+  }, [boundaryType, gameState.selectedState, placementMode]); // Reload when boundary type, selected state, or placement mode changes
 
   // Update franchise markers when franchises change
   useEffect(() => {
@@ -211,7 +222,7 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
     // Clean up existing markers and circles
     clickRef.current?.removeFrom(mapInstance.current);
     clickRef.current = null;
-    
+
     if (locationCircleRef.current) {
       mapInstance.current.removeLayer(locationCircleRef.current);
       locationCircleRef.current = null;
@@ -219,6 +230,9 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
 
     // If no clicked location, we're done (cleanup only)
     if (!clickedLocation) return;
+
+    // In explore mode, don't show markers or circles for clicked locations
+    if (placementMode === 'explore') return;
 
     const franchiseIcon = createFranchiseIcon(undefined, placementMode);
 
@@ -324,11 +338,6 @@ const GameMap = ({ mapControls }: { mapControls: MapControls }): React.ReactNode
       .addTo(mapInstance.current);
   }, [mapControls.style]);
 
-  // Update zoom
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    mapInstance.current.setZoom(mapControls.zoom);
-  }, [mapControls.zoom]);
 
   // Cleanup effect for location circle
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, BarChart } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,6 +14,7 @@ import {
 import { fetchStatsByTurnForUser } from '../api_calls/HTTPRequests';
 import { getCurrentGameId } from '../utils/gameUrl';
 import { useAuth } from '../auth/AuthContext';
+import { Dropdown, DropdownOption } from '../components/Dropdown';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -31,9 +32,12 @@ interface TurnStat {
   createdAt: Date;
 }
 
+type StatViewType = 'income' | 'totalMoney';
+
 export default function TurnStats({ isVisible }: TurnStatsProps) {
   const [turnStatsData, setTurnStatsData] = useState<TurnStat[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [selectedStatView, setSelectedStatView] = useState<StatViewType>('income');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -61,17 +65,48 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
     }
   };
 
-  // Prepare Chart.js data
+  // Dropdown options for stat selection
+  const statViewOptions: DropdownOption[] = [
+    { value: 'income', label: 'Income per Turn' },
+    { value: 'totalMoney', label: 'Total Money Over Time' }
+  ];
+
+  // Prepare Chart.js data based on selected view
+  const getChartConfig = () => {
+    if (selectedStatView === 'totalMoney') {
+      return {
+        data: turnStatsData.map(stat => stat.totalMoney),
+        label: 'Total Money',
+        title: 'Total Money Over Time',
+        yAxisLabel: 'Total Money ($)',
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        pointBackgroundColor: 'rgb(34, 197, 94)',
+      };
+    } else {
+      return {
+        data: turnStatsData.map(stat => stat.incomeReceived),
+        label: 'Income per Turn',
+        title: 'Income Over Time',
+        yAxisLabel: 'Income ($)',
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+      };
+    }
+  };
+
+  const chartConfig = getChartConfig();
   const chartData = {
     labels: turnStatsData.map(stat => `Turn ${stat.turnNumber}`),
     datasets: [
       {
-        label: 'Income per Turn',
-        data: turnStatsData.map(stat => stat.incomeReceived),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        label: chartConfig.label,
+        data: chartConfig.data,
+        borderColor: chartConfig.borderColor,
+        backgroundColor: chartConfig.backgroundColor,
         borderWidth: 3,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBackgroundColor: chartConfig.pointBackgroundColor,
         pointBorderColor: 'white',
         pointBorderWidth: 2,
         pointRadius: 6,
@@ -91,7 +126,7 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
       },
       title: {
         display: true,
-        text: 'Income Over Time',
+        text: chartConfig.title,
         font: {
           size: 18,
           weight: 'bold' as const,
@@ -119,7 +154,7 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
         },
         title: {
           display: true,
-          text: 'Income ($)',
+          text: chartConfig.yAxisLabel,
           font: {
             size: 14,
           },
@@ -148,6 +183,18 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
         </div>
       ) : turnStatsData.length > 0 ? (
         <div className="bg-gray-50 rounded-lg p-6">
+          {/* Stat Selection Dropdown */}
+          <div className="mb-6">
+            <Dropdown
+              value={selectedStatView}
+              onChange={(value) => setSelectedStatView(value as StatViewType)}
+              options={statViewOptions}
+              label="View Statistics:"
+              icon={<BarChart size={16} className="text-gray-500" />}
+              className="max-w-xs"
+            />
+          </div>
+
           {/* Chart Container */}
           <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div style={{ height: '400px' }}>
@@ -157,30 +204,66 @@ export default function TurnStats({ isVisible }: TurnStatsProps) {
 
           {/* Summary stats below chart */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <h5 className="font-medium text-gray-800">Average Income</h5>
-              <p className="text-2xl font-bold text-blue-600">
-                $
-                {Math.round(
-                  turnStatsData.reduce((sum, stat) => sum + stat.incomeReceived, 0) /
-                    turnStatsData.length
-                ).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <h5 className="font-medium text-gray-800">Peak Income</h5>
-              <p className="text-2xl font-bold text-green-600">
-                ${Math.max(...turnStatsData.map(s => s.incomeReceived)).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg p-4 border border-gray-200">
-              <h5 className="font-medium text-gray-800">Current Franchises</h5>
-              <p className="text-2xl font-bold text-purple-600">
-                {turnStatsData.length > 0
-                  ? turnStatsData[turnStatsData.length - 1].totalFranchises
-                  : 0}
-              </p>
-            </div>
+            {selectedStatView === 'income' ? (
+              <>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h5 className="font-medium text-gray-800">Average Income</h5>
+                  <p className="text-2xl font-bold text-blue-600">
+                    $
+                    {Math.round(
+                      turnStatsData.reduce((sum, stat) => sum + stat.incomeReceived, 0) /
+                        turnStatsData.length
+                    ).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h5 className="font-medium text-gray-800">Peak Income</h5>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${Math.max(...turnStatsData.map(s => s.incomeReceived)).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h5 className="font-medium text-gray-800">Current Franchises</h5>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {turnStatsData.length > 0
+                      ? turnStatsData[turnStatsData.length - 1].totalFranchises
+                      : 0}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h5 className="font-medium text-gray-800">Current Money</h5>
+                  <p className="text-2xl font-bold text-green-600">
+                    $
+                    {turnStatsData.length > 0
+                      ? turnStatsData[turnStatsData.length - 1].totalMoney.toLocaleString()
+                      : 0}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h5 className="font-medium text-gray-800">Peak Money</h5>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    ${Math.max(...turnStatsData.map(s => s.totalMoney)).toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <h5 className="font-medium text-gray-800">Money Growth</h5>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {turnStatsData.length > 1 ? (
+                      <>
+                        {turnStatsData[turnStatsData.length - 1].totalMoney > turnStatsData[0].totalMoney ? '+' : ''}
+                        $
+                        {(turnStatsData[turnStatsData.length - 1].totalMoney - turnStatsData[0].totalMoney).toLocaleString()}
+                      </>
+                    ) : (
+                      '$0'
+                    )}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : (

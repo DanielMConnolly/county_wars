@@ -14,6 +14,8 @@ export interface GameStateContextType {
   getUserSelectedColor: () => string;
   // Location tracking
   setClickedLocation: (_location: { lat: number; lng: number } | null) => void;
+  // State selection for explore mode
+  selectState: (_stateName: string | null) => void;
   // Franchise management
   placeFranchise: (_name: string) => void;
   // Placement mode management

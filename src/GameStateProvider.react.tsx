@@ -61,8 +61,24 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     }));
   };
 
+  const selectState = (stateName: string | null) => {
+    setGameState(prevState => ({
+      ...prevState,
+      selectedState: stateName,
+      selectedLocation: null,
+      clickedLocation: null,
+    }));
+  };
+
   const onPlacementModeChange = (mode: PlacementMode) => {
     setPlacementMode(mode);
+    
+    if (mode !== 'explore') {
+      setGameState(prevState => ({
+        ...prevState,
+        selectedState: null,
+      }));
+    }
   };
 
   const assignUserColors = async (newHighlightColor: string) => {
@@ -213,6 +229,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     getUserSelectedColor,
     resetGame,
     setClickedLocation,
+    selectState,
     placeFranchise,
     placementMode,
     onPlacementModeChange,

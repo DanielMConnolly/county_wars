@@ -1,11 +1,10 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { GameLobbyContext, GameLobbyContextType } from './GameLobbyContext';
 import { LobbyPlayer } from '../types/GameTypes';
-import { fetchLobbyState } from '../api_calls/HTTPRequests';
 import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../Toast/ToastContext';
-import { connectToLobbySocket, disconnectFromLobbySocket } from '../services/connectToLobbySocket';
+import { connectToLobbySocket, } from '../services/connectToLobbySocket';
 
 interface GameLobbyStateProviderProps {
   children: ReactNode;

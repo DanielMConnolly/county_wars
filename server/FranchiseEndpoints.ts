@@ -34,6 +34,64 @@ export function setupFranchiseEndpoints(app: express.Application, io: Server) {
     }
   );
 
+  // Calculate potential income for a location based on lat/long
+  app.post('/api/potential-income', async (req: Request, res: Response): Promise<void> => {
+    const { lat, long } = req.body;
+
+    if (lat === undefined || long === undefined) {
+      res.status(400).json({ error: 'lat and long are required' });
+      return;
+    }
+
+    if (typeof lat !== 'number' || typeof long !== 'number') {
+      res.status(400).json({ error: 'lat and long must be numbers' });
+      return;
+    }
+
+    try {
+      // Get geographical data
+      const geoData = await getGeoDataFromCoordinates(lat, long);
+      if (!geoData) {
+        res.status(400).json({ error: 'Unable to determine location data for income calculation' });
+        return;
+      }
+
+      // Get population data from the same source used for franchise cost calculation
+      const populationData = await getFranchiseCost(lat, long);
+      const population = populationData.population;
+
+      // Create a temporary franchise object for income calculation
+      const tempFranchise = {
+        id: 'temp',
+        lat,
+        long,
+        name: 'temp',
+        userId: 'temp',
+        username: 'temp',
+        county: geoData.county,
+        state: geoData.state,
+        metroArea: geoData.metroArea,
+        population: population,
+        locationType: 'franchise' as const
+      };
+
+      const projectedIncome = calculateIncomeForFranchise(tempFranchise);
+
+      res.json({
+        projectedIncome,
+        population: population,
+        location: {
+          county: geoData.county,
+          state: geoData.state,
+          metroArea: geoData.metroArea
+        }
+      });
+    } catch (error) {
+      console.error('Error calculating potential income:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   app.post('/api/place-franchise', async (req: Request, res: Response): Promise<void> => {
     const { userId, gameId, lat, long, name, locationType = 'franchise', population } = req.body;
     if (!userId || !gameId || lat === undefined || long === undefined || !name) {
@@ -246,7 +304,7 @@ export function setupFranchiseEndpoints(app: express.Application, io: Server) {
       if (franchise) {
         // Calculate income for this franchise
         const income = calculateIncomeForFranchise(franchise);
-        
+
         res.json({
           ...franchise,
           income
